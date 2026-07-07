@@ -16,21 +16,20 @@
     </header>
 
     <nav class="top-nav">
-      <button onclick="scrollToSection('pitchersSection')">🎯 Pitchers</button>
-      <button onclick="scrollToSection('hrSection')">💣 HR Pickz</button>
-      <button onclick="scrollToSection('hitsSection')">🔥 Hit Pickz</button>
-      <button onclick="scrollToSection('moneylineSection')">💰 Moneyline</button>
-      <button onclick="scrollToSection('gamesSection')">📊 Games</button>
+      <button onclick="showTab('pitchersSection')">🎯 Pitchers</button>
+      <button onclick="showTab('hrSection')">💣 HR Pickz</button>
+      <button onclick="showTab('hitsSection')">🔥 Hit Pickz</button>
+      <button onclick="showTab('moneylineSection')">💰 Moneyline</button>
     </nav>
 
     <section id="pitchersSection">
       <h2>🎯 Top 10 Pitchers To Target</h2>
-      <div id="pitcherTargetsBox">Loading...</div>
+      <div id="pitcherTargetsBox">Loading pitcher targets...</div>
     </section>
 
     <section id="hrSection">
       <h2>💣 Top 10 HR Pickz</h2>
-      <div id="hrPicksBox">Loading...</div>
+      <div id="hrPicksBox">Loading HR picks...</div>
     </section>
 
     <section id="hitsSection">
@@ -38,23 +37,18 @@
       <p class="section-note">
         Hitters with a previous HR vs today’s pitcher or a 2+ game hit streak.
       </p>
-      <div id="hitPicksBox">Loading...</div>
+      <div id="hitPicksBox">Loading hit picks...</div>
     </section>
 
     <section id="moneylineSection">
       <h2>💰 POPS Moneyline Model</h2>
-      <div id="moneylineBox">Loading...</div>
-    </section>
-
-    <section id="gamesSection">
-      <h2>📊 Today's Games</h2>
-      <div id="gameBreakdownBox">Loading...</div>
+      <div id="moneylineBox">Loading moneyline edges...</div>
     </section>
 
     <section id="scoutingSection">
       <h2>🔎 Scouting Report</h2>
       <div id="scoutingBox">
-        Tap a game to load the scouting report.
+        Tap a pitcher card to load the scouting report.
       </div>
     </section>
 
