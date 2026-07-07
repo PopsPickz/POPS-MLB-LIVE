@@ -219,10 +219,10 @@ async function loadGameDetails(gamePk) {
   "<ol>" + homeLineup + "</ol>" +
   "</div>" +
 
-  "<div class='report-section coming-soon'>" +
-  "<h4>💣 POPS HR Targets</h4>" +
-  "<p>Coming soon: top HR bats from this game.</p>" +
-  "</div>" +
+  "<div class='report-section'>" +
+"<h4>💣 POPS HR Targets</h4>" +
+buildAutoHrTargets(awayOrder, homeOrder, players) +
+"</div>" +
 
   "<div class='report-section coming-soon'>" +
   "<h4>🔥 POPS Hitterz</h4>" +
@@ -248,6 +248,79 @@ async function loadGameDetails(gamePk) {
     gameDetailsBox.innerHTML = "Error loading game details.";
   }
 }
+function buildAutoHrTargets(awayOrder, homeOrder, players) {
+  var allBatters = awayOrder.concat(homeOrder);
+  var targets = [];
 
-loadMLB();
+  allBatters.forEach(function(playerId, index) {
+    var playerKey = "ID" + playerId;
+    var player = players[playerKey];
+
+    if (!player) return;
+
+    var name = player.fullName;
+    var lineupSpot = (index % 9) + 1;
+    var score = 60;
+    var reasons = [];
+
+    if (lineupSpot >= 1 && lineupSpot <= 4) {
+      score += 15;
+      reasons.push("Top 4 lineup spot");
+    }
+
+    if (lineupSpot === 3 || lineupSpot === 4) {
+      score += 10;
+      reasons.push("Prime power spot");
+    }
+
+    if (
+      name.includes("Judge") ||
+      name.includes("Ohtani") ||
+      name.includes("Schwarber") ||
+      name.includes("Alonso") ||
+      name.includes("Olson") ||
+      name.includes("Devers") ||
+      name.includes("Raleigh") ||
+      name.includes("Guerrero") ||
+      name.includes("Tatis") ||
+      name.includes("Soto")
+    ) {
+      score += 15;
+      reasons.push("Known power bat");
+    }
+
+    if (score > 100) score = 100;
+
+    if (score >= 75) {
+      targets.push({
+        name: name,
+        score: score,
+        reasons: reasons.join(", ")
+      });
+    }
+  });
+
+  targets.sort(function(a, b) {
+    return b.score - a.score;
+  });
+
+  targets = targets.slice(0, 5);
+
+  if (targets.length === 0) {
+    return "<p>No strong HR targets found from this lineup yet.</p>";
+  }
+
+  var html = "";
+
+  targets.forEach(function(target, index) {
+    html +=
+      "<div class='pops-target'>" +
+      "<h4>" + (index + 1) + ". 💣 " + target.name + "</h4>" +
+      "<p><strong>POPS HR Score:</strong> " + target.score + "/100</p>" +
+      "<p><strong>Why:</strong> " + target.reasons + "</p>" +
+      "</div>";
+  });
+
+  return html;
+}loadMLB();
 setInterval(loadMLB, 60000);
