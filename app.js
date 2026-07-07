@@ -85,6 +85,7 @@ async function buildRealHRTargets(games) {
       const awayRisk = await pitcherRisk(awayPitcher, awayPitcherObj?.id);
       const homeRisk = await pitcherRisk(homePitcher, homePitcherObj?.id);
 
+      // AWAY hitters vs HOME pitcher
       if (awayOrder.length) {
         awayOrder.forEach((id, index) => {
           const player = players["ID" + id];
@@ -103,8 +104,24 @@ async function buildRealHRTargets(games) {
             type: "Confirmed lineup"
           });
         });
+      } else {
+        Formula.getProjectedPowerBats(away).forEach((name, index) => {
+          const result = Formula.getHrScore(name, index + 2, homeRisk);
+
+          allTargets.push({
+            name,
+            team: away,
+            game: away + " vs " + home,
+            pitcher: homePitcher,
+            pitcherRisk: homeRisk.risk,
+            score: result.score,
+            reasons: result.reasons,
+            type: "Projected lineup"
+          });
+        });
       }
 
+      // HOME hitters vs AWAY pitcher
       if (homeOrder.length) {
         homeOrder.forEach((id, index) => {
           const player = players["ID" + id];
@@ -123,22 +140,26 @@ async function buildRealHRTargets(games) {
             type: "Confirmed lineup"
           });
         });
+      } else {
+        Formula.getProjectedPowerBats(home).forEach((name, index) => {
+          const result = Formula.getHrScore(name, index + 2, awayRisk);
+
+          allTargets.push({
+            name,
+            team: home,
+            game: away + " vs " + home,
+            pitcher: awayPitcher,
+            pitcherRisk: awayRisk.risk,
+            score: result.score,
+            reasons: result.reasons,
+            type: "Projected lineup"
+          });
+        });
       }
 
     } catch (err) {
       console.log("HR target game error:", err);
     }
-  }
-
-  if (!allTargets.length) {
-    hrBox.innerHTML = `
-      <div class="pick-card">
-        <h3>Lineups not posted yet</h3>
-        <p>No confirmed batter-vs-pitcher HR targets available yet.</p>
-        <p class="small">Once MLB posts lineups, POPS will auto-rank hitters by lineup spot + opposing pitcher HR risk.</p>
-      </div>
-    `;
-    return;
   }
 
   allTargets = allTargets
