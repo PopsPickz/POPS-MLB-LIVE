@@ -215,6 +215,7 @@ async function loadGameDetails(gamePk) {
   "<div class='report-section'>" +
   "<h4>⚾ Starting Pitchers</h4>" +
   "<p>" + awayPitcher + " vs " + homePitcher + "</p>" +
+   buildPitcherRiskBox(awayPitcher, homePitcher) +
   "</div>" +
 
   "<div class='report-section'>" +
@@ -340,5 +341,25 @@ homeOrder.forEach(function(playerId) {
   });
 
   return html;
-}loadMLB();
+  function buildPitcherRiskBox(awayPitcher, homePitcher) {
+  var awayRisk = pitcherRiskData[awayPitcher] || pitcherRiskData["TBD"];
+  var homeRisk = pitcherRiskData[homePitcher] || pitcherRiskData["TBD"];
+
+  return (
+    "<div class='report-section'>" +
+    "<h4>🎯 Pitcher HR Risk</h4>" +
+
+    "<p><strong>" + awayPitcher + ":</strong> " + awayRisk.risk + "/100</p>" +
+    "<p>HR/9: " + awayRisk.hr9 + " | FB%: " + awayRisk.flyBall + "% | Hard-Hit%: " + awayRisk.hardHit + "% | Barrel%: " + awayRisk.barrel + "%</p>" +
+    "<p>" + awayRisk.note + "</p>" +
+
+    "<hr>" +
+
+    "<p><strong>" + homePitcher + ":</strong> " + homeRisk.risk + "/100</p>" +
+    "<p>HR/9: " + homeRisk.hr9 + " | FB%: " + homeRisk.flyBall + "% | Hard-Hit%: " + homeRisk.hardHit + "% | Barrel%: " + homeRisk.barrel + "%</p>" +
+    "<p>" + homeRisk.note + "</p>" +
+
+    "</div>"
+  );
+}}loadMLB();
 setInterval(loadMLB, 60000);
