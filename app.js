@@ -306,11 +306,7 @@ homeOrder.forEach(function(playerId) {
     if (score > 100) score = 100;
 
     if (score >= 75) {
-      targets.push({
-        name: name,
-        score: score,
-        reasons: reasons.join(", ")
-      });
+      "<h4>" + (index + 1) + ". 💣 " + target.name + " vs " + target.pitcher + "</h4>" +
     }
   });
 
