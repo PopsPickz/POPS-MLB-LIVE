@@ -10,24 +10,23 @@ const Formula = {
     return this.powerNames.some(powerName => name.includes(powerName));
   },
 
-  getLineupBoost(spot) {
-    if (spot === 3 || spot === 4) return 20;
-    if (spot >= 1 && spot <= 5) return 12;
-    return 5;
-  },
-
-  getHrScore(playerName, lineupSpot, opposingPitcher) {
+  getHrScore(playerName, lineupSpot, pitcherRisk) {
     let score = 45;
     let reasons = [];
 
-    const pitcherRisk = Pitchers.getRisk(opposingPitcher);
+    score += Math.round(pitcherRisk.risk * 0.30);
+    reasons.push("Pitcher HR Risk " + pitcherRisk.risk + "/100");
 
-    score += Math.round(pitcherRisk * 0.30);
-    reasons.push("Pitcher HR Risk " + pitcherRisk + "/100");
-
-    const lineupBoost = this.getLineupBoost(lineupSpot);
-    score += lineupBoost;
-    reasons.push("Lineup boost +" + lineupBoost);
+    if (lineupSpot === 3 || lineupSpot === 4) {
+      score += 20;
+      reasons.push("Prime power lineup spot");
+    } else if (lineupSpot >= 1 && lineupSpot <= 5) {
+      score += 12;
+      reasons.push("Top 5 lineup spot");
+    } else {
+      score += 5;
+      reasons.push("Lineup boost");
+    }
 
     if (this.isKnownPowerBat(playerName)) {
       score += 18;
@@ -37,9 +36,7 @@ const Formula = {
     if (score > 100) score = 100;
 
     return {
-      score,
-      pitcherRisk,
-      pitcherTier: Pitchers.getTier(opposingPitcher),
+      score: score,
       reasons: reasons.join(", ")
     };
   }
