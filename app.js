@@ -219,7 +219,6 @@ async function getHitStreak(playerId) {
 
     for (const game of games) {
       const hits = Number(game.stat?.hits || 0);
-
       if (hits > 0) streak++;
       else break;
     }
@@ -308,6 +307,53 @@ async function getLineupBvpHR(liveGame, side, opposingPitcherId) {
     : "No previous HR found vs this pitcher.";
 }
 
+async function getLineupHitStreaks(liveGame, side) {
+  const order = liveGame.liveData.boxscore.teams[side].battingOrder || [];
+  const players = liveGame.gameData.players || {};
+
+  let lineup = [];
+
+  if (order.length) {
+    for (const id of order) {
+      const player = players["ID" + id];
+      if (!player) continue;
+
+      lineup.push({
+        id,
+        name: player.fullName
+      });
+    }
+  }
+
+  if (!lineup.length) {
+    const teamId =
+      side === "home"
+        ? liveGame.gameData.teams.home.id
+        : liveGame.gameData.teams.away.id;
+
+    lineup = await getPreviousLineup(teamId);
+  }
+
+  let streaks = [];
+
+  for (const batter of lineup) {
+    const streak = await getHitStreak(batter.id);
+
+    if (streak >= 2) {
+      streaks.push({
+        name: batter.name,
+        streak
+      });
+    }
+  }
+
+  streaks = streaks.sort((a, b) => b.streak - a.streak);
+
+  return streaks.length
+    ? streaks.map(h => `${h.name}: ${h.streak}+ game hit streak`).join("<br>")
+    : "No 2+ game hit streaks found.";
+}
+
 /* ---------- PITCHERS TO TARGET ---------- */
 
 async function loadPitcherTargets(games) {
@@ -336,18 +382,23 @@ async function loadPitcherTargets(games) {
       const awayBvp = await getLineupBvpHR(live, "home", awayPitcherObj?.id);
       const homeBvp = await getLineupBvpHR(live, "away", homePitcherObj?.id);
 
+      const awayHitStreaks = await getLineupHitStreaks(live, "home");
+      const homeHitStreaks = await getLineupHitStreaks(live, "away");
+
       pitchers.push({
         ...awayRisk,
         game: `${away} vs ${home}`,
         targetTeam: home,
-        bvp: awayBvp
+        bvp: awayBvp,
+        hitStreaks: awayHitStreaks
       });
 
       pitchers.push({
         ...homeRisk,
         game: `${away} vs ${home}`,
         targetTeam: away,
-        bvp: homeBvp
+        bvp: homeBvp,
+        hitStreaks: homeHitStreaks
       });
 
     } catch (err) {
@@ -381,6 +432,11 @@ async function loadPitcherTargets(games) {
 
       <p><strong>Previous HR vs Pitcher:</strong></p>
       <p class="small">${p.bvp}</p>
+
+      <hr>
+
+      <p><strong>2+ Game Hit Streaks:</strong></p>
+      <p class="small">${p.hitStreaks}</p>
     </div>
   `).join("");
 
