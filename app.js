@@ -1,6 +1,7 @@
 var scoresBox = document.getElementById("scoresBox");
 var hrBox = document.getElementById("hrBox");
 var gameDetailsBox = document.getElementById("gameDetailsBox");
+
 var pitcherRiskData = {
   "TBD": {
     hr9: 0,
@@ -10,7 +11,9 @@ var pitcherRiskData = {
     risk: 50,
     note: "Pitcher data not added yet"
   }
-};function getTodayDate() {
+};
+
+function getTodayDate() {
   return new Date().toLocaleDateString("en-CA", {
     timeZone: "America/New_York"
   });
@@ -56,87 +59,14 @@ async function loadMLB() {
         "<h3>" + away + " vs " + home + "</h3>" +
         "<p><strong>Score:</strong> " + awayScore + " - " + homeScore + "</p>" +
         "<p><strong>Status:</strong> " + status + "</p>" +
-        "<p class='tap-text'>Tap to view pitchers and lineups</p>" +
+        "<p class='tap-text'>Tap to view full scouting report</p>" +
         "</div>";
 
-      try {
-        var liveURL =
-          "https://statsapi.mlb.com/api/v1.1/game/" +
-          gamePk +
-          "/feed/live";
-
-        var liveResponse = await fetch(liveURL);
-        var liveData = await liveResponse.json();
-
-        var plays =
-          liveData.liveData &&
-          liveData.liveData.plays &&
-          liveData.liveData.plays.allPlays
-            ? liveData.liveData.plays.allPlays
-            : [];
-
-        plays.forEach(function(play) {
-          if (play.result && play.result.event === "Home Run") {
-            var batter =
-              play.matchup && play.matchup.batter
-                ? play.matchup.batter.fullName
-                : "Unknown Hitter";
-
-            var pitcher =
-              play.matchup && play.matchup.pitcher
-                ? play.matchup.pitcher.fullName
-                : "Unknown Pitcher";
-
-            var inning = play.about.halfInning + " " + play.about.inning;
-            var description = play.result.description || "Home Run";
-
-            var distance = "N/A";
-            var exitVelo = "N/A";
-
-            if (play.hitData) {
-              if (play.hitData.totalDistance) {
-                distance = play.hitData.totalDistance + " ft";
-              }
-
-              if (play.hitData.launchSpeed) {
-                exitVelo = play.hitData.launchSpeed + " mph";
-              }
-            }
-
-            homeRuns.push({
-              batter: batter,
-              pitcher: pitcher,
-              game: away + " vs " + home,
-              inning: inning,
-              description: description,
-              distance: distance,
-              exitVelo: exitVelo
-            });
-          }
-        });
-      } catch (liveErr) {
-        console.log("Live feed error for game " + gamePk, liveErr);
-      }
+      await collectHomeRuns(gamePk, away, home, homeRuns);
     }
 
-    if (homeRuns.length === 0) {
-      hrBox.innerHTML = "<p>No home runs yet today.</p>";
-    } else {
-      hrBox.innerHTML = "";
+    renderHomeRuns(homeRuns);
 
-      homeRuns.reverse().forEach(function(hr) {
-        hrBox.innerHTML +=
-          "<div class='hr-card'>" +
-          "<h3>💣 " + hr.batter + "</h3>" +
-          "<p><strong>Game:</strong> " + hr.game + "</p>" +
-          "<p><strong>Pitcher:</strong> " + hr.pitcher + "</p>" +
-          "<p><strong>Inning:</strong> " + hr.inning + "</p>" +
-          "<p><strong>Distance:</strong> " + hr.distance + "</p>" +
-          "<p><strong>Exit Velo:</strong> " + hr.exitVelo + "</p>" +
-          "<p>" + hr.description + "</p>" +
-          "</div>";
-      });
-    }
   } catch (err) {
     console.log(err);
     scoresBox.innerHTML = "Error loading MLB scores.";
@@ -144,222 +74,92 @@ async function loadMLB() {
   }
 }
 
-async function loadGameDetails(gamePk) {
-  gameDetailsBox.innerHTML = "Loading game details...";
-
-  var liveURL =
-    "https://statsapi.mlb.com/api/v1.1/game/" +
-    gamePk +
-    "/feed/live";
-
+async function collectHomeRuns(gamePk, away, home, homeRuns) {
   try {
-    var response = await fetch(liveURL);
-    var data = await response.json();
+    var liveURL =
+      "https://statsapi.mlb.com/api/v1.1/game/" +
+      gamePk +
+      "/feed/live";
 
-    var awayTeam = data.gameData.teams.away.name;
-    var homeTeam = data.gameData.teams.home.name;
+    var liveResponse = await fetch(liveURL);
+    var liveData = await liveResponse.json();
 
-    var awayPitcher = "TBD";
-    var homePitcher = "TBD";
+    var plays =
+      liveData.liveData &&
+      liveData.liveData.plays &&
+      liveData.liveData.plays.allPlays
+        ? liveData.liveData.plays.allPlays
+        : [];
 
-    if (data.gameData.probablePitchers && data.gameData.probablePitchers.away) {
-      awayPitcher = data.gameData.probablePitchers.away.fullName;
-    }
+    plays.forEach(function(play) {
+      if (play.result && play.result.event === "Home Run") {
+        var batter =
+          play.matchup && play.matchup.batter
+            ? play.matchup.batter.fullName
+            : "Unknown Hitter";
 
-    if (data.gameData.probablePitchers && data.gameData.probablePitchers.home) {
-      homePitcher = data.gameData.probablePitchers.home.fullName;
-    }
+        var pitcher =
+          play.matchup && play.matchup.pitcher
+            ? play.matchup.pitcher.fullName
+            : "Unknown Pitcher";
 
-    var players = data.gameData.players || {};
+        var inning =
+          play.about && play.about.halfInning
+            ? play.about.halfInning + " " + play.about.inning
+            : "N/A";
 
-    var awayOrder =
-      data.liveData.boxscore.teams.away.battingOrder || [];
+        var description = play.result.description || "Home Run";
 
-    var homeOrder =
-      data.liveData.boxscore.teams.home.battingOrder || [];
+        var distance = "N/A";
+        var exitVelo = "N/A";
 
-    var awayLineup = "";
-    var homeLineup = "";
+        if (play.hitData) {
+          if (play.hitData.totalDistance) {
+            distance = play.hitData.totalDistance + " ft";
+          }
 
-    awayOrder.forEach(function(playerId) {
-      var playerKey = "ID" + playerId;
-      var playerName = players[playerKey]
-        ? players[playerKey].fullName
-        : "Unknown Player";
+          if (play.hitData.launchSpeed) {
+            exitVelo = play.hitData.launchSpeed + " mph";
+          }
+        }
 
-      awayLineup += "<li>" + playerName + "</li>";
+        homeRuns.push({
+          batter: batter,
+          pitcher: pitcher,
+          game: away + " vs " + home,
+          inning: inning,
+          description: description,
+          distance: distance,
+          exitVelo: exitVelo
+        });
+      }
     });
-
-    homeOrder.forEach(function(playerId) {
-      var playerKey = "ID" + playerId;
-      var playerName = players[playerKey]
-        ? players[playerKey].fullName
-        : "Unknown Player";
-
-      homeLineup += "<li>" + playerName + "</li>";
-    });
-
-    if (awayLineup === "") {
-      awayLineup = "<li>Lineup not posted yet</li>";
-    }
-
-    if (homeLineup === "") {
-      homeLineup = "<li>Lineup not posted yet</li>";
-    }
-
-    gameDetailsBox.innerHTML =
-  "<div class='details-card'>" +
-  "<h3>📊 Game Scouting Report</h3>" +
-  "<h2>" + awayTeam + " vs " + homeTeam + "</h2>" +
-
-  "<div class='report-section'>" +
-  "<h4>⚾ Starting Pitchers</h4>" +
-  "<p>" + awayPitcher + " vs " + homePitcher + "</p>" +
-   buildPitcherRiskBox(awayPitcher, homePitcher) +
-  "</div>" +
-
-  "<div class='report-section'>" +
-  "<h4>👥 " + awayTeam + " Lineup</h4>" +
-  "<ol>" + awayLineup + "</ol>" +
-  "</div>" +
-
-  "<div class='report-section'>" +
-  "<h4>👥 " + homeTeam + " Lineup</h4>" +
-  "<ol>" + homeLineup + "</ol>" +
-  "</div>" +
-
-  "<div class='report-section'>" +
-"<h4>💣 POPS HR Targets</h4>" +
-buildAutoHrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher) +
-"</div>" +
-
-  "<div class='report-section coming-soon'>" +
-  "<h4>🔥 POPS Hitterz</h4>" +
-  "<p>Coming soon: best bats for hits and total bases.</p>" +
-  "</div>" +
-
-  "<div class='report-section coming-soon'>" +
-  "<h4>💰 Moneyline Edge</h4>" +
-  "<p>Coming soon: starter, bullpen, offense, defense checklist.</p>" +
-  "</div>" +
-
-  "<div class='report-section coming-soon'>" +
-  "<h4>🌦 Weather / Wind</h4>" +
-  "<p>Coming soon: park weather and HR wind direction.</p>" +
-  "</div>" +
-
-  "</div>";
-
-    gameDetailsBox.scrollIntoView({ behavior: "smooth" });
-
   } catch (err) {
-    console.log(err);
-    gameDetailsBox.innerHTML = "Error loading game details.";
+    console.log("Home run feed error", err);
   }
 }
-function buildAutoHrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher) {
-  var allBatters = [];
 
-awayOrder.forEach(function(playerId) {
-  allBatters.push({
-    playerId: playerId,
-    opponentPitcher: homePitcher
-  });
-});
-
-homeOrder.forEach(function(playerId) {
-  allBatters.push({
-    playerId: playerId,
-    opponentPitcher: awayPitcher
-  });
-});
-  var targets = [];
-
-  allBatters.forEach(function(item, index) {
-  var playerKey = "ID" + item.playerId;
-    var player = players[playerKey];
-
-    if (!player) return;
-
-    var name = player.fullName;
-    var lineupSpot = (index % 9) + 1;
-    var score = 60;
-    var reasons = [];
-
-    if (lineupSpot >= 1 && lineupSpot <= 4) {
-      score += 15;
-      reasons.push("Top 4 lineup spot");
-    }
-
-    if (lineupSpot === 3 || lineupSpot === 4) {
-      score += 10;
-      reasons.push("Prime power spot");
-    }
-
-    if (
-      name.includes("Judge") ||
-      name.includes("Ohtani") ||
-      name.includes("Schwarber") ||
-      name.includes("Alonso") ||
-      name.includes("Olson") ||
-      name.includes("Devers") ||
-      name.includes("Raleigh") ||
-      name.includes("Guerrero") ||
-      name.includes("Tatis") ||
-      name.includes("Soto")
-    ) {
-      score += 15;
-      reasons.push("Known power bat");
-    }
-
-    if (score > 100) score = 100;
-
-    if (score >= 75) {
-      "<h4>" + (index + 1) + ". 💣 " + target.name + " vs " + target.pitcher + "</h4>" +
-    }
-  });
-
-  targets.sort(function(a, b) {
-    return b.score - a.score;
-  });
-
-  targets = targets.slice(0, 5);
-
-  if (targets.length === 0) {
-    return "<p>No strong HR targets found from this lineup yet.</p>";
+function renderHomeRuns(homeRuns) {
+  if (homeRuns.length === 0) {
+    hrBox.innerHTML = "<p>No home runs yet today.</p>";
+    return;
   }
 
-  var html = "";
+  hrBox.innerHTML = "";
 
-  targets.forEach(function(target, index) {
-    html +=
-      "<div class='pops-target'>" +
-      "<h4>" + (index + 1) + ". 💣 " + target.name + " vs " + target.pitcher + "</h4>" +
-      "<p><strong>POPS HR Score:</strong> " + target.score + "/100</p>" +
-      "<p><strong>Why:</strong> " + target.reasons + "</p>" +
+  homeRuns.reverse().forEach(function(hr) {
+    hrBox.innerHTML +=
+      "<div class='hr-card'>" +
+      "<h3>💣 " + hr.batter + "</h3>" +
+      "<p><strong>Game:</strong> " + hr.game + "</p>" +
+      "<p><strong>Pitcher:</strong> " + hr.pitcher + "</p>" +
+      "<p><strong>Inning:</strong> " + hr.inning + "</p>" +
+      "<p><strong>Distance:</strong> " + hr.distance + "</p>" +
+      "<p><strong>Exit Velo:</strong> " + hr.exitVelo + "</p>" +
+      "<p>" + hr.description + "</p>" +
       "</div>";
   });
+}
 
-  return html;
-  function buildPitcherRiskBox(awayPitcher, homePitcher) {
-  var awayRisk = pitcherRiskData[awayPitcher] || pitcherRiskData["TBD"];
-  var homeRisk = pitcherRiskData[homePitcher] || pitcherRiskData["TBD"];
-
-  return (
-    "<div class='report-section'>" +
-    "<h4>🎯 Pitcher HR Risk</h4>" +
-
-    "<p><strong>" + awayPitcher + ":</strong> " + awayRisk.risk + "/100</p>" +
-    "<p>HR/9: " + awayRisk.hr9 + " | FB%: " + awayRisk.flyBall + "% | Hard-Hit%: " + awayRisk.hardHit + "% | Barrel%: " + awayRisk.barrel + "%</p>" +
-    "<p>" + awayRisk.note + "</p>" +
-
-    "<hr>" +
-
-    "<p><strong>" + homePitcher + ":</strong> " + homeRisk.risk + "/100</p>" +
-    "<p>HR/9: " + homeRisk.hr9 + " | FB%: " + homeRisk.flyBall + "% | Hard-Hit%: " + homeRisk.hardHit + "% | Barrel%: " + homeRisk.barrel + "%</p>" +
-    "<p>" + homeRisk.note + "</p>" +
-
-    "</div>"
-  );
-}}loadMLB();
-setInterval(loadMLB, 60000);
+async function loadGameDetails(gamePk) {
+  gameDetailsBox.innerHTML = "Loading game scouting report
