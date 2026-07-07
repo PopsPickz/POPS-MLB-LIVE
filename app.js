@@ -1,9 +1,9 @@
 var scoresBox = document.getElementById("scoresBox");
 var lineupsBox = document.getElementById("lineupsBox");
 var hrBox = document.getElementById("hrBox");
-
+var gameDetailsBox = document.getElementById("gameDetailsBox");
 function getTodayDate() {
-  return new Date().toLocaleDateString("en-CA", {
+return new Date().toLocaleDateString("en-CA", {
     timeZone: "America/New_York"
   });
 }
@@ -44,11 +44,12 @@ async function loadMLB() {
       var gamePk = game.gamePk;
 
       scoresBox.innerHTML +=
-        "<div class='game'>" +
-        "<h3>" + away + " vs " + home + "</h3>" +
-        "<p><strong>Score:</strong> " + awayScore + " - " + homeScore + "</p>" +
-        "<p><strong>Status:</strong> " + status + "</p>" +
-        "</div>";
+  "<div class='game' onclick='loadGameDetails(" + gamePk + ")'>" +
+  "<h3>" + away + " vs " + home + "</h3>" +
+  "<p><strong>Score:</strong> " + awayScore + " - " + homeScore + "</p>" +
+  "<p><strong>Status:</strong> " + status + "</p>" +
+  "<p>Tap to view pitchers and lineups</p>" +
+  "</div>";
 
       var liveURL =
         "https://statsapi.mlb.com/api/v1.1/game/" +
