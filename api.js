@@ -12,7 +12,7 @@ const API = {
       "&hydrate=probablePitcher";
 
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Schedule failed");
+    if (!res.ok) throw new Error("Schedule API failed");
     return await res.json();
   },
 
@@ -23,7 +23,7 @@ const API = {
       "/feed/live";
 
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Game failed");
+    if (!res.ok) throw new Error("Game API failed");
     return await res.json();
   },
 
@@ -34,7 +34,7 @@ const API = {
       "/stats?stats=season&group=pitching&sportId=1";
 
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Pitcher failed");
+    if (!res.ok) throw new Error("Pitcher API failed");
     return await res.json();
   }
 };
