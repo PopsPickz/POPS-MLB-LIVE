@@ -16,12 +16,21 @@ const API = {
   },
 
   async getGame(gamePk) {
-    const url =
-      "https://statsapi.mlb.com/api/v1.1/game/" +
-      gamePk +
-      "/feed/live";
+  const url =
+    "https://statsapi.mlb.com/api/v1.1/game/" +
+    gamePk +
+    "/feed/live";
 
-    const response = await fetch(url);
-    return await response.json();
-  }
-};
+  const response = await fetch(url);
+  return await response.json();
+},
+
+async getPitcherStats(playerId) {
+  const url =
+    "https://statsapi.mlb.com/api/v1/people/" +
+    playerId +
+    "/stats?stats=season&group=pitching&sportId=1";
+
+  const response = await fetch(url);
+  return await response.json();
+}
