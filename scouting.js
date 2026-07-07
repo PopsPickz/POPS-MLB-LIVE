@@ -14,9 +14,14 @@ const Scouting = {
       const awayTeam = data.gameData.teams.away.name;
       const homeTeam = data.gameData.teams.home.name;
 
-      const awayPitcher = data.gameData.probablePitchers?.away?.fullName || "TBD";
-      const homePitcher = data.gameData.probablePitchers?.home?.fullName || "TBD";
+      const awayPitcherObj = data.gameData.probablePitchers?.away || null;
+const homePitcherObj = data.gameData.probablePitchers?.home || null;
 
+const awayPitcher = awayPitcherObj ? awayPitcherObj.fullName : "TBD";
+const homePitcher = homePitcherObj ? homePitcherObj.fullName : "TBD";
+
+const awayPitcherId = awayPitcherObj ? awayPitcherObj.id : null;
+const homePitcherId = homePitcherObj ? homePitcherObj.id : null;
       const players = data.gameData.players || {};
       const awayOrder = data.liveData.boxscore.teams.away.battingOrder || [];
       const homeOrder = data.liveData.boxscore.teams.home.battingOrder || [];
