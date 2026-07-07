@@ -144,5 +144,68 @@ const homePitcherId = homePitcherObj ? homePitcherObj.id : null;
         });
       }
     });
+  async pitcherAutoRisk(pitcherName, pitcherId) {
+  if (!pitcherId) {
+    return {
+      name: pitcherName,
+      hr9: 0,
+      hrAllowed: 0,
+      innings: 0,
+      risk: 50,
+      note: "Pitcher ID not available yet"
+    };
   }
-};
+
+  try {
+    const data = await API.getPitcherStats(pitcherId);
+    const splits = data.stats?.[0]?.splits || [];
+
+    if (!splits.length) {
+      return {
+        name: pitcherName,
+        hr9: 0,
+        hrAllowed: 0,
+        innings: 0,
+        risk: 50,
+        note: "No season pitching stats found"
+      };
+    }
+
+    const stat = splits[0].stat;
+
+    const hrAllowed = Number(stat.homeRuns || 0);
+    const innings = Number(stat.inningsPitched || 0);
+
+    let hr9 = 0;
+    if (innings > 0) {
+      hr9 = (hrAllowed / innings) * 9;
+    }
+
+    let risk = 50;
+
+    if (hr9 >= 1.8) risk = 90;
+    else if (hr9 >= 1.5) risk = 82;
+    else if (hr9 >= 1.2) risk = 74;
+    else if (hr9 >= 1.0) risk = 66;
+    else risk = 55;
+
+    return {
+      name: pitcherName,
+      hr9: hr9.toFixed(2),
+      hrAllowed: hrAllowed,
+      innings: innings,
+      risk: risk,
+      note: "Auto-calculated from season HR allowed and innings pitched"
+    };
+
+  } catch (err) {
+    return {
+      name: pitcherName,
+      hr9: 0,
+      hrAllowed: 0,
+      innings: 0,
+      risk: 50,
+      note: "Error loading pitcher stats"
+    };
+  }
+}
