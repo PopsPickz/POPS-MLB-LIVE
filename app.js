@@ -2,55 +2,13 @@ const scoresBox = document.getElementById("scoresBox");
 const hrBox = document.getElementById("hrBox");
 const scoutingBox = document.getElementById("scoutingBox");
 const leadersBox = document.getElementById("leadersBox");
+const liveHrBox = document.getElementById("liveHrBox");
+const tickerBox = document.getElementById("tickerBox");
+
+let cachedGames = [];
 
 function scrollToSection(id) {
   document.getElementById(id).scrollIntoView({ behavior: "smooth" });
-}
-
-const POWER_BATS = {
-  "New York Yankees": [
-    ["Aaron Judge", 98],
-    ["Giancarlo Stanton", 88],
-    ["Cody Bellinger", 78]
-  ],
-  "Los Angeles Dodgers": [
-    ["Shohei Ohtani", 97],
-    ["Mookie Betts", 86],
-    ["Freddie Freeman", 82]
-  ],
-  "Texas Rangers": [
-    ["Corey Seager", 90],
-    ["Adolis García", 87],
-    ["Wyatt Langford", 80]
-  ],
-  "Los Angeles Angels": [
-    ["Mike Trout", 86],
-    ["Taylor Ward", 80],
-    ["Logan O'Hoppe", 78]
-  ],
-  "Atlanta Braves": [
-    ["Matt Olson", 90],
-    ["Austin Riley", 86],
-    ["Ronald Acuña Jr.", 84]
-  ],
-  "Philadelphia Phillies": [
-    ["Kyle Schwarber", 93],
-    ["Bryce Harper", 88],
-    ["Trea Turner", 78]
-  ],
-  "New York Mets": [
-    ["Pete Alonso", 92],
-    ["Juan Soto", 90],
-    ["Francisco Lindor", 82]
-  ]
-};
-
-function getFallbackBats(team) {
-  return POWER_BATS[team] || [
-    [team + " Power Bat #1", 76],
-    [team + " Power Bat #2", 72],
-    [team + " Power Bat #3", 68]
-  ];
 }
 
 function teamName(game, side) {
@@ -65,6 +23,27 @@ function gameStatus(game) {
   return game.status?.detailedState || "Scheduled";
 }
 
+function probablePitcher(game, side) {
+  return game.teams[side].probablePitcher?.fullName || "TBD";
+}
+
+function probablePitcherId(game, side) {
+  return game.teams[side].probablePitcher?.id || null;
+}
+
+function buildTicker(games) {
+  if (!games.length) {
+    tickerBox.innerHTML = "No MLB games today.";
+    return;
+  }
+
+  tickerBox.innerHTML = games.map(game => {
+    const away = teamName(game, "away");
+    const home = teamName(game, "home");
+    return `⚾ ${away} ${teamScore(game, "away")} - ${teamScore(game, "home")} ${home} • ${gameStatus(game)}`;
+  }).join(" &nbsp; | &nbsp; ");
+}
+
 function buildGameCards(games) {
   scoresBox.innerHTML = games.map(game => {
     const away = teamName(game, "away");
@@ -75,47 +54,64 @@ function buildGameCards(games) {
         <h3>${away} vs ${home}</h3>
         <p class="score">${teamScore(game, "away")} - ${teamScore(game, "home")}</p>
         <p><span class="badge">${gameStatus(game)}</span></p>
-        <p class="small">Tap to view pitchers, lineups, HR risk, and POPS picks.</p>
+        <p><strong>Pitchers:</strong> ${probablePitcher(game, "away")} vs ${probablePitcher(game, "home")}</p>
+        <p class="small">Tap to view full POPS scouting report.</p>
       </div>
     `;
   }).join("");
+}
+
+function projectedTargetsForGame(game) {
+  const away = teamName(game, "away");
+  const home = teamName(game, "home");
+
+  let targets = [];
+
+  Formula.getProjectedPowerBats(away).forEach((name, index) => {
+    const result = Formula.getHrScore(name, index + 2, { risk: 70 });
+    targets.push({
+      name,
+      team: away,
+      game: away + " vs " + home,
+      pitcher: probablePitcher(game, "home"),
+      score: result.score,
+      reasons: result.reasons
+    });
+  });
+
+  Formula.getProjectedPowerBats(home).forEach((name, index) => {
+    const result = Formula.getHrScore(name, index + 2, { risk: 70 });
+    targets.push({
+      name,
+      team: home,
+      game: away + " vs " + home,
+      pitcher: probablePitcher(game, "away"),
+      score: result.score,
+      reasons: result.reasons
+    });
+  });
+
+  return targets.sort((a, b) => b.score - a.score);
 }
 
 function buildHRTargets(games) {
   let allTargets = [];
 
   games.forEach(game => {
-    const away = teamName(game, "away");
-    const home = teamName(game, "home");
-
-    getFallbackBats(away).forEach(player => {
-      allTargets.push({
-        name: player[0],
-        score: player[1],
-        team: away,
-        matchup: away + " vs " + home
-      });
-    });
-
-    getFallbackBats(home).forEach(player => {
-      allTargets.push({
-        name: player[0],
-        score: player[1],
-        team: home,
-        matchup: away + " vs " + home
-      });
-    });
+    allTargets.push(...projectedTargetsForGame(game));
   });
 
   allTargets = allTargets.sort((a, b) => b.score - a.score).slice(0, 20);
 
   hrBox.innerHTML = allTargets.map((p, i) => `
     <div class="pick-card">
-      <h3>${i + 1}. 💣 ${p.name}</h3>
+      <span class="rank-badge">#${i + 1}</span>
+      <h3>💣 ${p.name}</h3>
       <p><strong>Team:</strong> ${p.team}</p>
-      <p><strong>Game:</strong> ${p.matchup}</p>
-      <p><strong>POPS HR Score:</strong> <span class="gold">${p.score}/100</span></p>
-      <p class="small">Projected POPS power model.</p>
+      <p><strong>Game:</strong> ${p.game}</p>
+      <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
+      <p><strong>POPS HR Score:</strong> <span class="hr-score">${p.score}/100</span></p>
+      <p class="small">${p.reasons}</p>
     </div>
   `).join("");
 }
@@ -154,7 +150,6 @@ async function pitcherRisk(name, id) {
     const hr9 = ip > 0 ? ((hrAllowed / ip) * 9).toFixed(2) : "0.00";
 
     let risk = 55;
-
     if (hr9 >= 1.80) risk = 92;
     else if (hr9 >= 1.50) risk = 84;
     else if (hr9 >= 1.20) risk = 76;
@@ -214,16 +209,13 @@ async function loadScouting(gamePk) {
 
         <h3>🎯 Pitcher HR Risk</h3>
 
-        <p><strong>${awayRisk.name}:</strong> ${awayRisk.risk}/100</p>
-        <p>ERA: ${awayRisk.era} | HR/9: ${awayRisk.hr9} | HR Allowed: ${awayRisk.hrAllowed} | IP: ${awayRisk.ip}</p>
-
-        <p><strong>${homeRisk.name}:</strong> ${homeRisk.risk}/100</p>
-        <p>ERA: ${homeRisk.era} | HR/9: ${homeRisk.hr9} | HR Allowed: ${homeRisk.hrAllowed} | IP: ${homeRisk.ip}</p>
+        ${pitcherRiskHTML(awayRisk)}
+        ${pitcherRiskHTML(homeRisk)}
 
         <hr>
 
         <h3>💣 POPS Top 3 HR Targets</h3>
-        ${gameTop3HTML(away, home)}
+        ${gameTop3HTML(away, home, awayPitcher, homePitcher)}
 
         <hr>
 
@@ -232,6 +224,14 @@ async function loadScouting(gamePk) {
 
         <h3>👥 ${home} Lineup</h3>
         <ol>${lineupHTML(homeOrder, players)}</ol>
+
+        <hr>
+
+        <h3>🌦 Weather</h3>
+        <p class="small">Weather boost module coming next.</p>
+
+        <h3>💰 Moneyline Edge</h3>
+        <p class="small">Moneyline model coming next.</p>
       </div>
     `;
 
@@ -243,25 +243,34 @@ async function loadScouting(gamePk) {
   }
 }
 
-function gameTop3HTML(away, home) {
-  const targets = [
-    ...getFallbackBats(away).map(p => ({
-      name: p[0],
-      score: p[1],
-      team: away
-    })),
-    ...getFallbackBats(home).map(p => ({
-      name: p[0],
-      score: p[1],
-      team: home
-    }))
-  ].sort((a, b) => b.score - a.score).slice(0, 3);
+function pitcherRiskHTML(p) {
+  return `
+    <div class="pick-card">
+      <h3>${p.name}</h3>
+      <p><strong>Risk:</strong> <span class="${Pitchers.getColorClass(p.risk)}">${p.risk}/100</span></p>
+      <p><span class="badge">${Pitchers.getTier(p.risk)}</span></p>
+      <p>ERA: ${p.era} | HR/9: ${p.hr9} | HR Allowed: ${p.hrAllowed} | IP: ${p.ip}</p>
+    </div>
+  `;
+}
+
+function gameTop3HTML(away, home, awayPitcher, homePitcher) {
+  const fakeGame = {
+    teams: {
+      away: { team: { name: away }, probablePitcher: { fullName: awayPitcher } },
+      home: { team: { name: home }, probablePitcher: { fullName: homePitcher } }
+    }
+  };
+
+  const targets = projectedTargetsForGame(fakeGame).slice(0, 3);
 
   return targets.map((p, i) => `
     <div class="pick-card">
       <h3>${i + 1}. 💣 ${p.name}</h3>
       <p><strong>Team:</strong> ${p.team}</p>
-      <p><strong>POPS Score:</strong> <span class="gold">${p.score}/100</span></p>
+      <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
+      <p><strong>POPS Score:</strong> <span class="hr-score">${p.score}/100</span></p>
+      <p class="small">${p.reasons}</p>
     </div>
   `).join("");
 }
@@ -280,12 +289,18 @@ function lineupHTML(order, players) {
 function loadLeaders() {
   leadersBox.innerHTML = `
     <div class="pick-card">
-      <h3>👑 POPS 8.0 Leaders</h3>
+      <h3>👑 POPS HR Power Leaders</h3>
       <p>1. Aaron Judge — 98/100</p>
       <p>2. Shohei Ohtani — 97/100</p>
       <p>3. Kyle Schwarber — 93/100</p>
       <p>4. Pete Alonso — 92/100</p>
       <p>5. Matt Olson — 90/100</p>
+    </div>
+
+    <div class="pick-card">
+      <h3>🎯 Pitchers To Target</h3>
+      <p>Auto-ranking by HR/9 loads inside each scouting report.</p>
+      <p class="small">Full daily pitcher target board coming next.</p>
     </div>
   `;
 }
@@ -293,26 +308,37 @@ function loadLeaders() {
 async function loadApp() {
   scoresBox.innerHTML = "Loading games...";
   hrBox.innerHTML = "Loading HR targets...";
+  liveHrBox.innerHTML = "Loading live home runs...";
 
   try {
     const data = await API.getSchedule();
     const games = data.dates?.[0]?.games || [];
+    cachedGames = games;
 
     if (!games.length) {
       scoresBox.innerHTML = "No MLB games found today.";
       hrBox.innerHTML = "No HR targets today.";
+      liveHrBox.innerHTML = "No home run tracker today.";
+      tickerBox.innerHTML = "No MLB games today.";
       loadLeaders();
       return;
     }
 
+    buildTicker(games);
     buildGameCards(games);
     buildHRTargets(games);
+
+    const homeRuns = await HomeRuns.collectFromGames(games);
+    HomeRuns.render(homeRuns, liveHrBox);
+
     loadLeaders();
 
   } catch (err) {
-    console.log("POPS 8.0 error:", err);
+    console.log("POPS 9.0 error:", err);
     scoresBox.innerHTML = "Could not load MLB games.";
     hrBox.innerHTML = "Could not load HR targets.";
+    liveHrBox.innerHTML = "Could not load home run tracker.";
+    tickerBox.innerHTML = "API loading error.";
     loadLeaders();
   }
 }
