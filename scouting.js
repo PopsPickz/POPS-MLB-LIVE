@@ -15,16 +15,20 @@ const Scouting = {
       const homeTeam = data.gameData.teams.home.name;
 
       const awayPitcherObj = data.gameData.probablePitchers?.away || null;
-const homePitcherObj = data.gameData.probablePitchers?.home || null;
+      const homePitcherObj = data.gameData.probablePitchers?.home || null;
 
-const awayPitcher = awayPitcherObj ? awayPitcherObj.fullName : "TBD";
-const homePitcher = homePitcherObj ? homePitcherObj.fullName : "TBD";
+      const awayPitcher = awayPitcherObj ? awayPitcherObj.fullName : "TBD";
+      const homePitcher = homePitcherObj ? homePitcherObj.fullName : "TBD";
 
-const awayPitcherId = awayPitcherObj ? awayPitcherObj.id : null;
-const homePitcherId = homePitcherObj ? homePitcherObj.id : null;
+      const awayPitcherId = awayPitcherObj ? awayPitcherObj.id : null;
+      const homePitcherId = homePitcherObj ? homePitcherObj.id : null;
+
       const players = data.gameData.players || {};
       const awayOrder = data.liveData.boxscore.teams.away.battingOrder || [];
       const homeOrder = data.liveData.boxscore.teams.home.battingOrder || [];
+
+      const awayRisk = await this.pitcherAutoRisk(awayPitcher, awayPitcherId);
+      const homeRisk = await this.pitcherAutoRisk(homePitcher, homePitcherId);
 
       this.box.innerHTML = `
         <div class="details-card">
@@ -36,11 +40,11 @@ const homePitcherId = homePitcherObj ? homePitcherObj.id : null;
             <p>${awayPitcher} vs ${homePitcher}</p>
           </div>
 
-          ${this.pitcherRisk(awayPitcher, homePitcher)}
+          ${this.pitcherRiskAuto(awayRisk, homeRisk)}
 
           <div class="report-section">
             <h4>💣 POPS HR Targets</h4>
-            ${this.hrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher)}
+            ${this.hrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher, awayRisk, homeRisk)}
           </div>
 
           <div class="report-section">
@@ -74,7 +78,9 @@ const homePitcherId = homePitcherObj ? homePitcherObj.id : null;
   },
 
   lineup(order, players) {
-    if (!order.length) return "<li>Lineup not posted yet</li>";
+    if (!order || !order.length) {
+      return "<li>Lineup not posted yet</li>";
+    }
 
     return order.map(id => {
       const player = players["ID" + id];
@@ -82,37 +88,104 @@ const homePitcherId = homePitcherObj ? homePitcherObj.id : null;
     }).join("");
   },
 
-  pitcherRisk(awayPitcher, homePitcher) {
-    const away = Pitchers.get(awayPitcher);
-    const home = Pitchers.get(homePitcher);
+  async pitcherAutoRisk(pitcherName, pitcherId) {
+    if (!pitcherId) {
+      return {
+        name: pitcherName,
+        hr9: "0.00",
+        hrAllowed: 0,
+        innings: 0,
+        era: "N/A",
+        risk: 50,
+        note: "Pitcher ID not available"
+      };
+    }
 
+    try {
+      const data = await API.getPitcherStats(pitcherId);
+      const splits = data.stats?.[0]?.splits || [];
+
+      if (!splits.length) {
+        return {
+          name: pitcherName,
+          hr9: "0.00",
+          hrAllowed: 0,
+          innings: 0,
+          era: "N/A",
+          risk: 50,
+          note: "No season pitching stats found"
+        };
+      }
+
+      const stat = splits[0].stat;
+
+      const hrAllowed = Number(stat.homeRuns || 0);
+      const innings = parseFloat(stat.inningsPitched || 0);
+      const era = stat.era || "N/A";
+
+      const hr9 =
+        innings > 0 ? ((hrAllowed / innings) * 9).toFixed(2) : "0.00";
+
+      let risk = 55;
+
+      if (hr9 >= 1.80) risk = 90;
+      else if (hr9 >= 1.50) risk = 82;
+      else if (hr9 >= 1.20) risk = 74;
+      else if (hr9 >= 1.00) risk = 66;
+
+      return {
+        name: pitcherName,
+        hr9: hr9,
+        hrAllowed: hrAllowed,
+        innings: innings,
+        era: era,
+        risk: risk,
+        note: "Auto-calculated from MLB season pitching stats"
+      };
+
+    } catch (err) {
+      console.log("Pitcher stats error:", err);
+
+      return {
+        name: pitcherName,
+        hr9: "0.00",
+        hrAllowed: 0,
+        innings: 0,
+        era: "N/A",
+        risk: 50,
+        note: "Unable to load pitcher stats"
+      };
+    }
+  },
+
+  pitcherRiskAuto(away, home) {
     return `
       <div class="report-section pitcher-risk">
         <h4>🎯 Pitcher HR Risk</h4>
 
-        <p><strong>${awayPitcher}:</strong> ${away.risk}/100</p>
-        <p>HR/9: ${away.hr9} | FB%: ${away.flyBall}% | Hard-Hit%: ${away.hardHit}% | Barrel%: ${away.barrel}%</p>
+        <p><strong>${away.name}:</strong> ${away.risk}/100</p>
+        <p>ERA: ${away.era} | HR/9: ${away.hr9} | HR Allowed: ${away.hrAllowed} | IP: ${away.innings}</p>
         <p>${away.note}</p>
 
         <hr>
 
-        <p><strong>${homePitcher}:</strong> ${home.risk}/100</p>
-        <p>HR/9: ${home.hr9} | FB%: ${home.flyBall}% | Hard-Hit%: ${home.hardHit}% | Barrel%: ${home.barrel}%</p>
+        <p><strong>${home.name}:</strong> ${home.risk}/100</p>
+        <p>ERA: ${home.era} | HR/9: ${home.hr9} | HR Allowed: ${home.hrAllowed} | IP: ${home.innings}</p>
         <p>${home.note}</p>
       </div>
     `;
   },
 
-  hrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher) {
+  hrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher, awayRisk, homeRisk) {
     let targets = [];
 
-    this.addTargets(awayOrder, players, homePitcher, targets);
-    this.addTargets(homeOrder, players, awayPitcher, targets);
+    this.addTargets(awayOrder, players, homePitcher, homeRisk, targets);
+    this.addTargets(homeOrder, players, awayPitcher, awayRisk, targets);
 
     targets = targets.sort((a, b) => b.score - a.score).slice(0, 5);
 
     if (!targets.length) {
-      return "<p>No strong POPS HR targets yet.</p>";
+      return "<p>No strong POPS HR targets yet. Lineups or pitcher data may not be posted.</p>";
     }
 
     return targets.map((t, i) => `
@@ -125,87 +198,47 @@ const homePitcherId = homePitcherObj ? homePitcherObj.id : null;
     `).join("");
   },
 
-  addTargets(order, players, opposingPitcher, targets) {
-    const risk = Pitchers.get(opposingPitcher);
+  addTargets(order, players, opposingPitcher, pitcherRiskObj, targets) {
+    if (!order || !order.length) return;
 
     order.forEach((id, index) => {
       const player = players["ID" + id];
       if (!player) return;
 
-      const result = Formula.getHrScore(player.fullName, index + 1, opposingPitcher);
+      const lineupSpot = index + 1;
+      let score = 45;
+      let reasons = [];
 
-      if (result.score >= 70) {
+      score += Math.round(pitcherRiskObj.risk * 0.30);
+      reasons.push("Pitcher HR Risk " + pitcherRiskObj.risk + "/100");
+
+      if (lineupSpot === 3 || lineupSpot === 4) {
+        score += 20;
+        reasons.push("Prime power lineup spot");
+      } else if (lineupSpot >= 1 && lineupSpot <= 5) {
+        score += 12;
+        reasons.push("Top 5 lineup spot");
+      } else {
+        score += 5;
+        reasons.push("Lineup boost");
+      }
+
+      if (Formula.isKnownPowerBat(player.fullName)) {
+        score += 18;
+        reasons.push("Known power bat");
+      }
+
+      if (score > 100) score = 100;
+
+      if (score >= 70) {
         targets.push({
           name: player.fullName,
           pitcher: opposingPitcher,
-          score: result.score,
-          pitcherRisk: result.pitcherRisk,
-          reasons: result.reasons
+          score: score,
+          pitcherRisk: pitcherRiskObj.risk,
+          reasons: reasons.join(", ")
         });
       }
     });
-  async pitcherAutoRisk(pitcherName, pitcherId) {
-  if (!pitcherId) {
-    return {
-      name: pitcherName,
-      hr9: 0,
-      hrAllowed: 0,
-      innings: 0,
-      risk: 50,
-      note: "Pitcher ID not available yet"
-    };
   }
-
-  try {
-    const data = await API.getPitcherStats(pitcherId);
-    const splits = data.stats?.[0]?.splits || [];
-
-    if (!splits.length) {
-      return {
-        name: pitcherName,
-        hr9: 0,
-        hrAllowed: 0,
-        innings: 0,
-        risk: 50,
-        note: "No season pitching stats found"
-      };
-    }
-
-    const stat = splits[0].stat;
-
-    const hrAllowed = Number(stat.homeRuns || 0);
-    const innings = Number(stat.inningsPitched || 0);
-
-    let hr9 = 0;
-    if (innings > 0) {
-      hr9 = (hrAllowed / innings) * 9;
-    }
-
-    let risk = 50;
-
-    if (hr9 >= 1.8) risk = 90;
-    else if (hr9 >= 1.5) risk = 82;
-    else if (hr9 >= 1.2) risk = 74;
-    else if (hr9 >= 1.0) risk = 66;
-    else risk = 55;
-
-    return {
-      name: pitcherName,
-      hr9: hr9.toFixed(2),
-      hrAllowed: hrAllowed,
-      innings: innings,
-      risk: risk,
-      note: "Auto-calculated from season HR allowed and innings pitched"
-    };
-
-  } catch (err) {
-    return {
-      name: pitcherName,
-      hr9: 0,
-      hrAllowed: 0,
-      innings: 0,
-      risk: 50,
-      note: "Error loading pitcher stats"
-    };
-  }
-}
+};
