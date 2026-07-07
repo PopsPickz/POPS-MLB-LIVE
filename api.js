@@ -7,27 +7,34 @@ const API = {
 
   async getSchedule() {
     const url =
-      `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${this.today()}&hydrate=probablePitcher`;
+      "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=" +
+      this.today() +
+      "&hydrate=probablePitcher";
 
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Schedule API failed");
+    if (!res.ok) throw new Error("Schedule failed");
     return await res.json();
   },
 
   async getGame(gamePk) {
-    const url = `https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`;
+    const url =
+      "https://statsapi.mlb.com/api/v1.1/game/" +
+      gamePk +
+      "/feed/live";
 
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Game API failed");
+    if (!res.ok) throw new Error("Game failed");
     return await res.json();
   },
 
   async getPitcherStats(playerId) {
     const url =
-      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=season&group=pitching&sportId=1`;
+      "https://statsapi.mlb.com/api/v1/people/" +
+      playerId +
+      "/stats?stats=season&group=pitching&sportId=1";
 
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Pitcher API failed");
+    if (!res.ok) throw new Error("Pitcher failed");
     return await res.json();
   }
 };
