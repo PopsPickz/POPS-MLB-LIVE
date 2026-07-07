@@ -41,7 +41,8 @@ async function pitcherRisk(name, id) {
     else if (hr9 >= 1.00) risk = 68;
 
     return { name, era, hr9, hrAllowed, ip, risk };
-  } catch {
+  } catch (err) {
+    console.log("Pitcher risk error:", err);
     return { name, era: "N/A", hr9: "0.00", hrAllowed: 0, ip: 0, risk: 50 };
   }
 }
@@ -78,60 +79,65 @@ async function loadBatters(games) {
   let targets = [];
 
   for (const game of games) {
-    const live = await API.getGame(game.gamePk);
+    try {
+      const live = await API.getGame(game.gamePk);
 
-    const away = live.gameData.teams.away.name;
-    const home = live.gameData.teams.home.name;
+      const away = live.gameData.teams.away.name;
+      const home = live.gameData.teams.home.name;
 
-    const players = live.gameData.players || {};
-    const awayOrder = live.liveData.boxscore.teams.away.battingOrder || [];
-    const homeOrder = live.liveData.boxscore.teams.home.battingOrder || [];
+      const players = live.gameData.players || {};
+      const awayOrder = live.liveData.boxscore.teams.away.battingOrder || [];
+      const homeOrder = live.liveData.boxscore.teams.home.battingOrder || [];
 
-    const awayPitcherObj = live.gameData.probablePitchers?.away || null;
-    const homePitcherObj = live.gameData.probablePitchers?.home || null;
+      const awayPitcherObj = live.gameData.probablePitchers?.away || null;
+      const homePitcherObj = live.gameData.probablePitchers?.home || null;
 
-    const awayPitcher = awayPitcherObj?.fullName || "TBD";
-    const homePitcher = homePitcherObj?.fullName || "TBD";
+      const awayPitcher = awayPitcherObj?.fullName || "TBD";
+      const homePitcher = homePitcherObj?.fullName || "TBD";
 
-    const awayRisk = await pitcherRisk(awayPitcher, awayPitcherObj?.id);
-    const homeRisk = await pitcherRisk(homePitcher, homePitcherObj?.id);
+      const awayRisk = await pitcherRisk(awayPitcher, awayPitcherObj?.id);
+      const homeRisk = await pitcherRisk(homePitcher, homePitcherObj?.id);
 
-    if (awayOrder.length) {
-      awayOrder.forEach((id, index) => {
-        const player = players["ID" + id];
-        if (!player) return;
+      if (awayOrder.length) {
+        awayOrder.forEach((id, index) => {
+          const player = players["ID" + id];
+          if (!player) return;
 
-        const result = Formula.getHrScore(player.fullName, index + 1, homeRisk);
+          const result = Formula.getHrScore(player.fullName, index + 1, homeRisk);
 
-        targets.push({
-          name: player.fullName,
-          team: away,
-          game: `${away} vs ${home}`,
-          pitcher: homePitcher,
-          score: result.score,
-          reasons: result.reasons,
-          type: "Confirmed lineup"
+          targets.push({
+            name: player.fullName,
+            team: away,
+            game: `${away} vs ${home}`,
+            pitcher: homePitcher,
+            score: result.score,
+            reasons: result.reasons,
+            type: "Confirmed lineup"
+          });
         });
-      });
-    }
+      }
 
-    if (homeOrder.length) {
-      homeOrder.forEach((id, index) => {
-        const player = players["ID" + id];
-        if (!player) return;
+      if (homeOrder.length) {
+        homeOrder.forEach((id, index) => {
+          const player = players["ID" + id];
+          if (!player) return;
 
-        const result = Formula.getHrScore(player.fullName, index + 1, awayRisk);
+          const result = Formula.getHrScore(player.fullName, index + 1, awayRisk);
 
-        targets.push({
-          name: player.fullName,
-          team: home,
-          game: `${away} vs ${home}`,
-          pitcher: awayPitcher,
-          score: result.score,
-          reasons: result.reasons,
-          type: "Confirmed lineup"
+          targets.push({
+            name: player.fullName,
+            team: home,
+            game: `${away} vs ${home}`,
+            pitcher: awayPitcher,
+            score: result.score,
+            reasons: result.reasons,
+            type: "Confirmed lineup"
+          });
         });
-      });
+      }
+
+    } catch (err) {
+      console.log("Batter load error:", err);
     }
   }
 
@@ -160,22 +166,90 @@ async function loadBatters(games) {
   `).join("");
 }
 
-function loadMoneyline(games) {
-  moneylineBox.innerHTML = games.map(game => {
+async function loadMoneyline(games) {
+  let cards = [];
+
+  const powerTeams = [
+    "New York Yankees",
+    "Los Angeles Dodgers",
+    "Philadelphia Phillies",
+    "Atlanta Braves",
+    "New York Mets",
+    "Texas Rangers",
+    "Boston Red Sox",
+    "Chicago Cubs",
+    "Toronto Blue Jays",
+    "Seattle Mariners",
+    "Milwaukee Brewers",
+    "Houston Astros"
+  ];
+
+  for (const game of games) {
     const away = teamName(game, "away");
     const home = teamName(game, "home");
 
-    return `
+    const awayPitcher = probablePitcher(game, "away");
+    const homePitcher = probablePitcher(game, "home");
+
+    const awayRisk = await pitcherRisk(awayPitcher, probablePitcherId(game, "away"));
+    const homeRisk = await pitcherRisk(homePitcher, probablePitcherId(game, "home"));
+
+    let awayChecks = 0;
+    let homeChecks = 0;
+
+    const awayBetterStarter = awayRisk.risk < homeRisk.risk;
+    const homeBetterStarter = homeRisk.risk < awayRisk.risk;
+
+    if (awayBetterStarter) awayChecks++;
+    if (homeBetterStarter) homeChecks++;
+
+    const awayPower = powerTeams.includes(away);
+    const homePower = powerTeams.includes(home);
+
+    if (awayPower) {
+      awayChecks++;
+      awayChecks++;
+    }
+
+    if (homePower) {
+      homeChecks++;
+      homeChecks++;
+    }
+
+    homeChecks++;
+
+    let pick = "No Clear Edge";
+    if (awayChecks > homeChecks) pick = away;
+    if (homeChecks > awayChecks) pick = home;
+
+    cards.push(`
       <div class="pick-card">
         <h3>💰 ${away} vs ${home}</h3>
-        <p><strong>Lean:</strong> Waiting for full model</p>
-        <p>Better Starting Pitcher ⬜</p>
+
+        <p><strong>POPS Moneyline Pick:</strong> <span class="gold">${pick}</span></p>
+
+        <hr>
+
+        <p><strong>${away}</strong></p>
+        <p>Better Starting Pitcher ${awayBetterStarter ? "✅" : "❌"}</p>
         <p>Better Bullpen ⬜</p>
-        <p>Better Offense ⬜</p>
-        <p>Better Run Support ⬜</p>
+        <p>Better Offense ${awayPower ? "✅" : "❌"}</p>
+        <p>Better Run Support ${awayPower ? "✅" : "❌"}</p>
+
+        <hr>
+
+        <p><strong>${home}</strong></p>
+        <p>Better Starting Pitcher ${homeBetterStarter ? "✅" : "❌"}</p>
+        <p>Better Bullpen ⬜</p>
+        <p>Better Offense ${homePower ? "✅" : "❌"}</p>
+        <p>Better Run Support ${homePower ? "✅" : "❌"}</p>
+
+        <p class="small">Starter edge uses pitcher HR risk. Offense/run support uses POPS power-team model.</p>
       </div>
-    `;
-  }).join("");
+    `);
+  }
+
+  moneylineBox.innerHTML = cards.join("");
 }
 
 function loadMatchups(games) {
@@ -212,9 +286,9 @@ async function loadApp() {
     }
 
     loadMatchups(games);
-    loadMoneyline(games);
     await loadPitcherTargets(games);
     await loadBatters(games);
+    await loadMoneyline(games);
 
   } catch (err) {
     console.log("POPS 10.0 error:", err);
