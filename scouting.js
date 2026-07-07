@@ -206,37 +206,15 @@ const Scouting = {
       if (!player) return;
 
       const lineupSpot = index + 1;
-      let score = 45;
-      let reasons = [];
+      const result = Formula.getHrScore(player.fullName, lineupSpot, pitcherRiskObj);
 
-      score += Math.round(pitcherRiskObj.risk * 0.30);
-      reasons.push("Pitcher HR Risk " + pitcherRiskObj.risk + "/100");
-
-      if (lineupSpot === 3 || lineupSpot === 4) {
-        score += 20;
-        reasons.push("Prime power lineup spot");
-      } else if (lineupSpot >= 1 && lineupSpot <= 5) {
-        score += 12;
-        reasons.push("Top 5 lineup spot");
-      } else {
-        score += 5;
-        reasons.push("Lineup boost");
-      }
-
-      if (Formula.isKnownPowerBat(player.fullName)) {
-        score += 18;
-        reasons.push("Known power bat");
-      }
-
-      if (score > 100) score = 100;
-
-      if (score >= 70) {
+      if (result.score >= 70) {
         targets.push({
           name: player.fullName,
           pitcher: opposingPitcher,
-          score: score,
+          score: result.score,
           pitcherRisk: pitcherRiskObj.risk,
-          reasons: reasons.join(", ")
+          reasons: result.reasons
         });
       }
     });
