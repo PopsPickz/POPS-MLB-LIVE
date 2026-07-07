@@ -1,14 +1,16 @@
 const pitcherTargetsBox = document.getElementById("pitcherTargetsBox");
-const battersBox = document.getElementById("battersBox");
+const hrPicksBox = document.getElementById("hrPicksBox");
+const hitPicksBox = document.getElementById("hitPicksBox");
 const moneylineBox = document.getElementById("moneylineBox");
-const matchupsBox = document.getElementById("matchupsBox");
+const gameBreakdownBox = document.getElementById("gameBreakdownBox");
 
 let firstLoad = true;
 let lastHTML = {
   pitchers: "",
-  batters: "",
+  hr: "",
+  hits: "",
   moneyline: "",
-  matchups: ""
+  games: ""
 };
 
 function scrollToSection(id) {
@@ -16,6 +18,7 @@ function scrollToSection(id) {
 }
 
 function updateBox(box, key, html) {
+  if (!box) return;
   if (lastHTML[key] !== html) {
     lastHTML[key] = html;
     box.innerHTML = html;
@@ -88,7 +91,7 @@ async function getBatterVsPitcherHR(batterId, pitcherId) {
 
 async function getLineupBvpHR(liveGame, side, opposingPitcherId) {
   const order = liveGame.liveData.boxscore.teams[side].battingOrder || [];
-  const players = liveGame.gameData.players || [];
+  const players = liveGame.gameData.players || {};
 
   if (!order.length || !opposingPitcherId) {
     return "Batter vs pitcher HR history loads after official lineups post.";
@@ -171,7 +174,7 @@ async function loadPitcherTargets(games) {
   updateBox(pitcherTargetsBox, "pitchers", html);
 }
 
-async function loadBatters(games) {
+async function buildBatterTargets(games) {
   let targets = [];
 
   for (const game of games) {
@@ -208,12 +211,27 @@ async function loadBatters(games) {
             team: away,
             game: `${away} vs ${home}`,
             pitcher: homePitcher,
-            score: result.score + Math.min(bvpHR * 3, 9),
+            score: Math.min(result.score + Math.min(bvpHR * 3, 9), 100),
             bvpHR,
             reasons: result.reasons,
             type: "Confirmed lineup"
           });
         }
+      } else {
+        Formula.getProjectedPowerBats(away).forEach((name, index) => {
+          const result = Formula.getHrScore(name, index + 2, homeRisk);
+
+          targets.push({
+            name,
+            team: away,
+            game: `${away} vs ${home}`,
+            pitcher: homePitcher,
+            score: result.score,
+            bvpHR: "N/A",
+            reasons: result.reasons,
+            type: "Projected lineup"
+          });
+        });
       }
 
       if (homeOrder.length) {
@@ -230,32 +248,43 @@ async function loadBatters(games) {
             team: home,
             game: `${away} vs ${home}`,
             pitcher: awayPitcher,
-            score: result.score + Math.min(bvpHR * 3, 9),
+            score: Math.min(result.score + Math.min(bvpHR * 3, 9), 100),
             bvpHR,
             reasons: result.reasons,
             type: "Confirmed lineup"
           });
         }
+      } else {
+        Formula.getProjectedPowerBats(home).forEach((name, index) => {
+          const result = Formula.getHrScore(name, index + 2, awayRisk);
+
+          targets.push({
+            name,
+            team: home,
+            game: `${away} vs ${home}`,
+            pitcher: awayPitcher,
+            score: result.score,
+            bvpHR: "N/A",
+            reasons: result.reasons,
+            type: "Projected lineup"
+          });
+        });
       }
 
     } catch (err) {
-      console.log("Batter load error:", err);
+      console.log("Batter target error:", err);
     }
   }
 
-  if (!targets.length) {
-    updateBox(battersBox, "batters", `
-      <div class="pick-card">
-        <h3>Waiting for official MLB lineups</h3>
-        <p>Once lineups post, POPS will automatically rank batters vs the opposing pitcher.</p>
-      </div>
-    `);
-    return;
-  }
+  return targets;
+}
+
+async function loadHRPicks(games) {
+  let targets = await buildBatterTargets(games);
 
   targets = targets
     .sort((a, b) => b.score - a.score)
-    .slice(0, 25);
+    .slice(0, 20);
 
   const html = targets.map((p, i) => `
     <div class="pick-card">
@@ -265,12 +294,38 @@ async function loadBatters(games) {
       <p><strong>Game:</strong> ${p.game}</p>
       <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
       <p><strong>Previous HR vs Pitcher:</strong> ${p.bvpHR}</p>
-      <p><strong>POPS Score:</strong> <span class="hr-score">${Math.min(p.score, 100)}/100</span></p>
+      <p><strong>POPS HR Score:</strong> <span class="hr-score">${p.score}/100</span></p>
       <p class="small">${p.type} | ${p.reasons}</p>
     </div>
   `).join("");
 
-  updateBox(battersBox, "batters", html);
+  updateBox(hrPicksBox, "hr", html);
+}
+
+async function loadHitPicks(games) {
+  let targets = await buildBatterTargets(games);
+
+  targets = targets
+    .map(p => ({
+      ...p,
+      hitScore: Math.min(100, Math.round(p.score * 0.85 + 10))
+    }))
+    .sort((a, b) => b.hitScore - a.hitScore)
+    .slice(0, 20);
+
+  const html = targets.map((p, i) => `
+    <div class="pick-card">
+      <span class="rank-badge">#${i + 1}</span>
+      <h3>🔥 ${p.name}</h3>
+      <p><strong>Team:</strong> ${p.team}</p>
+      <p><strong>Game:</strong> ${p.game}</p>
+      <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
+      <p><strong>POPS Hit Score:</strong> <span class="hr-score">${p.hitScore}/100</span></p>
+      <p class="small">${p.type} | Strong lineup/profile matchup.</p>
+    </div>
+  `).join("");
+
+  updateBox(hitPicksBox, "hits", html);
 }
 
 async function loadMoneyline(games) {
@@ -344,7 +399,7 @@ async function loadMoneyline(games) {
   updateBox(moneylineBox, "moneyline", cards.join(""));
 }
 
-function loadMatchups(games) {
+function loadGameBreakdown(games) {
   const html = games.map(game => {
     const away = teamName(game, "away");
     const home = teamName(game, "home");
@@ -353,12 +408,12 @@ function loadMatchups(games) {
       <div class="game-card">
         <h3>${away} vs ${home}</h3>
         <p><strong>Pitchers:</strong> ${probablePitcher(game, "away")} vs ${probablePitcher(game, "home")}</p>
-        <p class="small">Lineups auto-load once MLB posts them.</p>
+        <p class="small">POPS uses projected power bats before lineups post, then switches to confirmed lineup picks automatically.</p>
       </div>
     `;
   }).join("");
 
-  updateBox(matchupsBox, "matchups", html);
+  updateBox(gameBreakdownBox, "games", html);
 }
 
 async function loadApp() {
@@ -366,9 +421,10 @@ async function loadApp() {
 
   if (firstLoad) {
     pitcherTargetsBox.innerHTML = "Loading pitcher targets...";
-    battersBox.innerHTML = "Checking official MLB lineups...";
-    moneylineBox.innerHTML = "Loading moneyline model...";
-    matchupsBox.innerHTML = "Loading matchups...";
+    hrPicksBox.innerHTML = "Loading HR picks...";
+    hitPicksBox.innerHTML = "Loading hit picks...";
+    moneylineBox.innerHTML = "Loading moneyline edges...";
+    gameBreakdownBox.innerHTML = "Loading game breakdowns...";
   }
 
   try {
@@ -377,19 +433,21 @@ async function loadApp() {
 
     if (!games.length) {
       updateBox(pitcherTargetsBox, "pitchers", "No MLB games today.");
-      updateBox(battersBox, "batters", "No lineups today.");
+      updateBox(hrPicksBox, "hr", "No HR picks today.");
+      updateBox(hitPicksBox, "hits", "No hit picks today.");
       updateBox(moneylineBox, "moneyline", "No moneyline picks today.");
-      updateBox(matchupsBox, "matchups", "No matchups today.");
+      updateBox(gameBreakdownBox, "games", "No games today.");
       return;
     }
 
-    loadMatchups(games);
+    loadGameBreakdown(games);
     await loadPitcherTargets(games);
-    await loadBatters(games);
+    await loadHRPicks(games);
+    await loadHitPicks(games);
     await loadMoneyline(games);
 
   } catch (err) {
-    console.log("POPS 10.0 error:", err);
+    console.log("POPS 11.0 error:", err);
   }
 
   firstLoad = false;
