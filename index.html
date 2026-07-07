@@ -3,34 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>POPS Pickz 8.0</title>
+  <title>POPS Pickz 9.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <div class="app">
+
     <header class="hero">
       <div class="live-badge">● LIVE</div>
       <h1>POPS PICKZ</h1>
-      <h2>MLB 8.0</h2>
+      <h2>MLB 9.0</h2>
       <p>Live Scores • HR Targets • Scouting • Pitcher Risk</p>
     </header>
 
-    <section class="quick-grid">
-      <button onclick="scrollToSection('scoresSection')">⚾<span>Scores</span></button>
-      <button onclick="scrollToSection('hrSection')">💣<span>HR Picks</span></button>
-      <button onclick="scrollToSection('scoutingSection')">📊<span>Scouting</span></button>
-      <button onclick="scrollToSection('leadersSection')">👑<span>Leaders</span></button>
-    </section>
+    <nav class="top-tabs">
+      <button onclick="scrollToSection('hrSection')">💣 HR Picks</button>
+      <button onclick="scrollToSection('gamesSection')">⚾ Games</button>
+      <button onclick="scrollToSection('trackerSection')">📡 HR Tracker</button>
+      <button onclick="scrollToSection('leadersSection')">👑 Leaders</button>
+    </nav>
 
-    <section id="scoresSection" class="card">
-      <h2>⚾ Today’s MLB Games</h2>
-      <div id="scoresBox">Loading games...</div>
+    <section id="tickerBox" class="ticker">
+      Loading live ticker...
     </section>
 
     <section id="hrSection" class="card">
-      <h2>💣 POPS HR Targets</h2>
+      <h2>💣 POPS Top HR Targets</h2>
       <div id="hrBox">Loading HR targets...</div>
+    </section>
+
+    <section id="gamesSection" class="card">
+      <h2>⚾ Today’s MLB Games</h2>
+      <div id="scoresBox">Loading games...</div>
     </section>
 
     <section id="scoutingSection" class="card">
@@ -38,13 +43,31 @@
       <div id="scoutingBox">Tap any game to view scouting report.</div>
     </section>
 
+    <section id="trackerSection" class="card">
+      <h2>📡 Live Home Run Tracker</h2>
+      <div id="liveHrBox">Loading home runs...</div>
+    </section>
+
     <section id="leadersSection" class="card">
       <h2>👑 POPS Leaders</h2>
       <div id="leadersBox">Loading leaders...</div>
     </section>
+
   </div>
 
+  <nav class="bottom-nav">
+    <button onclick="scrollToSection('hrSection')">💣<span>HR</span></button>
+    <button onclick="scrollToSection('gamesSection')">⚾<span>Games</span></button>
+    <button onclick="scrollToSection('scoutingSection')">📊<span>Scout</span></button>
+    <button onclick="scrollToSection('trackerSection')">📡<span>Tracker</span></button>
+    <button onclick="scrollToSection('leadersSection')">👑<span>Leaders</span></button>
+  </nav>
+
   <script src="api.js"></script>
+  <script src="formula.js"></script>
+  <script src="pitchers.js"></script>
+  <script src="homeruns.js"></script>
   <script src="app.js"></script>
+
 </body>
 </html>
