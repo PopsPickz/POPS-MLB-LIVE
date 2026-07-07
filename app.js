@@ -226,27 +226,55 @@ async function getHitStreak(playerId) {
 }
 
 async function getLineupBvpHR(liveGame, side, opposingPitcherId) {
+  if (!opposingPitcherId) {
+    return "Pitcher ID not available yet.";
+  }
+
   const order = liveGame.liveData.boxscore.teams[side].battingOrder || [];
   const players = liveGame.gameData.players || {};
 
-  if (!order.length || !opposingPitcherId) {
-    return "Using yesterday lineup until official lineup posts.";
+  let lineup = [];
+
+  // Official lineup first
+  if (order.length) {
+    for (const id of order) {
+      const player = players["ID" + id];
+      if (!player) continue;
+
+      lineup.push({
+        id,
+        name: player.fullName
+      });
+    }
+  }
+
+  // Yesterday lineup fallback
+  if (!lineup.length) {
+    const teamId =
+      side === "home"
+        ? liveGame.gameData.teams.home.id
+        : liveGame.gameData.teams.away.id;
+
+    lineup = await getPreviousLineup(teamId);
+  }
+
+  if (!lineup.length) {
+    return "No lineup data available yet.";
   }
 
   let hitters = [];
 
-  for (const id of order) {
-    const player = players["ID" + id];
-    if (!player) continue;
-
-    const hr = await getBatterVsPitcherHR(id, opposingPitcherId);
+  for (const batter of lineup) {
+    const hr = await getBatterVsPitcherHR(batter.id, opposingPitcherId);
 
     if (hr > 0) {
-      hitters.push(`${player.fullName}: ${hr} HR`);
+      hitters.push(`${batter.name}: ${hr} HR`);
     }
   }
 
-  return hitters.length ? hitters.join("<br>") : "No previous HR found vs this pitcher.";
+  return hitters.length
+    ? hitters.join("<br>")
+    : "No previous HR found vs this pitcher.";
 }
 
 /* ---------- PITCHERS TO TARGET ---------- */
