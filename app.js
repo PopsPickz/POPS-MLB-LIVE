@@ -20,9 +20,26 @@ const MANUAL_BVP_HR = {
   "Manny Machado|Zac Gallen": 1
 };
 
+function showTab(sectionId) {
+  const sections = [
+    "pitchersSection",
+    "hrSection",
+    "hitsSection",
+    "moneylineSection",
+    "scoutingSection"
+  ];
+
+  sections.forEach(id => {
+    const section = document.getElementById(id);
+    if (!section) return;
+    section.style.display = id === sectionId ? "block" : "none";
+  });
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function scrollToSection(id) {
-  const section = document.getElementById(id);
-  if (section) section.scrollIntoView({ behavior: "smooth" });
+  showTab(id);
 }
 
 function updateBox(box, key, html) {
@@ -230,6 +247,33 @@ async function getHitStreak(playerId) {
   }
 }
 
+async function getHRLast5Games(playerId) {
+  if (!playerId) return 0;
+
+  try {
+    const data = await API.getHitterGameLog(playerId);
+    let games = data.stats?.[0]?.splits || [];
+
+    games = games.sort((a, b) => {
+      return new Date(b.date || b.gameDate) - new Date(a.date || a.gameDate);
+    });
+
+    games = games.slice(0, 5);
+
+    let totalHR = 0;
+
+    games.forEach(game => {
+      totalHR += Number(game.stat?.homeRuns || 0);
+    });
+
+    return totalHR;
+
+  } catch (err) {
+    console.log("Last 5 HR error:", err);
+    return 0;
+  }
+}
+
 async function getLineupBvpHR(liveGame, side, opposingPitcherId) {
   if (!opposingPitcherId) {
     return "Pitcher ID not available yet.";
@@ -354,6 +398,53 @@ async function getLineupHitStreaks(liveGame, side) {
     : "No 2+ game hit streaks found.";
 }
 
+async function getLineupHRLast5(liveGame, side) {
+  const order = liveGame.liveData.boxscore.teams[side].battingOrder || [];
+  const players = liveGame.gameData.players || {};
+
+  let lineup = [];
+
+  if (order.length) {
+    for (const id of order) {
+      const player = players["ID" + id];
+      if (!player) continue;
+
+      lineup.push({
+        id,
+        name: player.fullName
+      });
+    }
+  }
+
+  if (!lineup.length) {
+    const teamId =
+      side === "home"
+        ? liveGame.gameData.teams.home.id
+        : liveGame.gameData.teams.away.id;
+
+    lineup = await getPreviousLineup(teamId);
+  }
+
+  let hitters = [];
+
+  for (const batter of lineup) {
+    const hr = await getHRLast5Games(batter.id);
+
+    if (hr > 0) {
+      hitters.push({
+        name: batter.name,
+        hr
+      });
+    }
+  }
+
+  hitters = hitters.sort((a, b) => b.hr - a.hr).slice(0, 5);
+
+  return hitters.length
+    ? hitters.map(h => `${h.name}: ${h.hr} HR`).join("<br>")
+    : "No HR in last 5 games found.";
+}
+
 /* ---------- PITCHERS TO TARGET ---------- */
 
 async function loadPitcherTargets(games) {
@@ -385,12 +476,16 @@ async function loadPitcherTargets(games) {
       const awayHitStreaks = await getLineupHitStreaks(live, "home");
       const homeHitStreaks = await getLineupHitStreaks(live, "away");
 
+      const awayHRLast5 = await getLineupHRLast5(live, "home");
+      const homeHRLast5 = await getLineupHRLast5(live, "away");
+
       pitchers.push({
         ...awayRisk,
         game: `${away} vs ${home}`,
         targetTeam: home,
         bvp: awayBvp,
-        hitStreaks: awayHitStreaks
+        hitStreaks: awayHitStreaks,
+        hrLast5: awayHRLast5
       });
 
       pitchers.push({
@@ -398,7 +493,8 @@ async function loadPitcherTargets(games) {
         game: `${away} vs ${home}`,
         targetTeam: away,
         bvp: homeBvp,
-        hitStreaks: homeHitStreaks
+        hitStreaks: homeHitStreaks,
+        hrLast5: homeHRLast5
       });
 
     } catch (err) {
@@ -409,7 +505,7 @@ async function loadPitcherTargets(games) {
   pitchers = pitchers.sort((a, b) => b.risk - a.risk);
 
   const html = pitchers.map((p, i) => `
-    <div class="pick-card">
+    <div class="pick-card" onclick="showTab('scoutingSection')">
       <span class="rank-badge">#${i + 1}</span>
       <h3>🎯 ${p.name}</h3>
 
@@ -430,13 +526,22 @@ async function loadPitcherTargets(games) {
 
       <hr>
 
-      <p><strong>Previous HR vs Pitcher:</strong></p>
-      <p class="small">${p.bvp}</p>
+      <div class="pitcher-grid">
+        <div>
+          <p><strong>Previous HR vs Pitcher:</strong></p>
+          <p class="small">${p.bvp}</p>
+        </div>
 
-      <hr>
+        <div>
+          <p><strong>🔥 Hot Hitters:</strong></p>
+          <p class="small">${p.hitStreaks}</p>
+        </div>
 
-      <p><strong>2+ Game Hit Streaks:</strong></p>
-      <p class="small">${p.hitStreaks}</p>
+        <div>
+          <p><strong>HR in the Last 5 Games:</strong></p>
+          <p class="small">${p.hrLast5}</p>
+        </div>
+      </div>
     </div>
   `).join("");
 
@@ -853,27 +958,6 @@ async function loadMoneyline(games) {
   updateBox(moneylineBox, "moneyline", cards.join("") || "No moneyline picks loaded.");
 }
 
-/* ---------- GAMES ---------- */
-
-function loadGameBreakdown(games) {
-  const html = games.map(game => {
-    const away = teamName(game, "away");
-    const home = teamName(game, "home");
-
-    return `
-      <div class="game-card" onclick="Scouting.load(${game.gamePk})">
-        <h3>${away} vs ${home}</h3>
-        <p><strong>Pitchers:</strong>
-          ${probablePitcher(game, "away")} vs ${probablePitcher(game, "home")}
-        </p>
-        <p class="small">Tap to open POPS scouting report.</p>
-      </div>
-    `;
-  }).join("");
-
-  updateBox(gameBreakdownBox, "games", html);
-}
-
 /* ---------- MAIN ---------- */
 
 async function loadApp() {
@@ -884,7 +968,6 @@ async function loadApp() {
     if (hrPicksBox) hrPicksBox.innerHTML = "Loading HR picks...";
     if (hitPicksBox) hitPicksBox.innerHTML = "Loading hit picks...";
     if (moneylineBox) moneylineBox.innerHTML = "Loading moneyline edges...";
-    if (gameBreakdownBox) gameBreakdownBox.innerHTML = "Loading game breakdowns...";
   }
 
   try {
@@ -896,11 +979,9 @@ async function loadApp() {
       updateBox(hrPicksBox, "hr", "No HR picks today.");
       updateBox(hitPicksBox, "hits", "No hit picks today.");
       updateBox(moneylineBox, "moneyline", "No moneyline picks today.");
-      updateBox(gameBreakdownBox, "games", "No games today.");
       return;
     }
 
-    loadGameBreakdown(games);
     await loadPitcherTargets(games);
     await loadHRPicks(games);
     await loadHitPicks(games);
@@ -913,7 +994,6 @@ async function loadApp() {
     updateBox(hrPicksBox, "hr", "Error loading HR picks.");
     updateBox(hitPicksBox, "hits", "Error loading hit picks.");
     updateBox(moneylineBox, "moneyline", "Error loading moneyline picks.");
-    updateBox(gameBreakdownBox, "games", "Error loading games.");
   }
 
   firstLoad = false;
@@ -925,4 +1005,5 @@ async function loadApp() {
 }
 
 loadApp();
+showTab("pitchersSection");
 setInterval(loadApp, 120000);
