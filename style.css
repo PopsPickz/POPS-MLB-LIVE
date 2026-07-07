@@ -1,101 +1,138 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0b0b0b;
+  font-family: Arial, Helvetica, sans-serif;
   color: white;
+  background:
+    linear-gradient(rgba(0,0,0,.75), rgba(0,0,0,.9)),
+    url("https://images.unsplash.com/photo-1566577739112-5180d4bf9390?auto=format&fit=crop&w=1400&q=80");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.overlay {
+  min-height: 100vh;
+  padding: 24px 18px 90px;
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .hero {
-  padding: 30px 20px;
   text-align: center;
-  background: #111;
-  border-bottom: 3px solid gold;
+  padding: 35px 10px 25px;
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  left: 10px;
+  top: 20px;
+  font-size: 30px;
 }
 
 .hero h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 48px;
+  letter-spacing: 3px;
+  color: #d4af37;
+  text-shadow: 0 0 15px black;
 }
 
-.hero p {
+.hero h2 {
+  margin: 8px 0;
+  color: #ffd700;
+  font-size: 26px;
+}
+
+.tagline {
+  font-size: 13px;
   color: #ddd;
+  letter-spacing: 1px;
 }
 
-.container {
-  padding: 20px;
-  max-width: 1100px;
-  margin: auto;
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin: 20px 0;
 }
 
-.card {
-  background: #181818;
-  border: 1px solid #333;
-  border-radius: 14px;
-  padding: 18px;
-  margin-bottom: 20px;
-}
-
-.card h2 {
-  margin-top: 0;
-  color: gold;
-}
+.nav-card,
+.content-card,
 .game {
-  border-bottom: 1px solid #333;
-  padding: 12px 0;
+  background: rgba(5, 5, 5, 0.82);
+  border: 1px solid #d4af37;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.25);
+  backdrop-filter: blur(5px);
 }
 
-.hr-card {
-  background: #250000;
-  border: 1px solid #ff4444;
-  border-radius: 14px;
-  padding: 15px;
-  margin-bottom: 15px;
+.nav-card {
+  text-align: center;
 }
 
-.hr-card h3 {
-  color: #ffcc00;
+.icon {
+  font-size: 44px;
+  margin-bottom: 10px;
+}
+
+.nav-card h3,
+.content-card h2 {
+  color: #ffd700;
   margin-top: 0;
 }
 
+.nav-card p,
+.content-card p,
+.game p {
+  color: #eee;
+  line-height: 1.4;
+}
+
 .game {
+  margin-bottom: 16px;
   cursor: pointer;
 }
 
-.game:hover {
-  background: #222;
-  border-radius: 10px;
-  padding-left: 10px;
+.game h3 {
+  color: #ffd700;
+  margin-top: 0;
 }
 
 .tap-text {
-  color: gold;
+  color: #d4af37;
   font-size: 14px;
 }
 
-.details-card {
-  background: #101010;
-  border: 1px solid gold;
-  border-radius: 14px;
-  padding: 15px;
+.pops-targets {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #444;
 }
 
-.details-card h3,
-.details-card h4 {
-  color: gold;
-}
-.report-section {
-  background: #0b0b0b;
-  border: 1px solid #333;
-  border-radius: 12px;
-  padding: 14px;
-  margin-top: 14px;
+.pops-targets h4 {
+  color: #ffd700;
 }
 
-.report-section h4 {
-  margin-top: 0;
-  color: gold;
+.target-box {
+  background: rgba(255,255,255,.06);
+  border-left: 4px solid #ffd700;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 10px;
 }
 
-.coming-soon {
-  opacity: 0.75;
+@media (min-width: 800px) {
+  .main-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .overlay {
+    max-width: 1100px;
+    margin: auto;
+  }
 }
