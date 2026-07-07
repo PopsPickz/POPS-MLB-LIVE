@@ -4,7 +4,7 @@ const Formula = {
     "Devers", "Raleigh", "Guerrero", "Tatis", "Soto",
     "Alvarez", "Marte", "Carroll", "Machado", "Freeman",
     "Betts", "Goodman", "Contreras", "Seager", "Stanton",
-    "Harper", "Trout", "Ward", "Langford", "Garcia"
+    "Harper", "Trout", "Ward", "Langford", "Garcia", "Riley"
   ],
 
   isKnownPowerBat(name) {
@@ -18,7 +18,7 @@ const Formula = {
     let score = 45;
     let reasons = [];
 
-    const risk = pitcherRisk && pitcherRisk.risk ? pitcherRisk.risk : 50;
+    const risk = pitcherRisk?.risk || 50;
 
     score += Math.round(risk * 0.30);
     reasons.push("Pitcher HR Risk " + risk + "/100");
