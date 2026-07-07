@@ -13,8 +13,6 @@ let lastHTML = {
   games: ""
 };
 
-const SEASON = new Date().getFullYear();
-
 function scrollToSection(id) {
   const section = document.getElementById(id);
   if (section) section.scrollIntoView({ behavior: "smooth" });
@@ -48,6 +46,56 @@ async function fetchJSON(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error("Fetch failed: " + url);
   return await res.json();
+}
+
+/* ---------- YESTERDAY LINEUP FALLBACK ---------- */
+
+function yesterdayDate() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+
+  return d.toLocaleDateString("en-CA", {
+    timeZone: "America/New_York"
+  });
+}
+
+async function getPreviousLineup(teamId) {
+  try {
+    const scheduleUrl =
+      `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${yesterdayDate()}&teamId=${teamId}`;
+
+    const schedule = await fetchJSON(scheduleUrl);
+    const gamePk = schedule.dates?.[0]?.games?.[0]?.gamePk;
+
+    if (!gamePk) return [];
+
+    const live = await API.getGame(gamePk);
+
+    const homeId = live.gameData.teams.home.id;
+    const side = Number(teamId) === Number(homeId) ? "home" : "away";
+
+    const players = live.liveData.boxscore.teams[side].players || {};
+
+    let lineup = [];
+
+    Object.values(players).forEach(p => {
+      if (p.battingOrder && p.person?.id && p.person?.fullName) {
+        lineup.push({
+          id: p.person.id,
+          name: p.person.fullName,
+          order: Number(p.battingOrder)
+        });
+      }
+    });
+
+    return lineup
+      .sort((a, b) => a.order - b.order)
+      .slice(0, 9);
+
+  } catch (err) {
+    console.log("Previous lineup error:", err);
+    return [];
+  }
 }
 
 /* ---------- PITCHER RISK ---------- */
@@ -171,7 +219,7 @@ async function getLineupBvpHR(liveGame, side, opposingPitcherId) {
   const players = liveGame.gameData.players || {};
 
   if (!order.length || !opposingPitcherId) {
-    return "Loads after official lineups post.";
+    return "Using yesterday lineup until official lineup posts.";
   }
 
   let hitters = [];
@@ -266,14 +314,46 @@ async function loadPitcherTargets(games) {
     </div>
   `).join("");
 
-  updateBox(
-    pitcherTargetsBox,
-    "pitchers",
-    html || "No pitcher targets loaded."
-  );
+  updateBox(pitcherTargetsBox, "pitchers", html || "No pitcher targets loaded.");
 }
 
 /* ---------- BATTER TARGET BUILDER ---------- */
+
+async function addBatterTarget({
+  id,
+  name,
+  team,
+  game,
+  pitcher,
+  pitcherId,
+  pitcherRiskObj,
+  lineupSpot,
+  type,
+  targets
+}) {
+  const bvpHR = await getBatterVsPitcherHR(id, pitcherId);
+  const hitStreak = await getHitStreak(id);
+
+  const result = Formula.getHrScore(
+    name,
+    lineupSpot,
+    pitcherRiskObj,
+    { bvpHR, hitStreak }
+  );
+
+  targets.push({
+    id,
+    name,
+    team,
+    game,
+    pitcher,
+    score: result.score,
+    bvpHR,
+    hitStreak,
+    reasons: result.reasons,
+    type
+  });
+}
 
 async function buildBatterTargets(games) {
   let targets = [];
@@ -285,6 +365,9 @@ async function buildBatterTargets(games) {
       const away = live.gameData.teams.away.name;
       const home = live.gameData.teams.home.name;
       const gameName = `${away} vs ${home}`;
+
+      const awayTeamId = live.gameData.teams.away.id;
+      const homeTeamId = live.gameData.teams.home.id;
 
       const players = live.gameData.players || {};
       const awayOrder = live.liveData.boxscore.teams.away.battingOrder || [];
@@ -305,46 +388,55 @@ async function buildBatterTargets(games) {
           const player = players["ID" + id];
           if (!player) continue;
 
-          const bvpHR = await getBatterVsPitcherHR(id, homePitcherObj?.id);
-          const hitStreak = await getHitStreak(id);
-
-          const result = Formula.getHrScore(
-            player.fullName,
-            index + 1,
-            homeRisk,
-            { bvpHR, hitStreak }
-          );
-
-          targets.push({
+          await addBatterTarget({
             id,
             name: player.fullName,
             team: away,
             game: gameName,
             pitcher: homePitcher,
-            score: result.score,
-            bvpHR,
-            hitStreak,
-            reasons: result.reasons,
-            type: "Confirmed lineup"
+            pitcherId: homePitcherObj?.id,
+            pitcherRiskObj: homeRisk,
+            lineupSpot: index + 1,
+            type: "Confirmed lineup",
+            targets
           });
         }
       } else {
-        Formula.getProjectedPowerBats(away).forEach((name, index) => {
-          const result = Formula.getHrScore(name, index + 2, homeRisk);
+        const previousAwayLineup = await getPreviousLineup(awayTeamId);
 
-          targets.push({
-            id: null,
-            name,
-            team: away,
-            game: gameName,
-            pitcher: homePitcher,
-            score: result.score,
-            bvpHR: 0,
-            hitStreak: 0,
-            reasons: result.reasons,
-            type: "Projected lineup"
+        if (previousAwayLineup.length) {
+          for (const batter of previousAwayLineup) {
+            await addBatterTarget({
+              id: batter.id,
+              name: batter.name,
+              team: away,
+              game: gameName,
+              pitcher: homePitcher,
+              pitcherId: homePitcherObj?.id,
+              pitcherRiskObj: homeRisk,
+              lineupSpot: batter.order / 100,
+              type: "Yesterday lineup",
+              targets
+            });
+          }
+        } else {
+          Formula.getProjectedPowerBats(away).forEach((name, index) => {
+            const result = Formula.getHrScore(name, index + 2, homeRisk);
+
+            targets.push({
+              id: null,
+              name,
+              team: away,
+              game: gameName,
+              pitcher: homePitcher,
+              score: result.score,
+              bvpHR: 0,
+              hitStreak: 0,
+              reasons: result.reasons,
+              type: "Projected fallback"
+            });
           });
-        });
+        }
       }
 
       if (homeOrder.length) {
@@ -353,46 +445,55 @@ async function buildBatterTargets(games) {
           const player = players["ID" + id];
           if (!player) continue;
 
-          const bvpHR = await getBatterVsPitcherHR(id, awayPitcherObj?.id);
-          const hitStreak = await getHitStreak(id);
-
-          const result = Formula.getHrScore(
-            player.fullName,
-            index + 1,
-            awayRisk,
-            { bvpHR, hitStreak }
-          );
-
-          targets.push({
+          await addBatterTarget({
             id,
             name: player.fullName,
             team: home,
             game: gameName,
             pitcher: awayPitcher,
-            score: result.score,
-            bvpHR,
-            hitStreak,
-            reasons: result.reasons,
-            type: "Confirmed lineup"
+            pitcherId: awayPitcherObj?.id,
+            pitcherRiskObj: awayRisk,
+            lineupSpot: index + 1,
+            type: "Confirmed lineup",
+            targets
           });
         }
       } else {
-        Formula.getProjectedPowerBats(home).forEach((name, index) => {
-          const result = Formula.getHrScore(name, index + 2, awayRisk);
+        const previousHomeLineup = await getPreviousLineup(homeTeamId);
 
-          targets.push({
-            id: null,
-            name,
-            team: home,
-            game: gameName,
-            pitcher: awayPitcher,
-            score: result.score,
-            bvpHR: 0,
-            hitStreak: 0,
-            reasons: result.reasons,
-            type: "Projected lineup"
+        if (previousHomeLineup.length) {
+          for (const batter of previousHomeLineup) {
+            await addBatterTarget({
+              id: batter.id,
+              name: batter.name,
+              team: home,
+              game: gameName,
+              pitcher: awayPitcher,
+              pitcherId: awayPitcherObj?.id,
+              pitcherRiskObj: awayRisk,
+              lineupSpot: batter.order / 100,
+              type: "Yesterday lineup",
+              targets
+            });
+          }
+        } else {
+          Formula.getProjectedPowerBats(home).forEach((name, index) => {
+            const result = Formula.getHrScore(name, index + 2, awayRisk);
+
+            targets.push({
+              id: null,
+              name,
+              team: home,
+              game: gameName,
+              pitcher: awayPitcher,
+              score: result.score,
+              bvpHR: 0,
+              hitStreak: 0,
+              reasons: result.reasons,
+              type: "Projected fallback"
+            });
           });
-        });
+        }
       }
 
     } catch (err) {
@@ -443,7 +544,6 @@ async function loadHitPicks(games) {
     .filter(p => p.bvpHR > 0 || p.hitStreak >= 2)
     .map(p => {
       const hitResult = Formula.getHitScore(p);
-
       return {
         ...p,
         hitScore: hitResult.score,
@@ -461,7 +561,7 @@ async function loadHitPicks(games) {
       <div class="pick-card">
         <h3>🔥 No Hit Pickz Loaded Yet</h3>
         <p class="small">
-          Hit Pickz will populate when official lineups post and a hitter has a previous HR vs the pitcher or a 2+ game hit streak.
+          Hit Pickz will populate when a hitter has a previous HR vs today’s pitcher or a 2+ game hit streak.
         </p>
       </div>
       `
@@ -487,7 +587,7 @@ async function loadHitPicks(games) {
       <p class="small">
         ${p.bvpHR > 0 ? "Previous HR history ✅" : ""}
         ${p.hitStreak >= 2 ? " | 2+ game hit streak ✅" : ""}
-        <br>${p.hitReasons}
+        <br>${p.type} | ${p.hitReasons}
       </p>
     </div>
   `).join("");
@@ -495,7 +595,7 @@ async function loadHitPicks(games) {
   updateBox(hitPicksBox, "hits", html);
 }
 
-/* ---------- TEAM STATS + MONEYLINE ---------- */
+/* ---------- MONEYLINE ---------- */
 
 async function getTeamStats(teamId) {
   try {
@@ -565,13 +665,10 @@ async function loadMoneyline(games) {
 
       if (awayBetterStarter) awayScore++;
       if (homeBetterStarter) homeScore++;
-
       if (awayBetterBullpen) awayScore++;
       if (homeBetterBullpen) homeScore++;
-
       if (awayBetterOffense) awayScore++;
       if (homeBetterOffense) homeScore++;
-
       if (awayBetterRunSupport) awayScore++;
       if (homeBetterRunSupport) homeScore++;
 
@@ -609,12 +706,7 @@ async function loadMoneyline(games) {
           <p>Better Bullpen ${awayBetterBullpen ? "✅" : "❌"}</p>
           <p>Better Offense ${awayBetterOffense ? "✅" : "❌"}</p>
           <p>Better Run Support ${awayBetterRunSupport ? "✅" : "❌"}</p>
-          <p class="small">
-            OPS: ${awayStats.ops} |
-            Runs: ${awayStats.runs} |
-            ERA: ${awayStats.era} |
-            WHIP: ${awayStats.whip}
-          </p>
+          <p class="small">OPS: ${awayStats.ops} | Runs: ${awayStats.runs} | ERA: ${awayStats.era} | WHIP: ${awayStats.whip}</p>
 
           <hr>
 
@@ -623,12 +715,7 @@ async function loadMoneyline(games) {
           <p>Better Bullpen ${homeBetterBullpen ? "✅" : "❌"}</p>
           <p>Better Offense ${homeBetterOffense ? "✅" : "❌"}</p>
           <p>Better Run Support ${homeBetterRunSupport ? "✅" : "❌"}</p>
-          <p class="small">
-            OPS: ${homeStats.ops} |
-            Runs: ${homeStats.runs} |
-            ERA: ${homeStats.era} |
-            WHIP: ${homeStats.whip}
-          </p>
+          <p class="small">OPS: ${homeStats.ops} | Runs: ${homeStats.runs} | ERA: ${homeStats.era} | WHIP: ${homeStats.whip}</p>
         </div>
       `);
 
@@ -653,9 +740,7 @@ function loadGameBreakdown(games) {
         <p><strong>Pitchers:</strong>
           ${probablePitcher(game, "away")} vs ${probablePitcher(game, "home")}
         </p>
-        <p class="small">
-          Tap to open POPS scouting report.
-        </p>
+        <p class="small">Tap to open POPS scouting report.</p>
       </div>
     `;
   }).join("");
