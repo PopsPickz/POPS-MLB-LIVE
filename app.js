@@ -1,8 +1,16 @@
 var scoresBox = document.getElementById("scoresBox");
 var hrBox = document.getElementById("hrBox");
 var gameDetailsBox = document.getElementById("gameDetailsBox");
-
-function getTodayDate() {
+var pitcherRiskData = {
+  "TBD": {
+    hr9: 0,
+    flyBall: 0,
+    hardHit: 0,
+    barrel: 0,
+    risk: 50,
+    note: "Pitcher data not added yet"
+  }
+};function getTodayDate() {
   return new Date().toLocaleDateString("en-CA", {
     timeZone: "America/New_York"
   });
