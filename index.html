@@ -8,35 +8,62 @@
 </head>
 <body>
 
-<header class="hero">
-  <h1>POPS Pickz MLB Live</h1>
-  <p>Live Scores • Lineups • HR Tracker 💣 • POPS HR Targets</p>
-</header>
+  <div class="overlay">
 
-<main class="container">
-  <section class="card">
-    <h2>⚾ Live MLB Scores</h2>
-    <div id="scoresBox">Loading live scores...</div>
-  </section>
+    <header class="hero">
+      <div class="menu">☰</div>
 
-  <section class="card">
-    <h2>📊 Game Scouting Report</h2>
-    <p>Tap any game to view pitchers, lineups, and POPS HR targets.</p>
-    <div id="gameDetailsBox">Select a game to view details.</div>
-  </section>
+      <h1>POPS PICKZ</h1>
+      <h2>★ MLB LIVE ★</h2>
 
-  <section class="card">
-    <h2>💣 Live Home Run Tracker</h2>
-    <div id="hrBox">Loading home runs...</div>
-  </section>
-</main>
+      <p class="tagline">
+        LIVE SCORES • LINEUPS • HR TRACKER • POPS HR TARGETS
+      </p>
+    </header>
 
-<script src="api.js"></script>
-<script src="pitchers.js"></script>
-<script src="formula.js"></script>
-<script src="homeruns.js"></script>
-<script src="scouting.js"></script>
-<script src="app.js"></script>
+    <main class="main-grid">
 
+      <section class="nav-card">
+        <div class="icon">⚾</div>
+        <h3>LIVE MLB SCORES</h3>
+        <p>View all live scores</p>
+      </section>
+
+      <section class="nav-card">
+        <div class="icon">👥</div>
+        <h3>GAME SCOUTING REPORT</h3>
+        <p>Tap any game to view pitchers, lineups, and POPS HR targets.</p>
+      </section>
+
+      <section class="nav-card">
+        <div class="icon">💣</div>
+        <h3>LIVE HOME RUN TRACKER</h3>
+        <p>Track every home run in real time.</p>
+      </section>
+
+    </main>
+
+    <section class="content-card">
+      <h2>⚾ Live MLB Scores</h2>
+      <div id="scoresBox">Loading live scores...</div>
+    </section>
+
+    <section class="content-card">
+      <h2>📊 Game Scouting Report</h2>
+      <div id="scoutingBox">
+        Tap any game to view details.
+      </div>
+    </section>
+
+    <section class="content-card">
+      <h2>💣 POPS HR Targets</h2>
+      <div id="hrBox">Loading POPS HR targets...</div>
+    </section>
+
+  </div>
+
+  <script src="api.js"></script>
+  <script src="scouting.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
