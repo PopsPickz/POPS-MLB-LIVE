@@ -1,9 +1,7 @@
-const scoresBox = document.getElementById("scoresBox");
-const hrBox = document.getElementById("hrBox");
-const scoutingBox = document.getElementById("scoutingBox");
-const leadersBox = document.getElementById("leadersBox");
-const liveHrBox = document.getElementById("liveHrBox");
-const tickerBox = document.getElementById("tickerBox");
+const pitcherTargetsBox = document.getElementById("pitcherTargetsBox");
+const battersBox = document.getElementById("battersBox");
+const moneylineBox = document.getElementById("moneylineBox");
+const matchupsBox = document.getElementById("matchupsBox");
 
 function scrollToSection(id) {
   document.getElementById(id).scrollIntoView({ behavior: "smooth" });
@@ -11,14 +9,6 @@ function scrollToSection(id) {
 
 function teamName(game, side) {
   return game.teams[side].team.name;
-}
-
-function teamScore(game, side) {
-  return game.teams[side].score ?? 0;
-}
-
-function gameStatus(game) {
-  return game.status?.detailedState || "Scheduled";
 }
 
 function probablePitcher(game, side) {
@@ -30,17 +20,13 @@ function probablePitcherId(game, side) {
 }
 
 async function pitcherRisk(name, id) {
-  if (!id) {
-    return { name, era: "N/A", hr9: "0.00", hrAllowed: 0, ip: 0, risk: 50 };
-  }
+  if (!id) return { name, era: "N/A", hr9: "0.00", hrAllowed: 0, ip: 0, risk: 50 };
 
   try {
     const data = await API.getPitcherStats(id);
     const split = data.stats?.[0]?.splits?.[0];
 
-    if (!split) {
-      return { name, era: "N/A", hr9: "0.00", hrAllowed: 0, ip: 0, risk: 50 };
-    }
+    if (!split) return { name, era: "N/A", hr9: "0.00", hrAllowed: 0, ip: 0, risk: 50 };
 
     const stat = split.stat;
     const hrAllowed = Number(stat.homeRuns || 0);
@@ -55,167 +41,54 @@ async function pitcherRisk(name, id) {
     else if (hr9 >= 1.00) risk = 68;
 
     return { name, era, hr9, hrAllowed, ip, risk };
-
-  } catch (err) {
-    console.log(err);
+  } catch {
     return { name, era: "N/A", hr9: "0.00", hrAllowed: 0, ip: 0, risk: 50 };
   }
 }
 
-async function buildRealHRTargets(games) {
-  let allTargets = [];
+async function loadPitcherTargets(games) {
+  let pitchers = [];
 
   for (const game of games) {
-    try {
-      const live = await API.getGame(game.gamePk);
+    const away = teamName(game, "away");
+    const home = teamName(game, "home");
 
-      const away = live.gameData.teams.away.name;
-      const home = live.gameData.teams.home.name;
+    const awayRisk = await pitcherRisk(probablePitcher(game, "away"), probablePitcherId(game, "away"));
+    const homeRisk = await pitcherRisk(probablePitcher(game, "home"), probablePitcherId(game, "home"));
 
-      const players = live.gameData.players || {};
-      const awayOrder = live.liveData.boxscore.teams.away.battingOrder || [];
-      const homeOrder = live.liveData.boxscore.teams.home.battingOrder || [];
-
-      const awayPitcherObj = live.gameData.probablePitchers?.away || null;
-      const homePitcherObj = live.gameData.probablePitchers?.home || null;
-
-      const awayPitcher = awayPitcherObj?.fullName || "TBD";
-      const homePitcher = homePitcherObj?.fullName || "TBD";
-
-      const awayRisk = await pitcherRisk(awayPitcher, awayPitcherObj?.id);
-      const homeRisk = await pitcherRisk(homePitcher, homePitcherObj?.id);
-
-      // AWAY hitters vs HOME pitcher
-      if (awayOrder.length) {
-        awayOrder.forEach((id, index) => {
-          const player = players["ID" + id];
-          if (!player) return;
-
-          const result = Formula.getHrScore(player.fullName, index + 1, homeRisk);
-
-          allTargets.push({
-            name: player.fullName,
-            team: away,
-            game: away + " vs " + home,
-            pitcher: homePitcher,
-            pitcherRisk: homeRisk.risk,
-            score: result.score,
-            reasons: result.reasons,
-            type: "Confirmed lineup"
-          });
-        });
-      } else {
-        Formula.getProjectedPowerBats(away).forEach((name, index) => {
-          const result = Formula.getHrScore(name, index + 2, homeRisk);
-
-          allTargets.push({
-            name,
-            team: away,
-            game: away + " vs " + home,
-            pitcher: homePitcher,
-            pitcherRisk: homeRisk.risk,
-            score: result.score,
-            reasons: result.reasons,
-            type: "Projected lineup"
-          });
-        });
-      }
-
-      // HOME hitters vs AWAY pitcher
-      if (homeOrder.length) {
-        homeOrder.forEach((id, index) => {
-          const player = players["ID" + id];
-          if (!player) return;
-
-          const result = Formula.getHrScore(player.fullName, index + 1, awayRisk);
-
-          allTargets.push({
-            name: player.fullName,
-            team: home,
-            game: away + " vs " + home,
-            pitcher: awayPitcher,
-            pitcherRisk: awayRisk.risk,
-            score: result.score,
-            reasons: result.reasons,
-            type: "Confirmed lineup"
-          });
-        });
-      } else {
-        Formula.getProjectedPowerBats(home).forEach((name, index) => {
-          const result = Formula.getHrScore(name, index + 2, awayRisk);
-
-          allTargets.push({
-            name,
-            team: home,
-            game: away + " vs " + home,
-            pitcher: awayPitcher,
-            pitcherRisk: awayRisk.risk,
-            score: result.score,
-            reasons: result.reasons,
-            type: "Projected lineup"
-          });
-        });
-      }
-
-    } catch (err) {
-      console.log("HR target game error:", err);
-    }
+    pitchers.push({ ...awayRisk, game: `${away} vs ${home}`, targetTeam: home });
+    pitchers.push({ ...homeRisk, game: `${away} vs ${home}`, targetTeam: away });
   }
 
-  allTargets = allTargets
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
+  pitchers = pitchers.sort((a, b) => b.risk - a.risk);
 
-  hrBox.innerHTML = allTargets.map((p, i) => `
+  pitcherTargetsBox.innerHTML = pitchers.map((p, i) => `
     <div class="pick-card">
       <span class="rank-badge">#${i + 1}</span>
-      <h3>💣 ${p.name}</h3>
-      <p><strong>Team:</strong> ${p.team}</p>
+      <h3>🎯 ${p.name}</h3>
+      <p><strong>Target Bats:</strong> ${p.targetTeam}</p>
       <p><strong>Game:</strong> ${p.game}</p>
-      <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
-      <p><strong>Pitcher HR Risk:</strong> ${p.pitcherRisk}/100</p>
-      <p><strong>POPS HR Score:</strong> <span class="hr-score">${p.score}/100</span></p>
-      <p class="small">${p.type} | ${p.reasons}</p>
+      <p><strong>Risk:</strong> <span class="hr-score">${p.risk}/100</span></p>
+      <p>ERA: ${p.era} | HR/9: ${p.hr9} | HR Allowed: ${p.hrAllowed} | IP: ${p.ip}</p>
     </div>
   `).join("");
 }
 
-function buildTicker(games) {
-  tickerBox.innerHTML = games.map(game => {
-    const away = teamName(game, "away");
-    const home = teamName(game, "home");
-    return `⚾ ${away} ${teamScore(game, "away")} - ${teamScore(game, "home")} ${home} • ${gameStatus(game)}`;
-  }).join(" &nbsp; | &nbsp; ");
-}
+async function loadBatters(games) {
+  let targets = [];
 
-function buildGameCards(games) {
-  scoresBox.innerHTML = games.map(game => {
-    const away = teamName(game, "away");
-    const home = teamName(game, "home");
+  for (const game of games) {
+    const live = await API.getGame(game.gamePk);
 
-    return `
-      <div class="game-card" onclick="loadScouting(${game.gamePk})">
-        <h3>${away} vs ${home}</h3>
-        <p class="score">${teamScore(game, "away")} - ${teamScore(game, "home")}</p>
-        <p><span class="badge">${gameStatus(game)}</span></p>
-        <p><strong>Pitchers:</strong> ${probablePitcher(game, "away")} vs ${probablePitcher(game, "home")}</p>
-        <p class="small">Tap to view full POPS scouting report.</p>
-      </div>
-    `;
-  }).join("");
-}
+    const away = live.gameData.teams.away.name;
+    const home = live.gameData.teams.home.name;
 
-async function loadScouting(gamePk) {
-  scoutingBox.innerHTML = "Loading scouting report...";
+    const players = live.gameData.players || {};
+    const awayOrder = live.liveData.boxscore.teams.away.battingOrder || [];
+    const homeOrder = live.liveData.boxscore.teams.home.battingOrder || [];
 
-  try {
-    const data = await API.getGame(gamePk);
-
-    const away = data.gameData.teams.away.name;
-    const home = data.gameData.teams.home.name;
-
-    const awayPitcherObj = data.gameData.probablePitchers?.away || null;
-    const homePitcherObj = data.gameData.probablePitchers?.home || null;
+    const awayPitcherObj = live.gameData.probablePitchers?.away || null;
+    const homePitcherObj = live.gameData.probablePitchers?.home || null;
 
     const awayPitcher = awayPitcherObj?.fullName || "TBD";
     const homePitcher = homePitcherObj?.fullName || "TBD";
@@ -223,102 +96,132 @@ async function loadScouting(gamePk) {
     const awayRisk = await pitcherRisk(awayPitcher, awayPitcherObj?.id);
     const homeRisk = await pitcherRisk(homePitcher, homePitcherObj?.id);
 
-    const players = data.gameData.players || {};
-    const awayOrder = data.liveData.boxscore.teams.away.battingOrder || [];
-    const homeOrder = data.liveData.boxscore.teams.home.battingOrder || [];
+    if (awayOrder.length) {
+      awayOrder.forEach((id, index) => {
+        const player = players["ID" + id];
+        if (!player) return;
 
-    scoutingBox.innerHTML = `
-      <div class="report-card">
-        <h3>${away} vs ${home}</h3>
-        <p><strong>Starting Pitchers:</strong> ${awayPitcher} vs ${homePitcher}</p>
+        const result = Formula.getHrScore(player.fullName, index + 1, homeRisk);
 
-        <hr>
+        targets.push({
+          name: player.fullName,
+          team: away,
+          game: `${away} vs ${home}`,
+          pitcher: homePitcher,
+          score: result.score,
+          reasons: result.reasons,
+          type: "Confirmed lineup"
+        });
+      });
+    }
 
-        <h3>🎯 Pitcher HR Risk</h3>
-        ${pitcherRiskHTML(awayRisk)}
-        ${pitcherRiskHTML(homeRisk)}
+    if (homeOrder.length) {
+      homeOrder.forEach((id, index) => {
+        const player = players["ID" + id];
+        if (!player) return;
 
-        <hr>
+        const result = Formula.getHrScore(player.fullName, index + 1, awayRisk);
 
-        <h3>👥 ${away} Lineup</h3>
-        <ol>${lineupHTML(awayOrder, players)}</ol>
+        targets.push({
+          name: player.fullName,
+          team: home,
+          game: `${away} vs ${home}`,
+          pitcher: awayPitcher,
+          score: result.score,
+          reasons: result.reasons,
+          type: "Confirmed lineup"
+        });
+      });
+    }
+  }
 
-        <h3>👥 ${home} Lineup</h3>
-        <ol>${lineupHTML(homeOrder, players)}</ol>
+  if (!targets.length) {
+    battersBox.innerHTML = `
+      <div class="pick-card">
+        <h3>Waiting for official MLB lineups</h3>
+        <p>Once lineups post, POPS will automatically rank batters vs the opposing pitcher.</p>
       </div>
     `;
-
-    scoutingBox.scrollIntoView({ behavior: "smooth" });
-
-  } catch (err) {
-    console.log(err);
-    scoutingBox.innerHTML = "Error loading scouting report.";
+    return;
   }
-}
 
-function pitcherRiskHTML(p) {
-  return `
+  targets = targets.sort((a, b) => b.score - a.score).slice(0, 25);
+
+  battersBox.innerHTML = targets.map((p, i) => `
     <div class="pick-card">
-      <h3>${p.name}</h3>
-      <p><strong>Risk:</strong> ${p.risk}/100</p>
-      <p><span class="badge">${Pitchers.getTier(p.risk)}</span></p>
-      <p>ERA: ${p.era} | HR/9: ${p.hr9} | HR Allowed: ${p.hrAllowed} | IP: ${p.ip}</p>
+      <span class="rank-badge">#${i + 1}</span>
+      <h3>💣 ${p.name}</h3>
+      <p><strong>Team:</strong> ${p.team}</p>
+      <p><strong>Game:</strong> ${p.game}</p>
+      <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
+      <p><strong>POPS Score:</strong> <span class="hr-score">${p.score}/100</span></p>
+      <p class="small">${p.type} | ${p.reasons}</p>
     </div>
-  `;
+  `).join("");
 }
 
-function lineupHTML(order, players) {
-  if (!order || !order.length) return "<li>Lineup not posted yet</li>";
+function loadMoneyline(games) {
+  moneylineBox.innerHTML = games.map(game => {
+    const away = teamName(game, "away");
+    const home = teamName(game, "home");
 
-  return order.map(id => {
-    const player = players["ID" + id];
-    return `<li>${player ? player.fullName : "Unknown Player"}</li>`;
+    return `
+      <div class="pick-card">
+        <h3>💰 ${away} vs ${home}</h3>
+        <p><strong>Lean:</strong> Waiting for full model</p>
+        <p>Better Starting Pitcher ⬜</p>
+        <p>Better Bullpen ⬜</p>
+        <p>Better Offense ⬜</p>
+        <p>Better Run Support ⬜</p>
+      </div>
+    `;
   }).join("");
 }
 
-function loadLeaders() {
-  leadersBox.innerHTML = `
-    <div class="pick-card">
-      <h3>👑 POPS HR Formula</h3>
-      <p>Uses confirmed lineup spot + opposing pitcher HR risk + known power bat boost.</p>
-      <p class="small">More Statcast data will be added in the next upgrade.</p>
-    </div>
-  `;
+function loadMatchups(games) {
+  matchupsBox.innerHTML = games.map(game => {
+    const away = teamName(game, "away");
+    const home = teamName(game, "home");
+
+    return `
+      <div class="game-card">
+        <h3>${away} vs ${home}</h3>
+        <p><strong>Pitchers:</strong> ${probablePitcher(game, "away")} vs ${probablePitcher(game, "home")}</p>
+        <p class="small">Lineups auto-load once MLB posts them.</p>
+      </div>
+    `;
+  }).join("");
 }
 
 async function loadApp() {
-  scoresBox.innerHTML = "Loading games...";
-  hrBox.innerHTML = "Generating real POPS HR targets...";
-  liveHrBox.innerHTML = "Loading live home runs...";
+  pitcherTargetsBox.innerHTML = "Loading pitcher targets...";
+  battersBox.innerHTML = "Checking official MLB lineups...";
+  moneylineBox.innerHTML = "Loading moneyline model...";
+  matchupsBox.innerHTML = "Loading matchups...";
 
   try {
     const data = await API.getSchedule();
     const games = data.dates?.[0]?.games || [];
 
     if (!games.length) {
-      scoresBox.innerHTML = "No MLB games found today.";
-      hrBox.innerHTML = "No HR targets today.";
-      tickerBox.innerHTML = "No MLB games today.";
-      loadLeaders();
+      pitcherTargetsBox.innerHTML = "No MLB games today.";
+      battersBox.innerHTML = "No lineups today.";
+      moneylineBox.innerHTML = "No moneyline picks today.";
+      matchupsBox.innerHTML = "No matchups today.";
       return;
     }
 
-    buildTicker(games);
-    buildGameCards(games);
-    await buildRealHRTargets(games);
-
-    const homeRuns = await HomeRuns.collectFromGames(games);
-    HomeRuns.render(homeRuns, liveHrBox);
-
-    loadLeaders();
+    loadMatchups(games);
+    loadMoneyline(games);
+    await loadPitcherTargets(games);
+    await loadBatters(games);
 
   } catch (err) {
-    console.log("POPS error:", err);
-    scoresBox.innerHTML = "Could not load MLB games.";
-    hrBox.innerHTML = "Could not load HR targets.";
-    liveHrBox.innerHTML = "Could not load home run tracker.";
-    tickerBox.innerHTML = "API loading error.";
-    loadLeaders();
+    console.log("POPS 10.0 error:", err);
+    pitcherTargetsBox.innerHTML = "Could not load pitcher targets.";
+    battersBox.innerHTML = "Could not load batters.";
+    moneylineBox.innerHTML = "Could not load moneyline.";
+    matchupsBox.innerHTML = "Could not load matchups.";
   }
 }
 
