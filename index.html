@@ -8,56 +8,34 @@
 </head>
 <body>
 
-  <div class="overlay">
+  <div class="app">
 
     <header class="hero">
-      <div class="menu">☰</div>
-
+      <div class="live-pill">● LIVE</div>
       <h1>POPS PICKZ</h1>
-      <h2>★ MLB LIVE ★</h2>
-
-      <p class="tagline">
-        LIVE SCORES • LINEUPS • HR TRACKER • POPS HR TARGETS
-      </p>
+      <h2>MLB LIVE</h2>
+      <p>Scores • Scouting Reports • HR Targets • Pitcher Risk</p>
     </header>
 
-    <main class="main-grid">
-
-      <section class="nav-card">
-        <div class="icon">⚾</div>
-        <h3>LIVE MLB SCORES</h3>
-        <p>View all live scores</p>
-      </section>
-
-      <section class="nav-card">
-        <div class="icon">👥</div>
-        <h3>GAME SCOUTING REPORT</h3>
-        <p>Tap any game to view pitchers, lineups, and POPS HR targets.</p>
-      </section>
-
-      <section class="nav-card">
-        <div class="icon">💣</div>
-        <h3>LIVE HOME RUN TRACKER</h3>
-        <p>Track every home run in real time.</p>
-      </section>
-
-    </main>
+    <section class="dashboard">
+      <div class="dash-card">⚾<span>Live Scores</span></div>
+      <div class="dash-card">📊<span>Scouting</span></div>
+      <div class="dash-card">💣<span>HR Targets</span></div>
+    </section>
 
     <section class="content-card">
-      <h2>⚾ Live MLB Scores</h2>
-      <div id="scoresBox">Loading live scores...</div>
+      <h2>⚾ Today's MLB Games</h2>
+      <div id="scoresBox">Loading games...</div>
     </section>
 
     <section class="content-card">
       <h2>📊 Game Scouting Report</h2>
-      <div id="scoutingBox">
-        Tap any game to view details.
-      </div>
+      <div id="scoutingBox">Tap any game to view scouting report.</div>
     </section>
 
     <section class="content-card">
       <h2>💣 POPS HR Targets</h2>
-      <div id="hrBox">Loading POPS HR targets...</div>
+      <div id="hrBox">Loading HR targets...</div>
     </section>
 
   </div>
