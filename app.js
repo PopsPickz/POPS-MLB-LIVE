@@ -51,55 +51,64 @@ async function loadMLB() {
         "<p class='tap-text'>Tap to view pitchers and lineups</p>" +
         "</div>";
 
-      var liveURL =
-        "https://statsapi.mlb.com/api/v1.1/game/" +
-        gamePk +
-        "/feed/live";
+      try {
+        var liveURL =
+          "https://statsapi.mlb.com/api/v1.1/game/" +
+          gamePk +
+          "/feed/live";
 
-      var liveResponse = await fetch(liveURL);
-      var liveData = await liveResponse.json();
+        var liveResponse = await fetch(liveURL);
+        var liveData = await liveResponse.json();
 
-      var plays = liveData.liveData.plays.allPlays || [];
+        var plays =
+          liveData.liveData &&
+          liveData.liveData.plays &&
+          liveData.liveData.plays.allPlays
+            ? liveData.liveData.plays.allPlays
+            : [];
 
-      plays.forEach(function(play) {
-        if (play.result && play.result.event === "Home Run") {
-          var batter =
-            play.matchup && play.matchup.batter
-              ? play.matchup.batter.fullName
-              : "Unknown Hitter";
+        plays.forEach(function(play) {
+          if (play.result && play.result.event === "Home Run") {
+            var batter =
+              play.matchup && play.matchup.batter
+                ? play.matchup.batter.fullName
+                : "Unknown Hitter";
 
-          var pitcher =
-            play.matchup && play.matchup.pitcher
-              ? play.matchup.pitcher.fullName
-              : "Unknown Pitcher";
+            var pitcher =
+              play.matchup && play.matchup.pitcher
+                ? play.matchup.pitcher.fullName
+                : "Unknown Pitcher";
 
-          var inning = play.about.halfInning + " " + play.about.inning;
-          var description = play.result.description || "Home Run";
+            var inning = play.about.halfInning + " " + play.about.inning;
+            var description = play.result.description || "Home Run";
 
-          var distance = "N/A";
-          var exitVelo = "N/A";
+            var distance = "N/A";
+            var exitVelo = "N/A";
 
-          if (play.hitData) {
-            if (play.hitData.totalDistance) {
-              distance = play.hitData.totalDistance + " ft";
+            if (play.hitData) {
+              if (play.hitData.totalDistance) {
+                distance = play.hitData.totalDistance + " ft";
+              }
+
+              if (play.hitData.launchSpeed) {
+                exitVelo = play.hitData.launchSpeed + " mph";
+              }
             }
 
-            if (play.hitData.launchSpeed) {
-              exitVelo = play.hitData.launchSpeed + " mph";
-            }
+            homeRuns.push({
+              batter: batter,
+              pitcher: pitcher,
+              game: away + " vs " + home,
+              inning: inning,
+              description: description,
+              distance: distance,
+              exitVelo: exitVelo
+            });
           }
-
-          homeRuns.push({
-            batter: batter,
-            pitcher: pitcher,
-            game: away + " vs " + home,
-            inning: inning,
-            description: description,
-            distance: distance,
-            exitVelo: exitVelo
-          });
-        }
-      });
+        });
+      } catch (liveErr) {
+        console.log("Live feed error for game " + gamePk, liveErr);
+      }
     }
 
     if (homeRuns.length === 0) {
@@ -145,15 +154,15 @@ async function loadGameDetails(gamePk) {
     var awayPitcher = "TBD";
     var homePitcher = "TBD";
 
-    if (data.gameData.probablePitchers.away) {
+    if (data.gameData.probablePitchers && data.gameData.probablePitchers.away) {
       awayPitcher = data.gameData.probablePitchers.away.fullName;
     }
 
-    if (data.gameData.probablePitchers.home) {
+    if (data.gameData.probablePitchers && data.gameData.probablePitchers.home) {
       homePitcher = data.gameData.probablePitchers.home.fullName;
     }
 
-    var players = data.gameData.players;
+    var players = data.gameData.players || {};
 
     var awayOrder =
       data.liveData.boxscore.teams.away.battingOrder || [];
@@ -164,7 +173,7 @@ async function loadGameDetails(gamePk) {
     var awayLineup = "";
     var homeLineup = "";
 
-    awayOrder.forEach(function(playerId, index) {
+    awayOrder.forEach(function(playerId) {
       var playerKey = "ID" + playerId;
       var playerName = players[playerKey]
         ? players[playerKey].fullName
@@ -173,7 +182,7 @@ async function loadGameDetails(gamePk) {
       awayLineup += "<li>" + playerName + "</li>";
     });
 
-    homeOrder.forEach(function(playerId, index) {
+    homeOrder.forEach(function(playerId) {
       var playerKey = "ID" + playerId;
       var playerName = players[playerKey]
         ? players[playerKey].fullName
