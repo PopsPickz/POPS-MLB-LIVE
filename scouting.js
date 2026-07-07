@@ -6,6 +6,9 @@ const Scouting = {
   },
 
   async load(gamePk) {
+    if (!this.box) this.init();
+    if (!this.box) return;
+
     this.box.innerHTML = "Loading scouting report...";
 
     try {
@@ -17,11 +20,11 @@ const Scouting = {
       const awayPitcherObj = data.gameData.probablePitchers?.away || null;
       const homePitcherObj = data.gameData.probablePitchers?.home || null;
 
-      const awayPitcher = awayPitcherObj ? awayPitcherObj.fullName : "TBD";
-      const homePitcher = homePitcherObj ? homePitcherObj.fullName : "TBD";
+      const awayPitcher = awayPitcherObj?.fullName || "TBD";
+      const homePitcher = homePitcherObj?.fullName || "TBD";
 
-      const awayPitcherId = awayPitcherObj ? awayPitcherObj.id : null;
-      const homePitcherId = homePitcherObj ? homePitcherObj.id : null;
+      const awayPitcherId = awayPitcherObj?.id || null;
+      const homePitcherId = homePitcherObj?.id || null;
 
       const players = data.gameData.players || {};
       const awayOrder = data.liveData.boxscore.teams.away.battingOrder || [];
@@ -29,6 +32,18 @@ const Scouting = {
 
       const awayRisk = await this.pitcherAutoRisk(awayPitcher, awayPitcherId);
       const homeRisk = await this.pitcherAutoRisk(homePitcher, homePitcherId);
+
+      const hrTargets = await this.hrTargets(
+        awayOrder,
+        homeOrder,
+        players,
+        awayPitcher,
+        homePitcher,
+        awayRisk,
+        homeRisk,
+        awayPitcherId,
+        homePitcherId
+      );
 
       this.box.innerHTML = `
         <div class="details-card">
@@ -44,7 +59,7 @@ const Scouting = {
 
           <div class="report-section">
             <h4>💣 POPS HR Targets</h4>
-            ${this.hrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher, awayRisk, homeRisk)}
+            ${hrTargets}
           </div>
 
           <div class="report-section">
@@ -86,6 +101,7 @@ const Scouting = {
         hrAllowed: 0,
         innings: 0,
         era: "N/A",
+        whip: "N/A",
         risk: 50,
         note: "Pitcher ID not available"
       };
@@ -102,6 +118,7 @@ const Scouting = {
           hrAllowed: 0,
           innings: 0,
           era: "N/A",
+          whip: "N/A",
           risk: 50,
           note: "No season pitching stats found"
         };
@@ -111,13 +128,23 @@ const Scouting = {
       const hrAllowed = Number(stat.homeRuns || 0);
       const innings = parseFloat(stat.inningsPitched || 0);
       const era = stat.era || "N/A";
+      const whip = stat.whip || "N/A";
       const hr9 = innings > 0 ? ((hrAllowed / innings) * 9).toFixed(2) : "0.00";
 
       let risk = 55;
-      if (hr9 >= 1.80) risk = 90;
-      else if (hr9 >= 1.50) risk = 82;
-      else if (hr9 >= 1.20) risk = 74;
-      else if (hr9 >= 1.00) risk = 66;
+
+      if (Number(hr9) >= 1.80) risk += 30;
+      else if (Number(hr9) >= 1.50) risk += 24;
+      else if (Number(hr9) >= 1.20) risk += 18;
+      else if (Number(hr9) >= 1.00) risk += 12;
+
+      if (Number(era) >= 5.00) risk += 10;
+      else if (Number(era) >= 4.50) risk += 7;
+      else if (Number(era) >= 4.00) risk += 4;
+
+      if (Number(whip) >= 1.40) risk += 6;
+
+      risk = Math.min(100, risk);
 
       return {
         name: pitcherName,
@@ -125,6 +152,7 @@ const Scouting = {
         hrAllowed,
         innings,
         era,
+        whip,
         risk,
         note: "Auto-calculated from MLB season pitching stats"
       };
@@ -138,6 +166,7 @@ const Scouting = {
         hrAllowed: 0,
         innings: 0,
         era: "N/A",
+        whip: "N/A",
         risk: 50,
         note: "Unable to load pitcher stats"
       };
@@ -150,59 +179,92 @@ const Scouting = {
         <h4>🎯 Pitcher HR Risk</h4>
 
         <p><strong>${away.name}:</strong> ${away.risk}/100</p>
-        <p>ERA: ${away.era} | HR/9: ${away.hr9} | HR Allowed: ${away.hrAllowed} | IP: ${away.innings}</p>
+        <p>ERA: ${away.era} | WHIP: ${away.whip} | HR/9: ${away.hr9} | HR Allowed: ${away.hrAllowed} | IP: ${away.innings}</p>
         <p class="small-note">${away.note}</p>
 
         <hr>
 
         <p><strong>${home.name}:</strong> ${home.risk}/100</p>
-        <p>ERA: ${home.era} | HR/9: ${home.hr9} | HR Allowed: ${home.hrAllowed} | IP: ${home.innings}</p>
+        <p>ERA: ${home.era} | WHIP: ${home.whip} | HR/9: ${home.hr9} | HR Allowed: ${home.hrAllowed} | IP: ${home.innings}</p>
         <p class="small-note">${home.note}</p>
       </div>
     `;
   },
 
-  hrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher, awayRisk, homeRisk) {
+  async getBvpHR(batterId, pitcherId) {
+    if (!batterId || !pitcherId) return 0;
+
+    try {
+      const data = await API.getBatterVsPitcher(batterId, pitcherId);
+      const stat = data.stats?.[0]?.splits?.[0]?.stat;
+      return Number(stat?.homeRuns || 0);
+    } catch {
+      return 0;
+    }
+  },
+
+  async hrTargets(
+    awayOrder,
+    homeOrder,
+    players,
+    awayPitcher,
+    homePitcher,
+    awayRisk,
+    homeRisk,
+    awayPitcherId,
+    homePitcherId
+  ) {
     let targets = [];
 
-    this.addTargets(awayOrder, players, homePitcher, homeRisk, targets);
-    this.addTargets(homeOrder, players, awayPitcher, awayRisk, targets);
+    await this.addTargets(awayOrder, players, homePitcher, homeRisk, homePitcherId, targets);
+    await this.addTargets(homeOrder, players, awayPitcher, awayRisk, awayPitcherId, targets);
 
     targets = targets.sort((a, b) => b.score - a.score).slice(0, 5);
 
     if (!targets.length) {
-      return "<p>No confirmed lineup targets yet. Use the main POPS HR Targets section for projected Top 3 picks.</p>";
+      return "<p>No confirmed lineup targets yet. Main page will use projected power bats until lineups post.</p>";
     }
 
     return targets.map((t, i) => `
       <div class="pops-target">
         <h4>${i + 1}. 💣 ${t.name} vs ${t.pitcher}</h4>
         <p><strong>POPS HR Score:</strong> ${t.score}/100</p>
+        <p><strong>Previous HR vs Pitcher:</strong> ${t.bvpHR}</p>
         <p><strong>Pitcher Risk:</strong> ${t.pitcherRisk}/100</p>
         <p><strong>Why:</strong> ${t.reasons}</p>
       </div>
     `).join("");
   },
 
-  addTargets(order, players, opposingPitcher, pitcherRiskObj, targets) {
+  async addTargets(order, players, opposingPitcher, pitcherRiskObj, opposingPitcherId, targets) {
     if (!order || !order.length) return;
 
-    order.forEach((id, index) => {
+    for (let index = 0; index < order.length; index++) {
+      const id = order[index];
       const player = players["ID" + id];
-      if (!player) return;
+      if (!player) continue;
 
       const lineupSpot = index + 1;
-      const score = Math.min(100, pitcherRiskObj.risk + Math.max(0, 10 - lineupSpot) * 2);
+      const bvpHR = await this.getBvpHR(id, opposingPitcherId);
 
-      if (score >= 70) {
+      const result = Formula.getHrScore(player.fullName, lineupSpot, pitcherRiskObj, {
+        bvpHR
+      });
+
+      if (result.score >= 70 || bvpHR > 0) {
         targets.push({
           name: player.fullName,
           pitcher: opposingPitcher,
-          score,
+          score: result.score,
+          bvpHR,
           pitcherRisk: pitcherRiskObj.risk,
-          reasons: `Lineup spot ${lineupSpot} plus pitcher HR risk`
+          reasons: result.reasons
         });
       }
-    });
+    }
   }
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+  Scouting.init();
+});
