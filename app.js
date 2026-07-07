@@ -198,18 +198,29 @@ async function getHitStreak(playerId) {
 
   try {
     const data = await API.getHitterGameLog(playerId);
-    const games = data.stats?.[0]?.splits || [];
+    let games = data.stats?.[0]?.splits || [];
+
+    // Sort newest game first
+    games = games.sort((a, b) => {
+      return new Date(b.date || b.gameDate) - new Date(a.date || a.gameDate);
+    });
 
     let streak = 0;
 
     for (const game of games) {
       const hits = Number(game.stat?.hits || 0);
-      if (hits > 0) streak++;
-      else break;
+
+      if (hits > 0) {
+        streak++;
+      } else {
+        break;
+      }
     }
 
     return streak;
-  } catch {
+
+  } catch (err) {
+    console.log("Hit streak error:", err);
     return 0;
   }
 }
