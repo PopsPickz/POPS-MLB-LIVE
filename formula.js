@@ -1,38 +1,18 @@
-// ===========================
-// POPS Pickz Formula Module
-// Version 6.0
-// ===========================
-
 const Formula = {
-
   powerNames: [
-    "Judge",
-    "Ohtani",
-    "Schwarber",
-    "Alonso",
-    "Olson",
-    "Devers",
-    "Raleigh",
-    "Guerrero",
-    "Tatis",
-    "Soto",
-    "Alvarez",
-    "Marte",
-    "Carroll",
-    "Machado",
-    "Freeman",
-    "Betts",
-    "Goodman",
-    "Contreras"
+    "Judge", "Ohtani", "Schwarber", "Alonso", "Olson",
+    "Devers", "Raleigh", "Guerrero", "Tatis", "Soto",
+    "Alvarez", "Marte", "Carroll", "Machado", "Freeman",
+    "Betts", "Goodman", "Contreras"
   ],
 
   isKnownPowerBat(name) {
     return this.powerNames.some(powerName => name.includes(powerName));
   },
 
-  getLineupBoost(lineupSpot) {
-    if (lineupSpot === 3 || lineupSpot === 4) return 20;
-    if (lineupSpot >= 1 && lineupSpot <= 5) return 12;
+  getLineupBoost(spot) {
+    if (spot === 3 || spot === 4) return 20;
+    if (spot >= 1 && spot <= 5) return 12;
     return 5;
   },
 
@@ -57,11 +37,10 @@ const Formula = {
     if (score > 100) score = 100;
 
     return {
-      score: score,
-      pitcherRisk: pitcherRisk,
+      score,
+      pitcherRisk,
       pitcherTier: Pitchers.getTier(opposingPitcher),
       reasons: reasons.join(", ")
     };
   }
-
 };
