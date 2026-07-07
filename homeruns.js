@@ -13,7 +13,7 @@ const HomeRuns = {
               batter: play.matchup?.batter?.fullName || "Unknown Hitter",
               pitcher: play.matchup?.pitcher?.fullName || "Unknown Pitcher",
               game: game.teams.away.team.name + " vs " + game.teams.home.team.name,
-              inning: play.about?.halfInning + " " + play.about?.inning,
+              inning: `${play.about?.halfInning || ""} ${play.about?.inning || ""}`,
               description: play.result?.description || "Home Run",
               distance: play.hitData?.totalDistance ? play.hitData.totalDistance + " ft" : "N/A",
               exitVelo: play.hitData?.launchSpeed ? play.hitData.launchSpeed + " mph" : "N/A"
@@ -36,7 +36,7 @@ const HomeRuns = {
       box.innerHTML = `
         <div class="pick-card">
           <h3>💣 No home runs yet</h3>
-          <p class="small">Live tracker updates every 60 seconds.</p>
+          <p class="small">Live tracker updates automatically.</p>
         </div>
       `;
       return;
