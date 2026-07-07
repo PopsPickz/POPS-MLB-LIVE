@@ -1,9 +1,9 @@
 var scoresBox = document.getElementById("scoresBox");
-var lineupsBox = document.getElementById("lineupsBox");
 var hrBox = document.getElementById("hrBox");
 var gameDetailsBox = document.getElementById("gameDetailsBox");
+
 function getTodayDate() {
-return new Date().toLocaleDateString("en-CA", {
+  return new Date().toLocaleDateString("en-CA", {
     timeZone: "America/New_York"
   });
 }
@@ -11,8 +11,8 @@ return new Date().toLocaleDateString("en-CA", {
 async function loadMLB() {
   var today = getTodayDate();
 
-  scoresBox.innerHTML = "Loading games...";
-  hrBox.innerHTML = "Checking for home runs...";
+  scoresBox.innerHTML = "Loading MLB games...";
+  hrBox.innerHTML = "Checking home runs...";
 
   var scheduleURL =
     "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=" +
@@ -44,12 +44,12 @@ async function loadMLB() {
       var gamePk = game.gamePk;
 
       scoresBox.innerHTML +=
-  "<div class='game' onclick='loadGameDetails(" + gamePk + ")'>" +
-  "<h3>" + away + " vs " + home + "</h3>" +
-  "<p><strong>Score:</strong> " + awayScore + " - " + homeScore + "</p>" +
-  "<p><strong>Status:</strong> " + status + "</p>" +
-  "<p>Tap to view pitchers and lineups</p>" +
-  "</div>";
+        "<div class='game' onclick='loadGameDetails(" + gamePk + ")'>" +
+        "<h3>" + away + " vs " + home + "</h3>" +
+        "<p><strong>Score:</strong> " + awayScore + " - " + homeScore + "</p>" +
+        "<p><strong>Status:</strong> " + status + "</p>" +
+        "<p class='tap-text'>Tap to view pitchers and lineups</p>" +
+        "</div>";
 
       var liveURL =
         "https://statsapi.mlb.com/api/v1.1/game/" +
@@ -63,13 +63,15 @@ async function loadMLB() {
 
       plays.forEach(function(play) {
         if (play.result && play.result.event === "Home Run") {
-          var batter = play.matchup && play.matchup.batter
-            ? play.matchup.batter.fullName
-            : "Unknown Hitter";
+          var batter =
+            play.matchup && play.matchup.batter
+              ? play.matchup.batter.fullName
+              : "Unknown Hitter";
 
-          var pitcher = play.matchup && play.matchup.pitcher
-            ? play.matchup.pitcher.fullName
-            : "Unknown Pitcher";
+          var pitcher =
+            play.matchup && play.matchup.pitcher
+              ? play.matchup.pitcher.fullName
+              : "Unknown Pitcher";
 
           var inning = play.about.halfInning + " " + play.about.inning;
           var description = play.result.description || "Home Run";
@@ -118,18 +120,12 @@ async function loadMLB() {
           "</div>";
       });
     }
-
-    lineupsBox.innerHTML = "Official lineups coming next.";
-
   } catch (err) {
     console.log(err);
     scoresBox.innerHTML = "Error loading MLB scores.";
     hrBox.innerHTML = "Error loading home run tracker.";
   }
 }
-
-loadMLB();
-setInterval(loadMLB, 60000);
 
 async function loadGameDetails(gamePk) {
   gameDetailsBox.innerHTML = "Loading game details...";
@@ -159,8 +155,11 @@ async function loadGameDetails(gamePk) {
 
     var players = data.gameData.players;
 
-    var awayOrder = data.liveData.boxscore.teams.away.battingOrder || [];
-    var homeOrder = data.liveData.boxscore.teams.home.battingOrder || [];
+    var awayOrder =
+      data.liveData.boxscore.teams.away.battingOrder || [];
+
+    var homeOrder =
+      data.liveData.boxscore.teams.home.battingOrder || [];
 
     var awayLineup = "";
     var homeLineup = "";
@@ -171,7 +170,7 @@ async function loadGameDetails(gamePk) {
         ? players[playerKey].fullName
         : "Unknown Player";
 
-      awayLineup += "<li>" + (index + 1) + ". " + playerName + "</li>";
+      awayLineup += "<li>" + playerName + "</li>";
     });
 
     homeOrder.forEach(function(playerId, index) {
@@ -180,7 +179,7 @@ async function loadGameDetails(gamePk) {
         ? players[playerKey].fullName
         : "Unknown Player";
 
-      homeLineup += "<li>" + (index + 1) + ". " + playerName + "</li>";
+      homeLineup += "<li>" + playerName + "</li>";
     });
 
     if (awayLineup === "") {
@@ -202,7 +201,13 @@ async function loadGameDetails(gamePk) {
       "<ol>" + homeLineup + "</ol>" +
       "</div>";
 
+    gameDetailsBox.scrollIntoView({ behavior: "smooth" });
+
   } catch (err) {
+    console.log(err);
     gameDetailsBox.innerHTML = "Error loading game details.";
   }
 }
+
+loadMLB();
+setInterval(loadMLB, 60000);
