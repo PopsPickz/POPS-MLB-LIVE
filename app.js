@@ -13,6 +13,13 @@ let lastHTML = {
   games: ""
 };
 
+const MANUAL_BVP_HR = {
+  "Ketel Marte|Germán Márquez": 2,
+  "Xander Bogaerts|Zac Gallen": 1,
+  "Ty France|Zac Gallen": 1,
+  "Manny Machado|Zac Gallen": 1
+};
+
 function scrollToSection(id) {
   const section = document.getElementById(id);
   if (section) section.scrollIntoView({ behavior: "smooth" });
@@ -88,9 +95,7 @@ async function getPreviousLineup(teamId) {
       }
     });
 
-    return lineup
-      .sort((a, b) => a.order - b.order)
-      .slice(0, 9);
+    return lineup.sort((a, b) => a.order - b.order).slice(0, 9);
 
   } catch (err) {
     console.log("Previous lineup error:", err);
@@ -181,7 +186,13 @@ async function pitcherRisk(name, id) {
 
 /* ---------- BVP + HIT STREAK ---------- */
 
-async function getBatterVsPitcherHR(batterId, pitcherId) {
+async function getBatterVsPitcherHR(batterId, pitcherId, batterName = "", pitcherName = "") {
+  const manualKey = `${batterName}|${pitcherName}`;
+
+  if (MANUAL_BVP_HR[manualKey] !== undefined) {
+    return MANUAL_BVP_HR[manualKey];
+  }
+
   if (!batterId || !pitcherId) return 0;
 
   try {
@@ -200,7 +211,6 @@ async function getHitStreak(playerId) {
     const data = await API.getHitterGameLog(playerId);
     let games = data.stats?.[0]?.splits || [];
 
-    // Sort newest game first
     games = games.sort((a, b) => {
       return new Date(b.date || b.gameDate) - new Date(a.date || a.gameDate);
     });
@@ -210,17 +220,13 @@ async function getHitStreak(playerId) {
     for (const game of games) {
       const hits = Number(game.stat?.hits || 0);
 
-      if (hits > 0) {
-        streak++;
-      } else {
-        break;
-      }
+      if (hits > 0) streak++;
+      else break;
     }
 
     return streak;
 
-  } catch (err) {
-    console.log("Hit streak error:", err);
+  } catch {
     return 0;
   }
 }
@@ -230,12 +236,14 @@ async function getLineupBvpHR(liveGame, side, opposingPitcherId) {
     return "Pitcher ID not available yet.";
   }
 
+  const pitcherName =
+    liveGame.gameData.players["ID" + opposingPitcherId]?.fullName || "";
+
   const order = liveGame.liveData.boxscore.teams[side].battingOrder || [];
   const players = liveGame.gameData.players || {};
 
   let lineup = [];
 
-  // Official lineup first
   if (order.length) {
     for (const id of order) {
       const player = players["ID" + id];
@@ -248,7 +256,6 @@ async function getLineupBvpHR(liveGame, side, opposingPitcherId) {
     }
   }
 
-  // Yesterday lineup fallback
   if (!lineup.length) {
     const teamId =
       side === "home"
@@ -258,22 +265,46 @@ async function getLineupBvpHR(liveGame, side, opposingPitcherId) {
     lineup = await getPreviousLineup(teamId);
   }
 
-  if (!lineup.length) {
-    return "No lineup data available yet.";
-  }
-
   let hitters = [];
 
   for (const batter of lineup) {
-    const hr = await getBatterVsPitcherHR(batter.id, opposingPitcherId);
+    const hr = await getBatterVsPitcherHR(
+      batter.id,
+      opposingPitcherId,
+      batter.name,
+      pitcherName
+    );
 
     if (hr > 0) {
-      hitters.push(`${batter.name}: ${hr} HR`);
+      hitters.push({
+        name: batter.name,
+        hr
+      });
     }
   }
 
+  Object.keys(MANUAL_BVP_HR).forEach(key => {
+    const [batterName, manualPitcherName] = key.split("|");
+
+    if (manualPitcherName === pitcherName) {
+      const manualHR = MANUAL_BVP_HR[key];
+      const existing = hitters.find(h => h.name === batterName);
+
+      if (existing) {
+        existing.hr = Math.max(existing.hr, manualHR);
+      } else {
+        hitters.push({
+          name: batterName,
+          hr: manualHR
+        });
+      }
+    }
+  });
+
+  hitters = hitters.sort((a, b) => b.hr - a.hr);
+
   return hitters.length
-    ? hitters.join("<br>")
+    ? hitters.map(h => `${h.name}: ${h.hr} HR`).join("<br>")
     : "No previous HR found vs this pitcher.";
 }
 
@@ -370,7 +401,7 @@ async function addBatterTarget({
   type,
   targets
 }) {
-  const bvpHR = await getBatterVsPitcherHR(id, pitcherId);
+  const bvpHR = await getBatterVsPitcherHR(id, pitcherId, name, pitcher);
   const hitStreak = await getHitStreak(id);
 
   const result = Formula.getHrScore(
