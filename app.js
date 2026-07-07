@@ -7,11 +7,11 @@ const POPS_HR_V3 = {
     const home = game.teams.home.team.name;
 
     const awayTargets = this.getFallbackPowerBats(away).map(player =>
-      this.scorePlayer(player, home, game)
+      this.scorePlayer(player, home)
     );
 
     const homeTargets = this.getFallbackPowerBats(home).map(player =>
-      this.scorePlayer(player, away, game)
+      this.scorePlayer(player, away)
     );
 
     return [...awayTargets, ...homeTargets]
@@ -19,7 +19,7 @@ const POPS_HR_V3 = {
       .slice(0, 3);
   },
 
-  scorePlayer(player, opponent, game) {
+  scorePlayer(player, opponent) {
     let score = 50;
 
     if (player.hr >= 25) score += 15;
@@ -45,18 +45,27 @@ const POPS_HR_V3 = {
       team: player.team,
       opponent,
       score,
-      reason: ⁠ ${player.hr} HR | ${player.barrel}% Barrel | ${player.hardHit}% Hard Hit ⁠
+      reason: `${player.hr} HR | ${player.barrel}% Barrel | ${player.hardHit}% Hard Hit`
     };
   },
 
   getFallbackPowerBats(team) {
     const bats = {
+      "Los Angeles Dodgers": [
+        { name: "Shohei Ohtani", team, bats: "L", hr: 35, iso: .300, barrel: 18, hardHit: 55 },
+        { name: "Mookie Betts", team, bats: "R", hr: 24, iso: .240, barrel: 11, hardHit: 46 },
+        { name: "Freddie Freeman", team, bats: "L", hr: 22, iso: .220, barrel: 10, hardHit: 45 }
+      ],
+      "New York Yankees": [
+        { name: "Aaron Judge", team, bats: "R", hr: 40, iso: .320, barrel: 20, hardHit: 58 },
+        { name: "Giancarlo Stanton", team, bats: "R", hr: 28, iso: .270, barrel: 17, hardHit: 54 },
+        { name: "Cody Bellinger", team, bats: "L", hr: 20, iso: .210, barrel: 10, hardHit: 43 }
+      ],
       "Los Angeles Angels": [
         { name: "Mike Trout", team, bats: "R", hr: 20, iso: .240, barrel: 14, hardHit: 50 },
         { name: "Taylor Ward", team, bats: "R", hr: 18, iso: .220, barrel: 11, hardHit: 45 },
         { name: "Logan O'Hoppe", team, bats: "R", hr: 17, iso: .210, barrel: 10, hardHit: 44 }
       ],
-
       "Texas Rangers": [
         { name: "Corey Seager", team, bats: "L", hr: 25, iso: .260, barrel: 15, hardHit: 50 },
         { name: "Adolis García", team, bats: "R", hr: 24, iso: .250, barrel: 14, hardHit: 48 },
@@ -65,9 +74,9 @@ const POPS_HR_V3 = {
     };
 
     return bats[team] || [
-      { name: ⁠ ${team} Power Bat #1 ⁠, team, bats: "R", hr: 16, iso: .210, barrel: 10, hardHit: 44 },
-      { name: ⁠ ${team} Power Bat #2 ⁠, team, bats: "L", hr: 14, iso: .200, barrel: 9, hardHit: 42 },
-      { name: ⁠ ${team} Power Bat #3 ⁠, team, bats: "R", hr: 12, iso: .185, barrel: 8, hardHit: 40 }
+      { name: `${team} Power Bat #1`, team, bats: "R", hr: 16, iso: .210, barrel: 10, hardHit: 44 },
+      { name: `${team} Power Bat #2`, team, bats: "L", hr: 14, iso: .200, barrel: 9, hardHit: 42 },
+      { name: `${team} Power Bat #3`, team, bats: "R", hr: 12, iso: .185, barrel: 8, hardHit: 40 }
     ];
   },
 
@@ -75,14 +84,15 @@ const POPS_HR_V3 = {
     const targets = this.getTop3(game);
 
     return `
-      <div class="pops-targets">
-        <h4>💣 POPS HR Targets</h4>
+      <div>
         ${targets.map((p, i) => `
-          <p>
-            <strong>${i + 1}. ${p.name}</strong> — ${p.team}<br>
-            POPS Score: ${p.score}/100<br>
-            <small>${p.reason}</small>
-          </p>
+          <div class="pops-target">
+            <h4>${i + 1}. 💣 ${p.name}</h4>
+            <p><strong>Team:</strong> ${p.team}</p>
+            <p><strong>Opponent:</strong> ${p.opponent}</p>
+            <p><strong>POPS Score:</strong> ${p.score}/100</p>
+            <p><strong>Why:</strong> ${p.reason}</p>
+          </div>
         `).join("")}
       </div>
     `;
@@ -97,6 +107,7 @@ const POPS_HR_V3 = {
         <div class="game">
           <h3>${away} vs ${home}</h3>
           ${this.renderGameTargets(game)}
+          <p class="small-note">Projected picks update every 60 seconds.</p>
         </div>
       `;
     }).join("");
@@ -122,7 +133,7 @@ async function loadMLB() {
       const home = game.teams.home.team.name;
       const awayScore = game.teams.away.score || 0;
       const homeScore = game.teams.home.score || 0;
-      const status = game.status.detailedState;
+      const status = game.status.detailedState || "Scheduled";
       const gamePk = game.gamePk;
 
       return `
