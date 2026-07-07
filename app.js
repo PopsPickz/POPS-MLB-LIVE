@@ -221,7 +221,7 @@ async function loadGameDetails(gamePk) {
 
   "<div class='report-section'>" +
 "<h4>💣 POPS HR Targets</h4>" +
-buildAutoHrTargets(awayOrder, homeOrder, players) +
+buildAutoHrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher) +
 "</div>" +
 
   "<div class='report-section coming-soon'>" +
@@ -248,12 +248,26 @@ buildAutoHrTargets(awayOrder, homeOrder, players) +
     gameDetailsBox.innerHTML = "Error loading game details.";
   }
 }
-function buildAutoHrTargets(awayOrder, homeOrder, players) {
-  var allBatters = awayOrder.concat(homeOrder);
+function buildAutoHrTargets(awayOrder, homeOrder, players, awayPitcher, homePitcher) {
+  var allBatters = [];
+
+awayOrder.forEach(function(playerId) {
+  allBatters.push({
+    playerId: playerId,
+    opponentPitcher: homePitcher
+  });
+});
+
+homeOrder.forEach(function(playerId) {
+  allBatters.push({
+    playerId: playerId,
+    opponentPitcher: awayPitcher
+  });
+});
   var targets = [];
 
-  allBatters.forEach(function(playerId, index) {
-    var playerKey = "ID" + playerId;
+  allBatters.forEach(function(item, index) {
+  var playerKey = "ID" + item.playerId;
     var player = players[playerKey];
 
     if (!player) return;
@@ -315,7 +329,7 @@ function buildAutoHrTargets(awayOrder, homeOrder, players) {
   targets.forEach(function(target, index) {
     html +=
       "<div class='pops-target'>" +
-      "<h4>" + (index + 1) + ". 💣 " + target.name + "</h4>" +
+      "<h4>" + (index + 1) + ". 💣 " + target.name + " vs " + target.pitcher + "</h4>" +
       "<p><strong>POPS HR Score:</strong> " + target.score + "/100</p>" +
       "<p><strong>Why:</strong> " + target.reasons + "</p>" +
       "</div>";
