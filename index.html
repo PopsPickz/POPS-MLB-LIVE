@@ -8,30 +8,28 @@
 </head>
 <body>
 
-  <header class="hero">
-    <h1>POPS Pickz MLB Live</h1>
-    <p>Live Scores • Official Lineups • Home Run Tracker 💣</p>
-  </header>
+<header class="hero">
+  <h1>POPS Pickz MLB Live</h1>
+  <p>Live Scores • Lineups • HR Tracker 💣 • POPS HR Targets</p>
+</header>
 
-  <main class="container">
+<main class="container">
+  <section class="card">
+    <h2>⚾ Live MLB Scores</h2>
+    <div id="scoresBox">Loading live scores...</div>
+  </section>
 
-    <section class="card">
-      <h2>⚾ Live MLB Scores</h2>
-      <div id="scoresBox">Loading live scores...</div>
-    </section>
+  <section class="card">
+    <h2>📊 Game Scouting Report</h2>
+    <p>Tap any game to view pitchers, lineups, and POPS HR targets.</p>
+    <div id="gameDetailsBox">Select a game to view details.</div>
+  </section>
 
-    <section class="card">
-  <h2>👥 Game Lineups</h2>
-  <p>Tap any game above to view starting pitchers and batting lineups.</p>
-  <div id="gameDetailsBox">Select a game to view details.</div>
-</section>
-
-    <section class="card">
-      <h2>💣 Live Home Run Tracker</h2>
-      <div id="hrBox">Loading home runs...</div>
-    </section>
-
-  </main>
+  <section class="card">
+    <h2>💣 Live Home Run Tracker</h2>
+    <div id="hrBox">Loading home runs...</div>
+  </section>
+</main>
 
 <script src="pitchers.js"></script>
 <script src="formula.js"></script>
@@ -39,5 +37,6 @@
 <script src="homeruns.js"></script>
 <script src="scouting.js"></script>
 <script src="app.js"></script>
+
 </body>
 </html>
