@@ -83,3 +83,19 @@ body {
 .details-card h4 {
   color: gold;
 }
+.report-section {
+  background: #0b0b0b;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.report-section h4 {
+  margin-top: 0;
+  color: gold;
+}
+
+.coming-soon {
+  opacity: 0.75;
+}
