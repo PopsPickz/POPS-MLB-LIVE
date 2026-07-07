@@ -1,10 +1,4 @@
-// ===========================
-// POPS Pitcher HR Risk Database
-// Version 6.0
-// ===========================
-
 const Pitchers = {
-
   data: {
     "TBD": {
       hr9: 0,
@@ -12,7 +6,6 @@ const Pitchers = {
       hardHit: 0,
       barrel: 0,
       risk: 50,
-      tier: "Unknown",
       note: "Pitcher data not added yet"
     }
   },
@@ -33,5 +26,4 @@ const Pitchers = {
     if (risk >= 65) return "🟡 Medium HR Risk";
     return "🟢 Lower HR Risk";
   }
-
 };
