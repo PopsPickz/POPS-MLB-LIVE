@@ -200,15 +200,46 @@ async function loadGameDetails(gamePk) {
     }
 
     gameDetailsBox.innerHTML =
-      "<div class='details-card'>" +
-      "<h3>" + awayTeam + " vs " + homeTeam + "</h3>" +
-      "<p><strong>Starting Pitchers:</strong></p>" +
-      "<p>" + awayPitcher + " vs " + homePitcher + "</p>" +
-      "<h4>" + awayTeam + " Lineup</h4>" +
-      "<ol>" + awayLineup + "</ol>" +
-      "<h4>" + homeTeam + " Lineup</h4>" +
-      "<ol>" + homeLineup + "</ol>" +
-      "</div>";
+  "<div class='details-card'>" +
+  "<h3>📊 Game Scouting Report</h3>" +
+  "<h2>" + awayTeam + " vs " + homeTeam + "</h2>" +
+
+  "<div class='report-section'>" +
+  "<h4>⚾ Starting Pitchers</h4>" +
+  "<p>" + awayPitcher + " vs " + homePitcher + "</p>" +
+  "</div>" +
+
+  "<div class='report-section'>" +
+  "<h4>👥 " + awayTeam + " Lineup</h4>" +
+  "<ol>" + awayLineup + "</ol>" +
+  "</div>" +
+
+  "<div class='report-section'>" +
+  "<h4>👥 " + homeTeam + " Lineup</h4>" +
+  "<ol>" + homeLineup + "</ol>" +
+  "</div>" +
+
+  "<div class='report-section coming-soon'>" +
+  "<h4>💣 POPS HR Targets</h4>" +
+  "<p>Coming soon: top HR bats from this game.</p>" +
+  "</div>" +
+
+  "<div class='report-section coming-soon'>" +
+  "<h4>🔥 POPS Hitterz</h4>" +
+  "<p>Coming soon: best bats for hits and total bases.</p>" +
+  "</div>" +
+
+  "<div class='report-section coming-soon'>" +
+  "<h4>💰 Moneyline Edge</h4>" +
+  "<p>Coming soon: starter, bullpen, offense, defense checklist.</p>" +
+  "</div>" +
+
+  "<div class='report-section coming-soon'>" +
+  "<h4>🌦 Weather / Wind</h4>" +
+  "<p>Coming soon: park weather and HR wind direction.</p>" +
+  "</div>" +
+
+  "</div>";
 
     gameDetailsBox.scrollIntoView({ behavior: "smooth" });
 
