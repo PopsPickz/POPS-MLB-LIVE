@@ -13,7 +13,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   color: white;
   background:
-    linear-gradient(rgba(0,0,0,.7), rgba(0,0,0,.95)),
+    linear-gradient(rgba(0,0,0,.72), rgba(0,0,0,.96)),
     url("https://images.unsplash.com/photo-1566577739112-5180d4bf9390?auto=format&fit=crop&w=1600&q=80");
   background-size: cover;
   background-position: center;
@@ -22,19 +22,19 @@ body {
 
 .app {
   width: 100%;
-  max-width: 1100px;
+  max-width: 1050px;
   margin: auto;
-  padding: 18px 14px 80px;
+  padding: 16px 12px 95px;
 }
 
 .hero {
   text-align: center;
-  padding: 35px 15px;
-  margin-bottom: 18px;
+  padding: 28px 14px;
   border-radius: 24px;
-  background: rgba(0,0,0,.8);
+  background: rgba(0,0,0,.82);
   border: 1px solid #d4af37;
-  box-shadow: 0 0 25px rgba(255,215,0,.25);
+  box-shadow: 0 0 28px rgba(255,215,0,.22);
+  margin-bottom: 14px;
 }
 
 .live-badge {
@@ -45,19 +45,19 @@ body {
   border-radius: 999px;
   font-size: 13px;
   font-weight: bold;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .hero h1 {
   margin: 0;
   color: #ffd700;
-  font-size: 44px;
+  font-size: 42px;
   letter-spacing: 3px;
 }
 
 .hero h2 {
   margin: 8px 0;
-  font-size: 26px;
+  font-size: 25px;
 }
 
 .hero p {
@@ -65,42 +65,49 @@ body {
   color: #ddd;
 }
 
-.quick-grid {
+.top-tabs {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  margin-bottom: 18px;
+  margin: 14px 0;
 }
 
-.quick-grid button {
+.top-tabs button {
   border: 1px solid #d4af37;
-  border-radius: 18px;
-  padding: 20px 12px;
+  border-radius: 16px;
+  padding: 14px 10px;
   background: rgba(0,0,0,.82);
   color: #ffd700;
-  font-size: 30px;
   font-weight: bold;
+  font-size: 15px;
 }
 
-.quick-grid span {
-  display: block;
-  margin-top: 8px;
-  font-size: 15px;
+.ticker {
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 12px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  background: rgba(0,0,0,.88);
+  border: 1px solid rgba(255,215,0,.5);
+  color: #ffd700;
+  font-weight: bold;
 }
 
 .card,
 .game-card,
 .pick-card,
-.report-card {
+.report-card,
+.stat-row {
   width: 100%;
   border-radius: 20px;
-  background: rgba(0,0,0,.85);
-  border: 1px solid rgba(255,215,0,.55);
-  box-shadow: 0 0 18px rgba(255,215,0,.15);
+  background: rgba(0,0,0,.86);
+  border: 1px solid rgba(255,215,0,.52);
+  box-shadow: 0 0 18px rgba(255,215,0,.13);
 }
 
 .card {
-  padding: 18px;
+  padding: 17px;
   margin-bottom: 18px;
 }
 
@@ -132,6 +139,18 @@ body {
   color: #ffd700;
 }
 
+.red {
+  color: #ff4444;
+}
+
+.orange {
+  color: #ff9f1c;
+}
+
+.green {
+  color: #33cc66;
+}
+
 .small {
   color: #bbb;
   font-size: 13px;
@@ -146,6 +165,20 @@ body {
   color: #ffd700;
   font-size: 12px;
   font-weight: bold;
+  margin: 3px 3px 3px 0;
+}
+
+.rank-badge {
+  float: right;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.hr-score {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffd700;
 }
 
 hr {
@@ -154,8 +187,43 @@ hr {
   margin: 14px 0;
 }
 
+ol {
+  padding-left: 22px;
+}
+
+li {
+  margin-bottom: 6px;
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: rgba(0,0,0,.96);
+  border-top: 1px solid #d4af37;
+  z-index: 50;
+}
+
+.bottom-nav button {
+  padding: 10px 4px;
+  background: transparent;
+  border: 0;
+  color: #ffd700;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.bottom-nav span {
+  display: block;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
 @media (min-width: 800px) {
-  .quick-grid {
+  .top-tabs {
     grid-template-columns: repeat(4, 1fr);
   }
 }
