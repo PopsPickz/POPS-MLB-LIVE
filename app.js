@@ -406,7 +406,7 @@ async function loadPitcherTargets(games) {
     }
   }
 
-  pitchers = pitchers.sort((a, b) => b.risk - a.risk).slice(0, 10);
+  pitchers = pitchers.sort((a, b) => b.risk - a.risk);
 
   const html = pitchers.map((p, i) => `
     <div class="pick-card">
