@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>POPS Pickz 9.0</title>
+  <title>POPS Pickz 10.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,62 +11,55 @@
   <div class="app">
 
     <header class="hero">
-      <div class="live-badge">● LIVE</div>
+      <div class="live-badge">AUTO MLB DATA</div>
       <h1>POPS PICKZ</h1>
-      <h2>MLB 9.0</h2>
-      <p>Live Scores • HR Targets • Scouting • Pitcher Risk</p>
+      <h2>MLB 10.0</h2>
+      <p>Pitcher Targets • Batter Matchups • Moneyline Edges</p>
     </header>
 
     <nav class="top-tabs">
-      <button onclick="scrollToSection('hrSection')">💣 HR Picks</button>
-      <button onclick="scrollToSection('gamesSection')">⚾ Games</button>
-      <button onclick="scrollToSection('trackerSection')">📡 HR Tracker</button>
-      <button onclick="scrollToSection('leadersSection')">👑 Leaders</button>
+      <button onclick="scrollToSection('pitcherTargetsSection')">🎯 Pitchers</button>
+      <button onclick="scrollToSection('battersSection')">💣 Batters</button>
+      <button onclick="scrollToSection('moneylineSection')">💰 Moneyline</button>
+      <button onclick="scrollToSection('matchupsSection')">📊 Matchups</button>
     </nav>
 
-    <section id="tickerBox" class="ticker">
-      Loading live ticker...
+    <section id="pitcherTargetsSection" class="card">
+      <h2>🎯 Pitchers To Target</h2>
+      <p class="small">Pitchers giving up hit and home run opportunities.</p>
+      <div id="pitcherTargetsBox">Loading pitcher targets...</div>
     </section>
 
-    <section id="hrSection" class="card">
-      <h2>💣 POPS Top HR Targets</h2>
-      <div id="hrBox">Loading HR targets...</div>
+    <section id="battersSection" class="card">
+      <h2>💣 Batters We Like</h2>
+      <p class="small">Auto-ranks official lineup hitters once MLB posts lineups.</p>
+      <div id="battersBox">Waiting for MLB lineups...</div>
     </section>
 
-    <section id="gamesSection" class="card">
-      <h2>⚾ Today’s MLB Games</h2>
-      <div id="scoresBox">Loading games...</div>
+    <section id="moneylineSection" class="card">
+      <h2>💰 Moneyline Picks</h2>
+      <p class="small">Team edge model: starter, bullpen, offense, and run support.</p>
+      <div id="moneylineBox">Loading moneyline model...</div>
     </section>
 
-    <section id="scoutingSection" class="card">
-      <h2>📊 Game Scouting Report</h2>
-      <div id="scoutingBox">Tap any game to view scouting report.</div>
-    </section>
-
-    <section id="trackerSection" class="card">
-      <h2>📡 Live Home Run Tracker</h2>
-      <div id="liveHrBox">Loading home runs...</div>
-    </section>
-
-    <section id="leadersSection" class="card">
-      <h2>👑 POPS Leaders</h2>
-      <div id="leadersBox">Loading leaders...</div>
+    <section id="matchupsSection" class="card">
+      <h2>📊 Matchup Reports</h2>
+      <p class="small">Game-by-game POPS breakdown.</p>
+      <div id="matchupsBox">Loading matchups...</div>
     </section>
 
   </div>
 
   <nav class="bottom-nav">
-    <button onclick="scrollToSection('hrSection')">💣<span>HR</span></button>
-    <button onclick="scrollToSection('gamesSection')">⚾<span>Games</span></button>
-    <button onclick="scrollToSection('scoutingSection')">📊<span>Scout</span></button>
-    <button onclick="scrollToSection('trackerSection')">📡<span>Tracker</span></button>
-    <button onclick="scrollToSection('leadersSection')">👑<span>Leaders</span></button>
+    <button onclick="scrollToSection('pitcherTargetsSection')">🎯<span>Pitchers</span></button>
+    <button onclick="scrollToSection('battersSection')">💣<span>Batters</span></button>
+    <button onclick="scrollToSection('moneylineSection')">💰<span>Money</span></button>
+    <button onclick="scrollToSection('matchupsSection')">📊<span>Games</span></button>
   </nav>
 
   <script src="api.js"></script>
   <script src="formula.js"></script>
   <script src="pitchers.js"></script>
-  <script src="homeruns.js"></script>
   <script src="app.js"></script>
 
 </body>
