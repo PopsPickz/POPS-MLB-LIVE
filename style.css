@@ -1,1 +1,41 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0b0b0b;
+  color: white;
+}
 
+.hero {
+  padding: 30px 20px;
+  text-align: center;
+  background: #111;
+  border-bottom: 3px solid gold;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.hero p {
+  color: #ddd;
+}
+
+.container {
+  padding: 20px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+.card {
+  background: #181818;
+  border: 1px solid #333;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.card h2 {
+  margin-top: 0;
+  color: gold;
+}
