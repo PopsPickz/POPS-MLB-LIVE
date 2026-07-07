@@ -130,3 +130,79 @@ async function loadMLB() {
 
 loadMLB();
 setInterval(loadMLB, 60000);
+
+async function loadGameDetails(gamePk) {
+  gameDetailsBox.innerHTML = "Loading game details...";
+
+  var liveURL =
+    "https://statsapi.mlb.com/api/v1.1/game/" +
+    gamePk +
+    "/feed/live";
+
+  try {
+    var response = await fetch(liveURL);
+    var data = await response.json();
+
+    var awayTeam = data.gameData.teams.away.name;
+    var homeTeam = data.gameData.teams.home.name;
+
+    var awayPitcher = "TBD";
+    var homePitcher = "TBD";
+
+    if (data.gameData.probablePitchers.away) {
+      awayPitcher = data.gameData.probablePitchers.away.fullName;
+    }
+
+    if (data.gameData.probablePitchers.home) {
+      homePitcher = data.gameData.probablePitchers.home.fullName;
+    }
+
+    var players = data.gameData.players;
+
+    var awayOrder = data.liveData.boxscore.teams.away.battingOrder || [];
+    var homeOrder = data.liveData.boxscore.teams.home.battingOrder || [];
+
+    var awayLineup = "";
+    var homeLineup = "";
+
+    awayOrder.forEach(function(playerId, index) {
+      var playerKey = "ID" + playerId;
+      var playerName = players[playerKey]
+        ? players[playerKey].fullName
+        : "Unknown Player";
+
+      awayLineup += "<li>" + (index + 1) + ". " + playerName + "</li>";
+    });
+
+    homeOrder.forEach(function(playerId, index) {
+      var playerKey = "ID" + playerId;
+      var playerName = players[playerKey]
+        ? players[playerKey].fullName
+        : "Unknown Player";
+
+      homeLineup += "<li>" + (index + 1) + ". " + playerName + "</li>";
+    });
+
+    if (awayLineup === "") {
+      awayLineup = "<li>Lineup not posted yet</li>";
+    }
+
+    if (homeLineup === "") {
+      homeLineup = "<li>Lineup not posted yet</li>";
+    }
+
+    gameDetailsBox.innerHTML =
+      "<div class='details-card'>" +
+      "<h3>" + awayTeam + " vs " + homeTeam + "</h3>" +
+      "<p><strong>Starting Pitchers:</strong></p>" +
+      "<p>" + awayPitcher + " vs " + homePitcher + "</p>" +
+      "<h4>" + awayTeam + " Lineup</h4>" +
+      "<ol>" + awayLineup + "</ol>" +
+      "<h4>" + homeTeam + " Lineup</h4>" +
+      "<ol>" + homeLineup + "</ol>" +
+      "</div>";
+
+  } catch (err) {
+    gameDetailsBox.innerHTML = "Error loading game details.";
+  }
+}
