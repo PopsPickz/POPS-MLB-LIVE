@@ -528,13 +528,22 @@ async function loadPitcherTargets(games) {
 
       <div class="pitcher-grid">
         <div>
-          <p><strong>Previous HR vs Pitcher:</strong></p>
-          <p class="small">${p.bvp}</p>
-        </div>
+          <div class="pitcher-grid">
+  <div>
+    <p><strong>Previous HR vs Pitcher:</strong></p>
+    <p class="small">${p.bvp}</p>
+  </div>
 
-        <div>
-          <p><strong>🔥 Hot Hitters:</strong></p>
-          <p class="small">${p.hitStreaks}</p>
+  <div>
+    <p><strong>🔥 Hot Hitters:</strong></p>
+    <p class="small">${p.hitStreaks}</p>
+  </div>
+
+  <div>
+    <p><strong>HR in the Last 5 Games:</strong></p>
+    <p class="small">${p.hrLast5}</p>
+  </div>
+</div>
         </div>
 
         <div>
