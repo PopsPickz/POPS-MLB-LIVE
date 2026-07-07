@@ -2,7 +2,7 @@ const Scouting = {
   box: null,
 
   init() {
-    this.box = document.getElementById("gameDetailsBox");
+    this.box = document.getElementById("scoutingBox");
   },
 
   async load(gamePk) {
@@ -56,16 +56,6 @@ const Scouting = {
             <h4>👥 ${homeTeam} Lineup</h4>
             <ol>${this.lineup(homeOrder, players)}</ol>
           </div>
-
-          <div class="report-section coming-soon">
-            <h4>🌦 Weather / Wind</h4>
-            <p>Coming soon.</p>
-          </div>
-
-          <div class="report-section coming-soon">
-            <h4>💰 Moneyline Edge</h4>
-            <p>Coming soon.</p>
-          </div>
         </div>
       `;
 
@@ -84,7 +74,7 @@ const Scouting = {
 
     return order.map(id => {
       const player = players["ID" + id];
-      return "<li>" + (player ? player.fullName : "Unknown Player") + "</li>";
+      return `<li>${player ? player.fullName : "Unknown Player"}</li>`;
     }).join("");
   },
 
@@ -118,16 +108,12 @@ const Scouting = {
       }
 
       const stat = splits[0].stat;
-
       const hrAllowed = Number(stat.homeRuns || 0);
       const innings = parseFloat(stat.inningsPitched || 0);
       const era = stat.era || "N/A";
-
-      const hr9 =
-        innings > 0 ? ((hrAllowed / innings) * 9).toFixed(2) : "0.00";
+      const hr9 = innings > 0 ? ((hrAllowed / innings) * 9).toFixed(2) : "0.00";
 
       let risk = 55;
-
       if (hr9 >= 1.80) risk = 90;
       else if (hr9 >= 1.50) risk = 82;
       else if (hr9 >= 1.20) risk = 74;
@@ -135,11 +121,11 @@ const Scouting = {
 
       return {
         name: pitcherName,
-        hr9: hr9,
-        hrAllowed: hrAllowed,
-        innings: innings,
-        era: era,
-        risk: risk,
+        hr9,
+        hrAllowed,
+        innings,
+        era,
+        risk,
         note: "Auto-calculated from MLB season pitching stats"
       };
 
@@ -160,18 +146,18 @@ const Scouting = {
 
   pitcherRiskAuto(away, home) {
     return `
-      <div class="report-section pitcher-risk">
+      <div class="report-section">
         <h4>🎯 Pitcher HR Risk</h4>
 
         <p><strong>${away.name}:</strong> ${away.risk}/100</p>
         <p>ERA: ${away.era} | HR/9: ${away.hr9} | HR Allowed: ${away.hrAllowed} | IP: ${away.innings}</p>
-        <p>${away.note}</p>
+        <p class="small-note">${away.note}</p>
 
         <hr>
 
         <p><strong>${home.name}:</strong> ${home.risk}/100</p>
         <p>ERA: ${home.era} | HR/9: ${home.hr9} | HR Allowed: ${home.hrAllowed} | IP: ${home.innings}</p>
-        <p>${home.note}</p>
+        <p class="small-note">${home.note}</p>
       </div>
     `;
   },
@@ -185,7 +171,7 @@ const Scouting = {
     targets = targets.sort((a, b) => b.score - a.score).slice(0, 5);
 
     if (!targets.length) {
-      return "<p>No strong POPS HR targets yet. Lineups or pitcher data may not be posted.</p>";
+      return "<p>No confirmed lineup targets yet. Use the main POPS HR Targets section for projected Top 3 picks.</p>";
     }
 
     return targets.map((t, i) => `
@@ -206,15 +192,15 @@ const Scouting = {
       if (!player) return;
 
       const lineupSpot = index + 1;
-      const result = Formula.getHrScore(player.fullName, lineupSpot, pitcherRiskObj);
+      const score = Math.min(100, pitcherRiskObj.risk + Math.max(0, 10 - lineupSpot) * 2);
 
-      if (result.score >= 70) {
+      if (score >= 70) {
         targets.push({
           name: player.fullName,
           pitcher: opposingPitcher,
-          score: result.score,
+          score,
           pitcherRisk: pitcherRiskObj.risk,
-          reasons: result.reasons
+          reasons: `Lineup spot ${lineupSpot} plus pitcher HR risk`
         });
       }
     });
