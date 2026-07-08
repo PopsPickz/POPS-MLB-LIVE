@@ -64,8 +64,13 @@ const Moneyline = {
       Number(homeRisk.era || 5) * 3 +
       Number(homeRisk.whip || 1.5) * 10;
 
-    const awayStarter = awayPitcherScore < homePitcherScore;
-    const homeStarter = homePitcherScore < awayPitcherScore;
+     const awayStarter =
+     awayPitcherScore < homePitcherScore ||
+     (awayPitcherScore === homePitcherScore && awayStats.era < homeStats.era);
+
+     const homeStarter =
+     homePitcherScore < awayPitcherScore ||
+    (awayPitcherScore === homePitcherScore && homeStats.era < awayStats.era);
        
       const awayBullpen =
         awayStats.era < homeStats.era &&
