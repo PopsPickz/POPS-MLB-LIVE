@@ -641,6 +641,7 @@ const result = Formula.getHrScore(
     score: result.score,
     bvpHR,
     hitStreak,
+    batterStats,
     reasons: result.reasons,
     type
   });
