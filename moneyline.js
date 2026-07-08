@@ -52,15 +52,20 @@ const Moneyline = {
       const homeStats = await this.getTeamStats(homeId);
 
       const awayStarter =
-      Number(awayRisk.era) < Number(homeRisk.era) &&
-      Number(awayRisk.whip) < Number(homeRisk.whip);
+        Number(awayRisk.era) < Number(homeRisk.era) &&
+        Number(awayRisk.whip) < Number(homeRisk.whip);
 
       const homeStarter =
-      Number(homeRisk.era) < Number(awayRisk.era) &&
-      Number(homeRisk.whip) < Number(awayRisk.whip);
-      
-      const awayBullpen = awayStats.era < homeStats.era && awayStats.whip < homeStats.whip;
-      const homeBullpen = homeStats.era < awayStats.era && homeStats.whip < awayStats.whip;
+        Number(homeRisk.era) < Number(awayRisk.era) &&
+        Number(homeRisk.whip) < Number(awayRisk.whip);
+
+      const awayBullpen =
+        awayStats.era < homeStats.era &&
+        awayStats.whip < homeStats.whip;
+
+      const homeBullpen =
+        homeStats.era < awayStats.era &&
+        homeStats.whip < awayStats.whip;
 
       const awayOffense = awayStats.ops > homeStats.ops;
       const homeOffense = homeStats.ops > awayStats.ops;
@@ -71,32 +76,41 @@ const Moneyline = {
       let awayScore = 0;
       let homeScore = 0;
 
-      if (awayStarter) awayScore++;
-      if (homeStarter) homeScore++;
+      // Starting Pitcher = 40%
+      if (awayStarter) awayScore += 40;
+      if (homeStarter) homeScore += 40;
 
-      if (awayBullpen) awayScore++;
-      if (homeBullpen) homeScore++;
+      // Bullpen = 25%
+      if (awayBullpen) awayScore += 25;
+      if (homeBullpen) homeScore += 25;
 
-      if (awayOffense) awayScore++;
-      if (homeOffense) homeScore++;
+      // Offense = 20%
+      if (awayOffense) awayScore += 20;
+      if (homeOffense) homeScore += 20;
 
-      if (awayRunSupport) awayScore++;
-      if (homeRunSupport) homeScore++;
+      // Run Support = 10%
+      if (awayRunSupport) awayScore += 10;
+      if (homeRunSupport) homeScore += 10;
+
+      // Home Field = 5%
+      homeScore += 5;
 
       let pick = "No Clear Edge";
       let confidence = 50;
 
+      const totalScore = awayScore + homeScore;
+
       if (awayScore > homeScore) {
         pick = away;
-        confidence = 55 + (awayScore - homeScore) * 10;
+        confidence = Math.round((awayScore / totalScore) * 100);
       }
 
       if (homeScore > awayScore) {
         pick = home;
-        confidence = 55 + (homeScore - awayScore) * 10;
+        confidence = Math.round((homeScore / totalScore) * 100);
       }
 
-      confidence = Math.min(confidence, 90);
+      confidence = Math.max(50, Math.min(confidence, 90));
 
       cards.push(`
         <div class="pick-card">
