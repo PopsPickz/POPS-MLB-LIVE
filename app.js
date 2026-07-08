@@ -6,6 +6,8 @@ const moneylineBox = document.getElementById("moneylineBox");
 let firstLoad = true;
 let lastHTML = { pitchers: "", hr: "", hits: "", moneyline: "" };
 
+const playerHandCache = {};
+
 function showTab(sectionId) {
   ["pitchersSection", "hrSection", "hitsSection", "moneylineSection", "weatherSection", "scoutingSection"].forEach(id => {
     const section = document.getElementById(id);
@@ -47,6 +49,40 @@ async function fetchJSON(url) {
   return await res.json();
 }
 
+async function getPlayerHandInfo(playerId) {
+  if (!playerId) return { bats: "N/A", throws: "N/A" };
+
+  if (playerHandCache[playerId]) return playerHandCache[playerId];
+
+  try {
+    const data = await fetchJSON(`https://statsapi.mlb.com/api/v1/people/${playerId}`);
+    const person = data.people?.[0] || {};
+
+    const info = {
+      bats: person.batSide?.code || "N/A",
+      throws: person.pitchHand?.code || person.throwHand?.code || "N/A"
+    };
+
+    playerHandCache[playerId] = info;
+    return info;
+  } catch {
+    return { bats: "N/A", throws: "N/A" };
+  }
+}
+
+function hasPlatoonEdge(batterHand, pitcherHand) {
+  if (!batterHand || !pitcherHand) return false;
+
+  batterHand = batterHand.toUpperCase();
+  pitcherHand = pitcherHand.toUpperCase();
+
+  if (batterHand === "S") return true;
+  if (batterHand === "L" && pitcherHand === "R") return true;
+  if (batterHand === "R" && pitcherHand === "L") return true;
+
+  return false;
+}
+
 function yesterdayDate() {
   const d = new Date();
   d.setDate(d.getDate() - 1);
@@ -84,6 +120,7 @@ async function pitcherRisk(name, id) {
   try {
     const data = await API.getPitcherStats(id);
     const stat = data.stats?.[0]?.splits?.[0]?.stat;
+
     if (!stat) return { name, id, era: "N/A", whip: "N/A", hr9: "0.00", hrAllowed: 0, ip: 0, risk: 50 };
 
     const hrAllowed = Number(stat.homeRuns || 0);
@@ -93,6 +130,7 @@ async function pitcherRisk(name, id) {
     const hr9 = ip > 0 ? ((hrAllowed / ip) * 9).toFixed(2) : "0.00";
 
     let risk = 55;
+
     if (Number(hr9) >= 1.8) risk += 30;
     else if (Number(hr9) >= 1.5) risk += 24;
     else if (Number(hr9) >= 1.2) risk += 18;
@@ -104,7 +142,16 @@ async function pitcherRisk(name, id) {
 
     if (Number(whip) >= 1.4) risk += 6;
 
-    return { name, id, era, whip, hr9, hrAllowed, ip, risk: Math.min(100, Math.round(risk)) };
+    return {
+      name,
+      id,
+      era,
+      whip,
+      hr9,
+      hrAllowed,
+      ip,
+      risk: Math.min(100, Math.round(risk))
+    };
   } catch {
     return { name, id, era: "N/A", whip: "N/A", hr9: "0.00", hrAllowed: 0, ip: 0, risk: 50 };
   }
@@ -131,6 +178,7 @@ async function getHitStreak(playerId) {
     games = games.sort((a, b) => new Date(b.date || b.gameDate) - new Date(a.date || a.gameDate));
 
     let streak = 0;
+
     for (const game of games) {
       if (Number(game.stat?.hits || 0) > 0) streak++;
       else break;
@@ -160,7 +208,9 @@ async function getHRLast5Games(playerId) {
 }
 
 async function getBatterSeasonStats(playerId) {
-  if (!playerId) return { barrelRate: 0, hardHitRate: 0, iso: 0, seasonHR: 0, recentHR: 0 };
+  if (!playerId) {
+    return { barrelRate: 0, hardHitRate: 0, iso: 0, seasonHR: 0, recentHR: 0 };
+  }
 
   try {
     const data = await fetchJSON(`https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=season&group=hitting`);
@@ -172,7 +222,13 @@ async function getBatterSeasonStats(playerId) {
     const seasonHR = Number(stat.homeRuns || 0);
     const recentHR = await getHRLast5Games(playerId);
 
-    return { barrelRate: 0, hardHitRate: 0, iso, seasonHR, recentHR };
+    return {
+      barrelRate: 0,
+      hardHitRate: 0,
+      iso,
+      seasonHR,
+      recentHR
+    };
   } catch {
     return { barrelRate: 0, hardHitRate: 0, iso: 0, seasonHR: 0, recentHR: 0 };
   }
@@ -217,6 +273,14 @@ async function addBatterTarget({ id, name, team, game, pitcher, pitcherId, pitch
     const bvpHR = await getBatterVsPitcherHR(id, pitcherId);
     const hitStreak = await getHitStreak(id);
 
+    const batterHandInfo = await getPlayerHandInfo(id);
+    const pitcherHandInfo = await getPlayerHandInfo(pitcherId);
+
+    const batterHand = batterHandInfo.bats;
+    const pitcherHand = pitcherHandInfo.throws;
+
+    const platoonAdvantage = hasPlatoonEdge(batterHand, pitcherHand);
+
     let batterStats = await getBatterSeasonStats(id);
     batterStats = addFallbackContactStats(name, batterStats, hitStreak);
 
@@ -224,7 +288,8 @@ async function addBatterTarget({ id, name, team, game, pitcher, pitcherId, pitch
       bvpHR,
       previousHRvsPitcher: bvpHR,
       hitStreak,
-      batterStats
+      batterStats,
+      hasPlatoonAdvantage: platoonAdvantage
     });
 
     targets.push({
@@ -237,6 +302,9 @@ async function addBatterTarget({ id, name, team, game, pitcher, pitcherId, pitch
       bvpHR,
       hitStreak,
       batterStats,
+      batterHand,
+      pitcherHand,
+      platoonAdvantage,
       reasons: result.reasons,
       type
     });
@@ -273,11 +341,19 @@ async function buildBatterTargets(games) {
       const homeRisk = await pitcherRisk(homePitcher, homePitcherObj?.id);
 
       const awayLineup = awayOrder.length
-        ? awayOrder.map((id, index) => ({ id, name: players["ID" + id]?.fullName, order: index + 1 })).filter(p => p.name)
+        ? awayOrder.map((id, index) => ({
+            id,
+            name: players["ID" + id]?.fullName,
+            order: index + 1
+          })).filter(p => p.name)
         : await getPreviousLineup(awayTeamId);
 
       const homeLineup = homeOrder.length
-        ? homeOrder.map((id, index) => ({ id, name: players["ID" + id]?.fullName, order: index + 1 })).filter(p => p.name)
+        ? homeOrder.map((id, index) => ({
+            id,
+            name: players["ID" + id]?.fullName,
+            order: index + 1
+          })).filter(p => p.name)
         : await getPreviousLineup(homeTeamId);
 
       for (const batter of awayLineup) {
@@ -309,7 +385,6 @@ async function buildBatterTargets(games) {
           targets
         });
       }
-
     } catch (err) {
       console.log("Batter target error:", err);
     }
@@ -321,7 +396,9 @@ async function buildBatterTargets(games) {
 async function loadHRPicks(games) {
   let targets = await buildBatterTargets(games);
 
-  targets = targets.sort((a, b) => b.score - a.score).slice(0, 20);
+  targets = targets
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 20);
 
   const html = targets.map((p, i) => `
     <div class="pick-card">
@@ -330,6 +407,9 @@ async function loadHRPicks(games) {
       <p><strong>Team:</strong> ${p.team}</p>
       <p><strong>Game:</strong> ${p.game}</p>
       <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
+      <p><strong>Batter Hand:</strong> ${p.batterHand}</p>
+      <p><strong>Pitcher Hand:</strong> ${p.pitcherHand}</p>
+      <p><strong>Platoon Edge:</strong> ${p.platoonAdvantage ? "✅ Yes" : "❌ No"}</p>
       <p><strong>Previous HR vs Pitcher:</strong> ${p.bvpHR}</p>
       <p><strong>Hit Streak:</strong> ${p.hitStreak}+ games</p>
       <p><strong>POPS HR Score:</strong> <span class="score">${p.score}/100</span></p>
@@ -430,8 +510,8 @@ async function loadMoneyline(games) {
       if (awayBetterRunSupport) awayScore += 15;
       if (homeBetterRunSupport) homeScore += 15;
 
-      let pick = awayScore > homeScore ? away : homeScore > awayScore ? home : "No Clear Edge";
-      let confidence = pick === "No Clear Edge" ? 50 : Math.max(55, Math.min(100, Math.max(awayScore, homeScore)));
+      const pick = awayScore > homeScore ? away : homeScore > awayScore ? home : "No Clear Edge";
+      const confidence = pick === "No Clear Edge" ? 50 : Math.max(55, Math.min(100, Math.max(awayScore, homeScore)));
 
       cards.push(`
         <div class="pick-card">
