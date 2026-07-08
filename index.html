@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>POPS Pickz 6.0 Auto</title>
+  <title>POPS Pickz MLB Auto</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -11,20 +11,20 @@
   <div class="app">
 
     <header class="hero">
-      <h1>⚾ POPS Pickz 6.0 Auto</h1>
+      <h1>⚾ POPS Pickz<br>6.0 Auto</h1>
       <p>Automatic MLB Matchups • HR Pickz • Hit Pickz • Moneyline Edges</p>
     </header>
 
-    <nav class="top-nav">
+    <nav class="tabs">
       <button onclick="showTab('pitchersSection')">🎯 Pitchers</button>
       <button onclick="showTab('hrSection')">💣 HR Pickz</button>
       <button onclick="showTab('hitsSection')">🔥 Hit Pickz</button>
       <button onclick="showTab('moneylineSection')">💰 Moneyline</button>
-      <button onclick="showWeather()">🌦️ Weather</button>
+      <button onclick="showTab('weatherSection')">🌦️ Weather</button>
     </nav>
 
     <section id="pitchersSection">
-      <h2>🎯 Today's Pitchers To Target</h2>
+      <h2>🎯 Pitchers To Target</h2>
       <div id="pitcherTargetsBox">Loading pitcher targets...</div>
     </section>
 
@@ -36,7 +36,7 @@
     <section id="hitsSection">
       <h2>🔥 POPS Hit Pickz</h2>
       <p class="section-note">
-        Hitters with a previous HR vs today’s pitcher or a 2+ game hit streak.
+        Hitters with a 2+ game hit streak or previous HR vs today’s pitcher.
       </p>
       <div id="hitPicksBox">Loading hit picks...</div>
     </section>
@@ -45,15 +45,13 @@
       <h2>💰 POPS Moneyline Model</h2>
       <div id="moneylineBox">Loading moneyline edges...</div>
     </section>
+
     <section id="weatherSection">
+      <h2>🌦️ POPS Weather Report</h2>
+      <div id="weatherBox">Loading weather...</div>
+    </section>
 
-    <h2>🌦️ POPS Weather Report</h2>
-
-    <div id="weatherBox">
-        Loading weather...
-    </div>
-
-</section>    <section id="scoutingSection">
+    <section id="scoutingSection">
       <h2>🔎 Scouting Report</h2>
       <div id="scoutingBox">
         Tap a pitcher card to load the scouting report.
@@ -63,13 +61,13 @@
   </div>
 
   <script src="api.js"></script>
-  <script src="formula.js"></script>
+  <script src="formula.js?v=3"></script>
   <script src="pitchers.js"></script>
   <script src="homeruns.js"></script>
   <script src="hits.js"></script>
   <script src="moneyline.js"></script>
   <script src="scouting.js"></script>
-  <script src="weather.js"></script>  
+  <script src="weather.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
