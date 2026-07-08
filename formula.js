@@ -55,7 +55,8 @@ const Formula = {
   else if (recentHR >= 1) score += 1;
 
   return Math.min(score, 25);
-},  getHrScore(playerName, lineupSpot, pitcherRisk = {}, extras = {}) {
+},  
+  getHrScore(playerName, lineupSpot, pitcherRisk = {}, extras = {}) {
   let score = 0;
   let reasons = [];
 
@@ -64,66 +65,57 @@ const Formula = {
   const era = Number(pitcherRisk.era || 0);
   const whip = Number(pitcherRisk.whip || 0);
 
-  // 1. Pitching matchup — max 25
-  let matchupScore = 0;
+  // 1. Batter Power — max 25
+  let batterPower = this.getBatterStatScore(extras.batterStats || {});
+  if (this.isKnownPowerBat(playerName)) batterPower += 5;
+  batterPower = Math.min(batterPower, 25);
+  score += batterPower;
+  reasons.push(`Batter Power ${batterPower}/25`);
 
-  if (era >= 5) matchupScore += 10;
-  else if (era >= 4.25) matchupScore += 7;
-  else if (era >= 3.75) matchupScore += 4;
+  // 2. Pitcher HR Risk — max 25
+  let pitcherHRRisk = Math.round(risk * 0.18);
+  if (hr9 >= 1.8) pitcherHRRisk += 7;
+  else if (hr9 >= 1.3) pitcherHRRisk += 5;
+  else if (hr9 >= 1.0) pitcherHRRisk += 3;
+  pitcherHRRisk = Math.min(pitcherHRRisk, 25);
+  score += pitcherHRRisk;
+  reasons.push(`Pitcher HR Risk ${pitcherHRRisk}/25`);
 
-  if (whip >= 1.45) matchupScore += 10;
-  else if (whip >= 1.30) matchupScore += 7;
-  else if (whip >= 1.20) matchupScore += 4;
+  // 3. Pitching Matchup — max 15
+  let matchup = 0;
+  if (era >= 5) matchup += 6;
+  else if (era >= 4.25) matchup += 4;
+  else if (era >= 3.75) matchup += 2;
 
-  if (lineupSpot >= 1 && lineupSpot <= 5) matchupScore += 5;
+  if (whip >= 1.45) matchup += 6;
+  else if (whip >= 1.30) matchup += 4;
+  else if (whip >= 1.20) matchup += 2;
 
-  matchupScore = Math.min(matchupScore, 25);
-  score += matchupScore;
-  reasons.push(`Pitching matchup ${matchupScore}/25`);
+  if (lineupSpot >= 1 && lineupSpot <= 5) matchup += 3;
 
-  // 2. Pitcher HR risk — max 25
-  let pitcherHRScore = Math.round(risk * 0.18);
+  matchup = Math.min(matchup, 15);
+  score += matchup;
+  reasons.push(`Pitching Matchup ${matchup}/15`);
 
-  if (hr9 >= 1.8) pitcherHRScore += 7;
-  else if (hr9 >= 1.3) pitcherHRScore += 5;
-  else if (hr9 >= 1.0) pitcherHRScore += 3;
+  // 4. Previous HR vs Pitcher — max 10
+  let bvp = Math.min(Number(extras.bvpHR || 0) * 5, 10);
+  score += bvp;
+  reasons.push(`Previous HR vs Pitcher ${bvp}/10`);
 
-  pitcherHRScore = Math.min(pitcherHRScore, 25);
-  score += pitcherHRScore;
-  reasons.push(`Pitcher HR risk ${pitcherHRScore}/25`);
+  // 5. Hit Streak — max 10
+  let streak = Math.min(Number(extras.hitStreak || 0) * 2, 10);
+  score += streak;
+  reasons.push(`Hit Streak ${streak}/10`);
 
-  // 3. Weather — max 15
-  let weatherScore = Number(extras.weatherScore || extras.weatherBoost || 0);
-  weatherScore = Math.min(weatherScore, 15);
-  score += weatherScore;
+  // 6. Weather — max 10
+  let weather = Math.min(Number(extras.weatherScore || 0), 10);
+  score += weather;
+  reasons.push(`Weather ${weather}/10`);
 
-  if (weatherScore >= 10) reasons.push(`Weather boost ${weatherScore}/15`);
-  else if (weatherScore > 0) reasons.push(`Small weather edge ${weatherScore}/15`);
-
- // 4. Batter power/form — max 25
-let batterScore = this.getBatterStatScore(extras.batterStats || {});
-
-if (this.isKnownPowerBat(playerName)) {
-  batterScore += 3;
-  reasons.push("Known power bat");
-}
-
-if (Number(extras.hitStreak || 0) >= 2) {
-  batterScore += Math.min(Number(extras.hitStreak), 4);
-  reasons.push(`${extras.hitStreak}+ game hit streak`);
-}
-
-batterScore = Math.min(batterScore, 25);
-score += batterScore;
-reasons.push(`Batter stats ${batterScore}/25`);
-
-  // 5. Previous HR vs pitcher — max 10
-  let bvpScore = Math.min(Number(extras.bvpHR || 0) * 5, 10);
-  score += bvpScore;
-
-  if (bvpScore > 0) {
-    reasons.push(`Previous HR vs pitcher ${bvpScore}/10`);
-  }
+  // 7. Ballpark — max 5
+  let ballpark = Math.min(Number(extras.ballparkScore || 0), 5);
+  score += ballpark;
+  reasons.push(`Ballpark ${ballpark}/5`);
 
   score = Math.max(0, Math.min(100, Math.round(score)));
 
@@ -131,6 +123,7 @@ reasons.push(`Batter stats ${batterScore}/25`);
     score,
     reasons: reasons.join(" | ")
   };
+},
 },
   getHitScore(player = {}) {
     let score = 50;
