@@ -697,8 +697,10 @@ async function buildBatterTargets(games) {
       
       const stadium = live.gameData.venue?.name || "";
       let gameWeatherScore = 0;
-
+      
+      const gameBallparkScore = getBallparkScore(stadium);      
       if (typeof fetchStadiumWeather === "function") {
+        
       const weather = await fetchStadiumWeather(stadium);
       gameWeatherScore = weather?.weatherScore || 0;
      }    
