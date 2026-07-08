@@ -125,36 +125,64 @@ const Formula = {
   };
 },
   getHitScore(player = {}) {
-    let score = 50;
-    let reasons = [];
+  let score = 0;
+  let reasons = [];
 
-    const hitStreak = Number(player.hitStreak || 0);
-    const bvpHR = Number(player.bvpHR || 0);
-    const hrScore = Number(player.score || 50);
+  const hitStreak = Number(player.hitStreak || 0);
+  const bvpHR = Number(player.bvpHR || 0);
+  const hrScore = Number(player.score || 0);
+  const weatherScore = Number(player.weatherScore || 0);
+  const ballparkScore = Number(player.ballparkScore || 0);
 
-    if (hitStreak >= 2) {
-      score += Math.min(hitStreak * 7, 28);
-      reasons.push(`${hitStreak}+ game hit streak`);
-    }
+  // 1. Recent hit streak — max 25
+  let streakScore = Math.min(hitStreak * 5, 25);
+  score += streakScore;
+  reasons.push(`Hit Streak ${streakScore}/25`);
 
-    if (bvpHR > 0) {
-      score += Math.min(bvpHR * 8, 18);
-      reasons.push("Previous HR vs pitcher");
-    }
+  // 2. Pitcher matchup from HR score — max 25
+  let matchupScore = Math.min(Math.round(hrScore * 0.25), 25);
+  score += matchupScore;
+  reasons.push(`Pitcher Matchup ${matchupScore}/25`);
 
-    score += Math.min(Math.round(hrScore * 0.12), 12);
+  // 3. Previous success vs pitcher — max 15
+  let bvpScore = Math.min(bvpHR * 7, 15);
+  score += bvpScore;
+  reasons.push(`BvP Edge ${bvpScore}/15`);
 
-    if (player.type) {
-      reasons.push(player.type);
-    }
+  // 4. Batter quality — max 20
+  let batterQuality = 0;
 
-    score = Math.max(0, Math.min(100, Math.round(score)));
+  const stats = player.batterStats || {};
+  const iso = Number(stats.iso || 0);
+  const seasonHR = Number(stats.seasonHR || 0);
+  const recentHR = Number(stats.recentHR || 0);
 
-    return {
-      score,
-      reasons: reasons.join(" | ")
-    };
-  },
+  if (this.isKnownPowerBat(player.name)) batterQuality += 8;
+  if (iso >= .250) batterQuality += 5;
+  else if (iso >= .180) batterQuality += 3;
+
+  if (seasonHR >= 20) batterQuality += 4;
+  else if (seasonHR >= 10) batterQuality += 2;
+
+  if (recentHR >= 2) batterQuality += 3;
+  else if (recentHR >= 1) batterQuality += 1;
+
+  batterQuality = Math.min(batterQuality, 20);
+  score += batterQuality;
+  reasons.push(`Batter Quality ${batterQuality}/20`);
+
+  // 5. Weather + Ballpark — max 15
+  let environment = Math.min(weatherScore + ballparkScore, 15);
+  score += environment;
+  reasons.push(`Weather/Ballpark ${environment}/15`);
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  return {
+    score,
+    reasons: reasons.join(" | ")
+  };
+},
 
   getProjectedPowerBats(teamName) {
     const bats = {
