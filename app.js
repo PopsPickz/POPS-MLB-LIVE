@@ -660,7 +660,15 @@ async function buildBatterTargets(games) {
       const away = live.gameData.teams.away.name;
       const home = live.gameData.teams.home.name;
       const gameName = `${away} vs ${home}`;
+      
+      const stadium = live.gameData.venue?.name || "";
+      let gameWeatherScore = 0;
 
+      if (typeof fetchStadiumWeather === "function") {
+      const weather = await fetchStadiumWeather(stadium);
+      gameWeatherScore = weather?.weatherScore || 0;
+     }    
+      
       const awayTeamId = live.gameData.teams.away.id;
       const homeTeamId = live.gameData.teams.home.id;
 
