@@ -114,7 +114,8 @@ async function showWeather() {
         <p>🌡️ Temp: <strong>${weather.temp}°F</strong></p>
         <p>💨 Wind: <strong>${weather.wind} MPH ${weather.arrow}</strong></p>
         <p>🌧️ Rain Chance: <strong>${weather.rain}%</strong></p>
-      </div>
+        <p>💣 HR Weather Score: <strong>${weather.weatherScore}/15</strong></p>    
+        </div>
     `;
   }
 
