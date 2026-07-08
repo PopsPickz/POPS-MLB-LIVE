@@ -676,6 +676,7 @@ async function addBatterTarget({
       hitStreak,
       batterStats,
       weatherScore,
+      ballparkScore,
       reasons: result.reasons,
       type
     });
