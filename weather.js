@@ -64,12 +64,23 @@ async function fetchStadiumWeather(stadium) {
 
   const hour = new Date().getHours();
 
-  return {
-    temp: Math.round(data.hourly.temperature_2m[hour]),
-    rain: data.hourly.precipitation_probability[hour],
-    wind: Math.round(data.hourly.wind_speed_10m[hour]),
-    arrow: windArrow(data.hourly.wind_direction_10m[hour])
-  };
+  const temp = Math.round(data.hourly.temperature_2m[hour]);
+  const rain = data.hourly.precipitation_probability[hour];
+  const wind = Math.round(data.hourly.wind_speed_10m[hour]);
+  const direction = data.hourly.wind_direction_10m[hour];
+
+  const weather = {
+   temp,
+   rain,
+   wind,
+   direction,
+   arrow: windArrow(direction),
+   windType: "neutral"
+ };
+
+weather.weatherScore = getWeatherScore(weather);
+
+return weather;
 }
 
 async function showWeather() {
