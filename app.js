@@ -20,6 +20,25 @@ const MANUAL_BVP_HR = {
   "Manny Machado|Zac Gallen": 1
 };
 
+const BALLPARK_HR_SCORE = {
+  "Coors Field": 5,
+  "Great American Ball Park": 5,
+  "Yankee Stadium": 4,
+  "Citizens Bank Park": 4,
+  "Wrigley Field": 4,
+  "Camden Yards": 4,
+  "Dodger Stadium": 3,
+  "Fenway Park": 3,
+  "Truist Park": 3,
+  "Citi Field": 2,
+  "Comerica Park": 2,
+  "Oracle Park": 1,
+  "Petco Park": 1
+};
+
+function getBallparkScore(stadiumName = "") {
+  return BALLPARK_HR_SCORE[stadiumName] || 0;
+}
 function showTab(sectionId) {
   const sections = [
     "pitchersSection",
