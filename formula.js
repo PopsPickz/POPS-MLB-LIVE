@@ -23,7 +23,39 @@ const Formula = {
     return 4;
   },
 
-  getHrScore(playerName, lineupSpot, pitcherRisk = {}, extras = {}) {
+  getBatterStatScore(stats = {}) {
+  let score = 0;
+
+  const barrel = Number(stats.barrelRate || 0);
+  const hardHit = Number(stats.hardHitRate || 0);
+  const iso = Number(stats.iso || 0);
+  const avgEV = Number(stats.avgExitVelocity || 0);
+  const seasonHR = Number(stats.seasonHR || 0);
+  const recentHR = Number(stats.recentHR || 0);
+
+  if (barrel >= 15) score += 7;
+  else if (barrel >= 11) score += 5;
+  else if (barrel >= 8) score += 3;
+
+  if (hardHit >= 50) score += 5;
+  else if (hardHit >= 45) score += 4;
+  else if (hardHit >= 40) score += 2;
+
+  if (iso >= .260) score += 5;
+  else if (iso >= .220) score += 4;
+  else if (iso >= .180) score += 2;
+
+  if (avgEV >= 92) score += 3;
+  else if (avgEV >= 90) score += 2;
+
+  if (seasonHR >= 25) score += 3;
+  else if (seasonHR >= 15) score += 2;
+
+  if (recentHR >= 3) score += 2;
+  else if (recentHR >= 1) score += 1;
+
+  return Math.min(score, 25);
+},  getHrScore(playerName, lineupSpot, pitcherRisk = {}, extras = {}) {
   let score = 0;
   let reasons = [];
 
@@ -68,25 +100,22 @@ const Formula = {
   if (weatherScore >= 10) reasons.push(`Weather boost ${weatherScore}/15`);
   else if (weatherScore > 0) reasons.push(`Small weather edge ${weatherScore}/15`);
 
-  // 4. Batter power/form — max 25
-  let batterScore = 0;
+ // 4. Batter power/form — max 25
+let batterScore = this.getBatterStatScore(extras.batterStats || {});
 
-  const lineupBoost = this.getLineupBoost(lineupSpot);
-  batterScore += Math.min(lineupBoost, 12);
+if (this.isKnownPowerBat(playerName)) {
+  batterScore += 3;
+  reasons.push("Known power bat");
+}
 
-  if (this.isKnownPowerBat(playerName)) {
-    batterScore += 10;
-    reasons.push("Known power bat");
-  }
+if (Number(extras.hitStreak || 0) >= 2) {
+  batterScore += Math.min(Number(extras.hitStreak), 4);
+  reasons.push(`${extras.hitStreak}+ game hit streak`);
+}
 
-  if (Number(extras.hitStreak || 0) >= 2) {
-    batterScore += Math.min(Number(extras.hitStreak), 8);
-    reasons.push(`${extras.hitStreak}+ game hit streak`);
-  }
-
-  batterScore = Math.min(batterScore, 25);
-  score += batterScore;
-  reasons.push(`Batter score ${batterScore}/25`);
+batterScore = Math.min(batterScore, 25);
+score += batterScore;
+reasons.push(`Batter stats ${batterScore}/25`);
 
   // 5. Previous HR vs pitcher — max 10
   let bvpScore = Math.min(Number(extras.bvpHR || 0) * 5, 10);
