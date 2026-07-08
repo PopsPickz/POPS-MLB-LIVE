@@ -24,79 +24,85 @@ const Formula = {
   },
 
   getHrScore(playerName, lineupSpot, pitcherRisk = {}, extras = {}) {
-    let score = 40;
-    let reasons = [];
+  let score = 0;
+  let reasons = [];
 
-    const risk = Number(pitcherRisk.risk || 50);
-    const hr9 = Number(pitcherRisk.hr9 || 0);
-    const era = Number(pitcherRisk.era || 0);
-    const whip = Number(pitcherRisk.whip || 0);
+  const risk = Number(pitcherRisk.risk || 50);
+  const hr9 = Number(pitcherRisk.hr9 || 0);
+  const era = Number(pitcherRisk.era || 0);
+  const whip = Number(pitcherRisk.whip || 0);
 
-    score += Math.round(risk * 0.28);
-    reasons.push(`Pitcher HR Risk ${risk}/100`);
+  // 1. Pitching matchup — max 25
+  let matchupScore = 0;
 
-    if (hr9 >= 1.8) {
-      score += 12;
-      reasons.push("Pitcher gives up HRs");
-    } else if (hr9 >= 1.3) {
-      score += 8;
-      reasons.push("Elevated HR/9");
-    }
+  if (era >= 5) matchupScore += 10;
+  else if (era >= 4.25) matchupScore += 7;
+  else if (era >= 3.75) matchupScore += 4;
 
-    if (era >= 5) {
-      score += 6;
-      reasons.push("High ERA matchup");
-    }
+  if (whip >= 1.45) matchupScore += 10;
+  else if (whip >= 1.30) matchupScore += 7;
+  else if (whip >= 1.20) matchupScore += 4;
 
-    if (whip >= 1.4) {
-      score += 5;
-      reasons.push("Traffic on bases");
-    }
+  if (lineupSpot >= 1 && lineupSpot <= 5) matchupScore += 5;
 
-    const lineupBoost = this.getLineupBoost(lineupSpot);
-    score += lineupBoost;
+  matchupScore = Math.min(matchupScore, 25);
+  score += matchupScore;
+  reasons.push(`Pitching matchup ${matchupScore}/25`);
 
-    if (lineupSpot === 3 || lineupSpot === 4) {
-      reasons.push("Prime power lineup spot");
-    } else if (lineupSpot >= 1 && lineupSpot <= 5) {
-      reasons.push("Top 5 lineup spot");
-    } else {
-      reasons.push("Lineup spot boost");
-    }
+  // 2. Pitcher HR risk — max 25
+  let pitcherHRScore = Math.round(risk * 0.18);
 
-    if (this.isKnownPowerBat(playerName)) {
-      score += 16;
-      reasons.push("Known power bat");
-    }
+  if (hr9 >= 1.8) pitcherHRScore += 7;
+  else if (hr9 >= 1.3) pitcherHRScore += 5;
+  else if (hr9 >= 1.0) pitcherHRScore += 3;
 
-    if (Number(extras.bvpHR || 0) > 0) {
-      score += Math.min(Number(extras.bvpHR) * 5, 15);
-      reasons.push("Previous HR vs pitcher");
-    }
+  pitcherHRScore = Math.min(pitcherHRScore, 25);
+  score += pitcherHRScore;
+  reasons.push(`Pitcher HR risk ${pitcherHRScore}/25`);
 
-    if (Number(extras.hitStreak || 0) >= 2) {
-      score += Math.min(Number(extras.hitStreak) * 2, 10);
-      reasons.push(`${extras.hitStreak}+ game hit streak`);
-    }
+  // 3. Weather — max 15
+  let weatherScore = Number(extras.weatherScore || extras.weatherBoost || 0);
+  weatherScore = Math.min(weatherScore, 15);
+  score += weatherScore;
 
-    if (extras.weatherBoost) {
-      score += Number(extras.weatherBoost);
-      reasons.push("Weather boost");
-    }
+  if (weatherScore >= 10) reasons.push(`Weather boost ${weatherScore}/15`);
+  else if (weatherScore > 0) reasons.push(`Small weather edge ${weatherScore}/15`);
 
-    if (extras.ballparkBoost) {
-      score += Number(extras.ballparkBoost);
-      reasons.push("Ballpark boost");
-    }
+  // 4. Batter power/form — max 25
+  let batterScore = 0;
 
-    score = Math.max(0, Math.min(100, Math.round(score)));
+  const lineupBoost = this.getLineupBoost(lineupSpot);
+  batterScore += Math.min(lineupBoost, 12);
 
-    return {
-      score,
-      reasons: reasons.join(" | ")
-    };
-  },
+  if (this.isKnownPowerBat(playerName)) {
+    batterScore += 10;
+    reasons.push("Known power bat");
+  }
 
+  if (Number(extras.hitStreak || 0) >= 2) {
+    batterScore += Math.min(Number(extras.hitStreak), 8);
+    reasons.push(`${extras.hitStreak}+ game hit streak`);
+  }
+
+  batterScore = Math.min(batterScore, 25);
+  score += batterScore;
+  reasons.push(`Batter score ${batterScore}/25`);
+
+  // 5. Previous HR vs pitcher — max 10
+  let bvpScore = Math.min(Number(extras.bvpHR || 0) * 5, 10);
+  score += bvpScore;
+
+  if (bvpScore > 0) {
+    reasons.push(`Previous HR vs pitcher ${bvpScore}/10`);
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  return {
+    score,
+    reasons: reasons.join(" | ")
+  };
+},
   getHitScore(player = {}) {
     let score = 50;
     let reasons = [];
