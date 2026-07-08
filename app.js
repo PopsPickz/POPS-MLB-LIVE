@@ -43,6 +43,18 @@ function probablePitcherId(game, side) {
   return game.teams?.[side]?.probablePitcher?.id || null;
 }
 
+function gameDateTime(game) {
+  if (!game.gameDate) return "Time TBD";
+
+  return new Date(game.gameDate).toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
 async function fetchJSON(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error("Fetch failed: " + url);
@@ -51,7 +63,6 @@ async function fetchJSON(url) {
 
 async function getPlayerHandInfo(playerId) {
   if (!playerId) return { bats: "N/A", throws: "N/A" };
-
   if (playerHandCache[playerId]) return playerHandCache[playerId];
 
   try {
@@ -268,7 +279,7 @@ function addFallbackContactStats(name, batterStats, hitStreak) {
   return batterStats;
 }
 
-async function addBatterTarget({ id, name, team, game, pitcher, pitcherId, pitcherRiskObj, lineupSpot, type, targets }) {
+async function addBatterTarget({ id, name, team, game, gameTime, pitcher, pitcherId, pitcherRiskObj, lineupSpot, type, targets }) {
   try {
     const bvpHR = await getBatterVsPitcherHR(id, pitcherId);
     const hitStreak = await getHitStreak(id);
@@ -278,7 +289,6 @@ async function addBatterTarget({ id, name, team, game, pitcher, pitcherId, pitch
 
     const batterHand = batterHandInfo.bats;
     const pitcherHand = pitcherHandInfo.throws;
-
     const platoonAdvantage = hasPlatoonEdge(batterHand, pitcherHand);
 
     let batterStats = await getBatterSeasonStats(id);
@@ -297,6 +307,7 @@ async function addBatterTarget({ id, name, team, game, pitcher, pitcherId, pitch
       name,
       team,
       game,
+      gameTime,
       pitcher,
       score: result.score,
       bvpHR,
@@ -323,6 +334,7 @@ async function buildBatterTargets(games) {
       const away = live.gameData.teams.away.name;
       const home = live.gameData.teams.home.name;
       const gameName = `${away} vs ${home}`;
+      const gameTime = gameDateTime(game);
 
       const awayTeamId = live.gameData.teams.away.id;
       const homeTeamId = live.gameData.teams.home.id;
@@ -362,6 +374,7 @@ async function buildBatterTargets(games) {
           name: batter.name,
           team: away,
           game: gameName,
+          gameTime,
           pitcher: homePitcher,
           pitcherId: homePitcherObj?.id,
           pitcherRiskObj: homeRisk,
@@ -377,6 +390,7 @@ async function buildBatterTargets(games) {
           name: batter.name,
           team: home,
           game: gameName,
+          gameTime,
           pitcher: awayPitcher,
           pitcherId: awayPitcherObj?.id,
           pitcherRiskObj: awayRisk,
@@ -406,6 +420,7 @@ async function loadHRPicks(games) {
       <h3>💣 ${p.name}</h3>
       <p><strong>Team:</strong> ${p.team}</p>
       <p><strong>Game:</strong> ${p.game}</p>
+      <p><strong>Date/Time:</strong> ${p.gameTime}</p>
       <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
       <p><strong>Batter Hand:</strong> ${p.batterHand}</p>
       <p><strong>Pitcher Hand:</strong> ${p.pitcherHand}</p>
@@ -444,6 +459,7 @@ async function loadHitPicks(games) {
       <h3>🔥 ${p.name}</h3>
       <p><strong>Team:</strong> ${p.team}</p>
       <p><strong>Game:</strong> ${p.game}</p>
+      <p><strong>Date/Time:</strong> ${p.gameTime}</p>
       <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
       <p><strong>Hit Streak:</strong> ${p.hitStreak}+ games</p>
       <p><strong>Previous HR vs Pitcher:</strong> ${p.bvpHR}</p>
@@ -479,6 +495,7 @@ async function loadMoneyline(games) {
     try {
       const away = teamName(game, "away");
       const home = teamName(game, "home");
+      const time = gameDateTime(game);
 
       const awayStats = await getTeamStats(teamId(game, "away"));
       const homeStats = await getTeamStats(teamId(game, "home"));
@@ -516,6 +533,7 @@ async function loadMoneyline(games) {
       cards.push(`
         <div class="pick-card">
           <h3>💰 ${away} vs ${home}</h3>
+          <p><strong>Date/Time:</strong> ${time}</p>
           <p><strong>POPS Moneyline Pick:</strong> <span class="green">${pick}</span></p>
           <p><strong>Confidence:</strong> <span class="score">${confidence}%</span></p>
           <hr>
