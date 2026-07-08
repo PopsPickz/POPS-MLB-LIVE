@@ -124,7 +124,6 @@ const Formula = {
     reasons: reasons.join(" | ")
   };
 },
-},
   getHitScore(player = {}) {
     let score = 50;
     let reasons = [];
