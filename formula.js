@@ -65,38 +65,44 @@ const Formula = {
   const era = Number(pitcherRisk.era || 0);
   const whip = Number(pitcherRisk.whip || 0);
 
-  // 1. Batter Power — max 25
-  let batterPower = this.getBatterStatScore(extras.batterStats || {});
-  if (this.isKnownPowerBat(playerName)) batterPower += 5;
-  batterPower = Math.min(batterPower, 25);
-  score += batterPower;
-  reasons.push(`Batter Power ${batterPower}/25`);
+  // 1. Batter Power — max 30
+let batterPower = this.getBatterStatScore(extras.batterStats || {});
 
-  // 2. Pitcher HR Risk — max 25
-  let pitcherHRRisk = Math.round(risk * 0.18);
-  if (hr9 >= 1.8) pitcherHRRisk += 7;
-  else if (hr9 >= 1.3) pitcherHRRisk += 5;
-  else if (hr9 >= 1.0) pitcherHRRisk += 3;
-  pitcherHRRisk = Math.min(pitcherHRRisk, 25);
-  score += pitcherHRRisk;
-  reasons.push(`Pitcher HR Risk ${pitcherHRRisk}/25`);
+if (this.isKnownPowerBat(playerName)) {
+  batterPower += 5;
+}
 
-  // 3. Pitching Matchup — max 15
-  let matchup = 0;
-  if (era >= 5) matchup += 6;
-  else if (era >= 4.25) matchup += 4;
-  else if (era >= 3.75) matchup += 2;
+batterPower = Math.min(batterPower, 30);
+score += batterPower;
+reasons.push(`Batter Power ${batterPower}/30`);
+    
+  // 2. Pitcher HR Risk - max 30
+let pitcherHRRisk = Math.round(risk * 0.20);
+if (hr9 >= 2.0) pitcherHRRisk += 10;
+else if (hr9 >= 1.7) pitcherHRRisk += 8;
+else if (hr9 >= 1.4) pitcherHRRisk += 6;
+else if (hr9 >= 1.1) pitcherHRRisk += 4;
+pitcherHRRisk = Math.min(pitcherHRRisk, 30);
+score += pitcherHRRisk;
+reasons.push(`Pitcher HR Risk ${pitcherHRRisk}/30`);
+    
+  // 3. Pitching Matchup — max 20
+let matchup = 0;
 
-  if (whip >= 1.45) matchup += 6;
-  else if (whip >= 1.30) matchup += 4;
-  else if (whip >= 1.20) matchup += 2;
+if (era >= 5) matchup += 8;
+else if (era >= 4.25) matchup += 6;
+else if (era >= 3.75) matchup += 3;
 
-  if (lineupSpot >= 1 && lineupSpot <= 5) matchup += 3;
+if (whip >= 1.45) matchup += 8;
+else if (whip >= 1.30) matchup += 6;
+else if (whip >= 1.20) matchup += 3;
 
-  matchup = Math.min(matchup, 15);
-  score += matchup;
-  reasons.push(`Pitching Matchup ${matchup}/15`);
+if (lineupSpot >= 1 && lineupSpot <= 5) matchup += 4;
 
+matchup = Math.min(matchup, 20);
+score += matchup;
+reasons.push(`Pitching Matchup ${matchup}/20`);
+    
   // 4. Previous HR vs Pitcher — max 10
   let bvp = Math.min(Number(extras.bvpHR || 0) * 5, 10);
   score += bvp;
