@@ -117,7 +117,12 @@ score += matchup;
 reasons.push(`Pitching Matchup ${matchup}/20`);
     
   // 4. Previous HR vs Pitcher — max 10
-  let bvp = Math.min(Number(extras.bvpHR || 0) * 5, 10);
+  let bvp = 0;
+
+  if (extras.bvpHR >= 3) bvp = 10;
+  else if (extras.bvpHR == 2) bvp = 8;
+  else if (extras.bvpHR == 1) bvp = 5;
+
   score += bvp;
   reasons.push(`Previous HR vs Pitcher ${bvp}/10`);
 
