@@ -21,7 +21,32 @@ function windArrow(deg) {
   if (deg < 292) return "⬅️";
   return "↖️";
 }
+function getWeatherScore(weather = {}) {
+  let score = 0;
 
+  const wind = Number(weather.wind || 0);
+  const temp = Number(weather.temp || 0);
+  const rain = Number(weather.rain || 0);
+  const windType = weather.windType || "neutral";
+
+  // Wind helping hitters
+  if (windType === "out" && wind >= 15) score += 8;
+  else if (windType === "out" && wind >= 8) score += 5;
+
+  // Wind hurting hitters
+  if (windType === "in" && wind >= 15) score -= 8;
+  else if (windType === "in" && wind >= 8) score -= 5;
+
+  // Temperature
+  if (temp >= 90) score += 5;
+  else if (temp >= 85) score += 3;
+  else if (temp < 60) score -= 3;
+
+  // Rain
+  if (rain >= 40) score -= 5;
+
+  return Math.max(0, Math.min(score, 15));
+}
 async function fetchStadiumWeather(stadium) {
   const loc = stadiumWeather[stadium];
 
