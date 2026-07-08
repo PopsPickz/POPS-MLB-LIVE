@@ -51,11 +51,17 @@ const Moneyline = {
       const awayStats = await this.getTeamStats(awayId);
       const homeStats = await this.getTeamStats(homeId);
 
-      const awayStarter = Number(awayRisk.risk) < Number(homeRisk.risk);
+      const awayRiskNum = Number(awayRisk.risk) || 50;
+      const homeRiskNum = Number(homeRisk.risk) || 50;
 
-      const homeStarter = Number(homeRisk.risk) < Number(awayRisk.risk);
+      const awayStarter =
+      awayRiskNum < homeRiskNum ||
+     (awayRiskNum === homeRiskNum && awayStats.era < homeStats.era);
 
-     const awayBullpen =
+       const homeStarter =
+       homeRiskNum < awayRiskNum ||
+      (homeRiskNum === awayRiskNum && homeStats.era < awayStats.era);
+       const awayBullpen =
         awayStats.era < homeStats.era &&
         awayStats.whip < homeStats.whip;
 
