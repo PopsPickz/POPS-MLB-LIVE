@@ -69,7 +69,7 @@ const Moneyline = {
       const homeRunSupport = homeStats.runs > awayStats.runs;
 
       let awayScore = 0;
-      let homeScore = 1;
+      let homeScore = 0;
 
       if (awayStarter) awayScore++;
       if (homeStarter) homeScore++;
