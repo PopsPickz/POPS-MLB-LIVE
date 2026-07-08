@@ -31,6 +31,7 @@ const BALLPARK_HR_SCORE = {
   "Fenway Park": 3,
   "Truist Park": 3,
   "Citi Field": 2,
+  "Kauffman Stadium": 2,
   "Comerica Park": 2,
   "Oracle Park": 1,
   "Petco Park": 1
