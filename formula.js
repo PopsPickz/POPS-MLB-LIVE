@@ -29,33 +29,42 @@ const Formula = {
   const barrel = Number(stats.barrelRate || 0);
   const hardHit = Number(stats.hardHitRate || 0);
   const iso = Number(stats.iso || 0);
-  const avgEV = Number(stats.avgExitVelocity || 0);
+  const ops = Number(stats.ops || 0);
   const seasonHR = Number(stats.seasonHR || 0);
-  const recentHR = Number(stats.recentHR || 0);
 
-  if (barrel >= 15) score += 7;
-  else if (barrel >= 11) score += 5;
-  else if (barrel >= 8) score += 3;
+  // Barrel % — max 8
+  if (barrel >= 15) score += 8;
+  else if (barrel >= 12) score += 6;
+  else if (barrel >= 9) score += 4;
+  else if (barrel >= 6) score += 2;
 
-  if (hardHit >= 50) score += 5;
+  // Hard-Hit % — max 7
+  if (hardHit >= 55) score += 7;
+  else if (hardHit >= 50) score += 6;
   else if (hardHit >= 45) score += 4;
   else if (hardHit >= 40) score += 2;
 
-  if (iso >= .260) score += 5;
-  else if (iso >= .220) score += 4;
-  else if (iso >= .180) score += 2;
+  // ISO — max 5
+  if (iso >= .280) score += 5;
+  else if (iso >= .240) score += 4;
+  else if (iso >= .200) score += 3;
+  else if (iso >= .170) score += 2;
 
-  if (avgEV >= 92) score += 3;
-  else if (avgEV >= 90) score += 2;
+  // OPS — max 5
+  if (ops >= .950) score += 5;
+  else if (ops >= .875) score += 4;
+  else if (ops >= .800) score += 3;
+  else if (ops >= .725) score += 2;
 
-  if (seasonHR >= 25) score += 3;
-  else if (seasonHR >= 15) score += 2;
+  // Season HR — max 5
+  if (seasonHR >= 30) score += 5;
+  else if (seasonHR >= 22) score += 4;
+  else if (seasonHR >= 15) score += 3;
+  else if (seasonHR >= 8) score += 2;
 
-  if (recentHR >= 3) score += 2;
-  else if (recentHR >= 1) score += 1;
-
-  return Math.min(score, 25);
-},  
+  return Math.min(score, 30);
+},
+  
   getHrScore(playerName, lineupSpot, pitcherRisk = {}, extras = {}) {
   let score = 0;
   let reasons = [];
