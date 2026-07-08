@@ -1012,6 +1012,32 @@ async function loadApp() {
     behavior: "instant"
   });
 }
+function windArrow(deg) {
+  if (deg >= 337 || deg < 22) return "⬆️";
+  if (deg < 67) return "↗️";
+  if (deg < 112) return "➡️";
+  if (deg < 157) return "↘️";
+  if (deg < 202) return "⬇️";
+  if (deg < 247) return "↙️";
+  if (deg < 292) return "⬅️";
+  return "↖️";
+}
+
+async function showWeather() {
+  showTab("weatherSection");
+
+  const box = document.getElementById("weatherBox");
+  box.innerHTML = "Loading weather...";
+
+  box.innerHTML = `
+    <div class="weather-card">
+      <h3>🌦️ Weather Test</h3>
+      <p>🌡️ Temp: 82°F</p>
+      <p>💨 Wind: 12 MPH ${windArrow(45)}</p>
+      <p>🌧️ Rain Chance: 18%</p>
+    </div>
+  `;
+}
 
 loadApp();
 showTab("pitchersSection");
