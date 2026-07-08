@@ -615,22 +615,24 @@ async function addBatterTarget({
   pitcherRiskObj,
   lineupSpot,
   type,
-  targets
+  targets,
+  weatherScore = 0
 }) {
   const bvpHR = await getBatterVsPitcherHR(id, pitcherId, name, pitcher);
-const hitStreak = await getHitStreak(id);
-const batterStats = await getBatterSeasonStats(id);
+  const hitStreak = await getHitStreak(id);
+  const batterStats = await getBatterSeasonStats(id);
 
-const result = Formula.getHrScore(
-  name,
-  lineupSpot,
-  pitcherRiskObj,
-  {
-    bvpHR,
-    hitStreak,
-    batterStats
-  }
-);
+  const result = Formula.getHrScore(
+    name,
+    lineupSpot,
+    pitcherRiskObj,
+    {
+      bvpHR,
+      hitStreak,
+      batterStats,
+      weatherScore
+    }
+  );
 
   targets.push({
     id,
@@ -642,6 +644,7 @@ const result = Formula.getHrScore(
     bvpHR,
     hitStreak,
     batterStats,
+    weatherScore,
     reasons: result.reasons,
     type
   });
