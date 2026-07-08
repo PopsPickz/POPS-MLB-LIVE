@@ -592,10 +592,7 @@ async function loadPitcherTargets(games) {
 </div>
         </div>
 
-        <div>
-          <p><strong>HR in the Last 5 Games:</strong></p>
-          <p class="small">${p.hrLast5}</p>
-        </div>
+        
       </div>
     </div>
   `).join("");
