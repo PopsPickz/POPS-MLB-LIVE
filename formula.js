@@ -65,78 +65,44 @@ const Formula = {
   return Math.min(score, 30);
 },
   
-  getHrScore(playerName, lineupSpot, pitcherRisk = {}, extras = {}) {
+  function getPopsHRScore(player) {
   let score = 0;
-  let reasons = [];
 
-  const risk = Number(pitcherRisk.risk || 50);
-  const hr9 = Number(pitcherRisk.hr9 || 0);
-  const era = Number(pitcherRisk.era || 0);
-  const whip = Number(pitcherRisk.whip || 0);
+  // 1. Pitcher HR Risk (0-35)
+  score += player.pitcherHR9 >= 1.8 ? 35 :
+           player.pitcherHR9 >= 1.5 ? 30 :
+           player.pitcherHR9 >= 1.2 ? 25 :
+           player.pitcherHR9 >= 1.0 ? 18 :
+           player.pitcherHR9 >= 0.8 ? 10 : 5;
 
-  // 1. Batter Power — max 30
-let batterPower = this.getBatterStatScore(extras.batterStats || {});
+  // 2. Batter Power (0-25)
+  score += player.barrelRate >= 15 ? 25 :
+           player.barrelRate >= 12 ? 20 :
+           player.barrelRate >= 9 ? 15 :
+           player.barrelRate >= 6 ? 10 : 5;
 
-if (this.isKnownPowerBat(playerName)) {
-    batterPower += 8;
+  // 3. Hard Contact (0-15)
+  score += player.hardHitRate >= 50 ? 15 :
+           player.hardHitRate >= 45 ? 12 :
+           player.hardHitRate >= 40 ? 9 :
+           player.hardHitRate >= 35 ? 6 : 3;
+
+  // 4. Platoon Advantage (0-10)
+  if (player.hasPlatoonAdvantage) score += 10;
+
+  // 5. Lineup Spot (0-8)
+  score += player.lineupSpot <= 5 ? 8 : 3;
+
+  // 6. Recent Quality Contact, last 15 games (0-7)
+  score += player.recentHardHitRate >= 50 ? 7 :
+           player.recentHardHitRate >= 45 ? 5 :
+           player.recentHardHitRate >= 40 ? 3 : 0;
+
+  // 7. Previous HR vs Pitcher Bonus (0-6)
+  score += Math.min((player.previousHRvsPitcher || 0) * 3, 6);
+
+  return Math.min(Math.round(score), 100);
 }
-
-batterPower = Math.min(batterPower, 30);
-score += batterPower;
-reasons.push(`Batter Power ${batterPower}/30`);
-    
-  // 2. Pitcher HR Risk - max 30
-let pitcherHRRisk = Math.round(risk * 0.20);
-if (hr9 >= 2.0) pitcherHRRisk += 10;
-else if (hr9 >= 1.7) pitcherHRRisk += 8;
-else if (hr9 >= 1.4) pitcherHRRisk += 6;
-else if (hr9 >= 1.1) pitcherHRRisk += 4;
-pitcherHRRisk = Math.min(pitcherHRRisk, 30);
-score += pitcherHRRisk;
-reasons.push(`Pitcher HR Risk ${pitcherHRRisk}/30`);
-    
-  // 3. Pitching Matchup — max 20
-let matchup = 0;
-
-if (era >= 5) matchup += 7;
-else if (era >= 4.25) matchup += 5;
-else if (era >= 3.75) matchup += 3;
-
-if (whip >= 1.45) matchup += 6;
-else if (whip >= 1.30) matchup += 4;
-else if (whip >= 1.20) matchup += 2;
-
-if (hr9 >= 2.0) matchup += 5;
-else if (hr9 >= 1.5) matchup += 4;
-else if (hr9 >= 1.1) matchup += 2;
-
-if (lineupSpot >= 1 && lineupSpot <= 5) matchup += 2;
-
-matchup = Math.min(matchup, 20);
-score += matchup;
-reasons.push(`Pitching Matchup ${matchup}/20`);
-    
-  // 4. Previous HR vs Pitcher — max 10
-  let bvp = 0;
-
-  if (extras.bvpHR >= 3) bvp = 10;
-  else if (extras.bvpHR == 2) bvp = 8;
-  else if (extras.bvpHR == 1) bvp = 5;
-
-  score += bvp;
-  reasons.push(`Previous HR vs Pitcher ${bvp}/10`);
-
-  // 5. Hit Streak — max 10
-  let streak = Math.min(Number(extras.hitStreak || 0) * 2, 10);
-  score += streak;
-  reasons.push(`Hit Streak ${streak}/10`);
-
-  
-
-  score = Math.max(0, Math.min(100, Math.round(score)));
-
-  return {
-    score,
     reasons: reasons.join(" | ")
   };
 },
