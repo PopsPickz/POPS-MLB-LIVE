@@ -1075,5 +1075,9 @@ async function loadApp() {
 
 
 loadApp();
-showTab("pitchersSection");
+
+if (firstLoad) {
+  showTab("pitchersSection");
+}
+
 setInterval(loadApp, 120000);
