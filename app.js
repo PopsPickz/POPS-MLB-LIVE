@@ -273,7 +273,53 @@ async function getHRLast5Games(playerId) {
     return 0;
   }
 }
+async function getBatterSeasonStats(playerId) {
+  if (!playerId) {
+    return {
+      barrelRate: 0,
+      hardHitRate: 0,
+      iso: 0,
+      avgExitVelocity: 0,
+      seasonHR: 0,
+      recentHR: 0
+    };
+  }
 
+  try {
+    const url =
+      `https://statsapi.mlb.com/api/v1/people/${playerId}/stats?stats=season&group=hitting`;
+
+    const data = await fetchJSON(url);
+    const stat = data.stats?.[0]?.splits?.[0]?.stat || {};
+
+    const avg = Number(stat.avg || 0);
+    const slg = Number(stat.slg || 0);
+    const iso = slg - avg;
+
+    const recentHR = await getHRLast5Games(playerId);
+
+    return {
+      barrelRate: 0,
+      hardHitRate: 0,
+      iso,
+      avgExitVelocity: 0,
+      seasonHR: Number(stat.homeRuns || 0),
+      recentHR
+    };
+
+  } catch (err) {
+    console.log("Batter stats error:", err);
+
+    return {
+      barrelRate: 0,
+      hardHitRate: 0,
+      iso: 0,
+      avgExitVelocity: 0,
+      seasonHR: 0,
+      recentHR: 0
+    };
+  }
+}
 async function getLineupBvpHR(liveGame, side, opposingPitcherId) {
   if (!opposingPitcherId) {
     return "Pitcher ID not available yet.";
