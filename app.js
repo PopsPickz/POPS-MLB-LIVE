@@ -321,7 +321,7 @@ async function buildBatterTargets(games) {
 async function loadHRPicks(games) {
   let targets = await buildBatterTargets(games);
 
-  targets = targets.sort((a, b) => b.score - a.score).slice(0, 10);
+  targets = targets.sort((a, b) => b.score - a.score).slice(0, 20);
 
   const html = targets.map((p, i) => `
     <div class="pick-card">
