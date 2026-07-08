@@ -883,17 +883,15 @@ async function loadHitPicks(games) {
   let targets = await buildBatterTargets(games);
 
   targets = targets
-    .filter(p => p.bvpHR > 0 || p.hitStreak >= 2)
-    .map(p => {
-      const hitResult = Formula.getHitScore(p);
-      return {
-        ...p,
-        hitScore: hitResult.score,
-        hitReasons: hitResult.reasons
-      };
+    .filter(p => Number(p.hitStreak || 0) >= 2 || Number(p.bvpHR || 0) > 0)
+    .sort((a, b) => {
+      if (Number(b.hitStreak || 0) !== Number(a.hitStreak || 0)) {
+        return Number(b.hitStreak || 0) - Number(a.hitStreak || 0);
+      }
+
+      return Number(b.bvpHR || 0) - Number(a.bvpHR || 0);
     })
-    .sort((a, b) => b.hitScore - a.hitScore)
-    .slice(0, 20);
+    .slice(0, 30);
 
   if (!targets.length) {
     updateBox(
@@ -903,7 +901,7 @@ async function loadHitPicks(games) {
       <div class="pick-card">
         <h3>🔥 No Hit Pickz Loaded Yet</h3>
         <p class="small">
-          Hit Pickz will populate when a hitter has a previous HR vs today’s pitcher or a 2+ game hit streak.
+          Hit Pickz will populate when a hitter has a 2+ game hit streak or previous HR vs today’s pitcher.
         </p>
       </div>
       `
@@ -919,24 +917,20 @@ async function loadHitPicks(games) {
       <p><strong>Team:</strong> ${p.team}</p>
       <p><strong>Game:</strong> ${p.game}</p>
       <p><strong>Vs Pitcher:</strong> ${p.pitcher}</p>
-      <p><strong>Previous HR vs Pitcher:</strong> ${p.bvpHR}</p>
-      <p><strong>Hit Streak:</strong> ${p.hitStreak}+ games</p>
 
-      <p><strong>POPS Hit Score:</strong>
-        <span class="hr-score">${p.hitScore}/100</span>
-      </p>
+      <p><strong>Hit Streak:</strong> ${p.hitStreak}+ games</p>
+      <p><strong>Previous HR vs Pitcher:</strong> ${p.bvpHR}</p>
 
       <p class="small">
-        ${p.bvpHR > 0 ? "Previous HR history ✅" : ""}
-        ${p.hitStreak >= 2 ? " | 2+ game hit streak ✅" : ""}
-        <br>${p.type} | ${p.hitReasons}
+        ${Number(p.hitStreak || 0) >= 2 ? "🔥 2+ game hit streak ✅" : ""}
+        ${Number(p.bvpHR || 0) > 0 ? " | 💣 Previous HR vs pitcher ✅" : ""}
+        <br>${p.type}
       </p>
     </div>
   `).join("");
 
   updateBox(hitPicksBox, "hits", html);
 }
-
 /* ---------- MONEYLINE ---------- */
 
 async function getTeamStats(teamId) {
