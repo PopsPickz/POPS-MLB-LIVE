@@ -107,15 +107,7 @@ const Formula = {
   score += streak;
   reasons.push(`Hit Streak ${streak}/10`);
 
-  // 6. Weather — max 10
-  let weather = Math.min(Number(extras.weatherScore || 0), 10);
-  score += weather;
-  reasons.push(`Weather ${weather}/10`);
-
-  // 7. Ballpark — max 5
-  let ballpark = Math.min(Number(extras.ballparkScore || 0), 5);
-  score += ballpark;
-  reasons.push(`Ballpark ${ballpark}/5`);
+  
 
   score = Math.max(0, Math.min(100, Math.round(score)));
 
