@@ -615,36 +615,54 @@ async function addBatterTarget({
   targets,
   weatherScore = 0
 }) {
-  const bvpHR = await getBatterVsPitcherHR(id, pitcherId, name, pitcher);
-  const hitStreak = await getHitStreak(id);
-  const batterStats = await getBatterSeasonStats(id);
+  try {
+    const bvpHR = await getBatterVsPitcherHR(id, pitcherId, name, pitcher);
+    const hitStreak = await getHitStreak(id);
 
-  const result = Formula.getHrScore(
-    name,
-    lineupSpot,
-    pitcherRiskObj,
-    {
+    let batterStats = {
+      barrelRate: 0,
+      hardHitRate: 0,
+      iso: 0,
+      avgExitVelocity: 0,
+      seasonHR: 0,
+      recentHR: 0
+    };
+
+    if (typeof getBatterSeasonStats === "function") {
+      batterStats = await getBatterSeasonStats(id);
+    }
+
+    const result = Formula.getHrScore(
+      name,
+      lineupSpot,
+      pitcherRiskObj || {},
+      {
+        bvpHR,
+        hitStreak,
+        batterStats,
+        weatherScore,
+        ballparkScore: 0
+      }
+    );
+
+    targets.push({
+      id,
+      name,
+      team,
+      game,
+      pitcher,
+      score: result.score,
       bvpHR,
       hitStreak,
       batterStats,
-      weatherScore
-    }
-  );
+      weatherScore,
+      reasons: result.reasons,
+      type
+    });
 
-  targets.push({
-    id,
-    name,
-    team,
-    game,
-    pitcher,
-    score: result.score,
-    bvpHR,
-    hitStreak,
-    batterStats,
-    weatherScore,
-    reasons: result.reasons,
-    type
-  });
+  } catch (err) {
+    console.log("Add batter target error:", name, err);
+  }
 }
 
 async function buildBatterTargets(games) {
