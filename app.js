@@ -632,7 +632,8 @@ async function addBatterTarget({
   lineupSpot,
   type,
   targets,
-  weatherScore = 0
+  weatherScore = 0,
+  ballparkScore = 0
 }) {
   try {
     const bvpHR = await getBatterVsPitcherHR(id, pitcherId, name, pitcher);
