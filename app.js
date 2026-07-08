@@ -35,7 +35,7 @@ function showTab(sectionId) {
     section.style.display = id === sectionId ? "block" : "none";
   });
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  // window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function scrollToSection(id) {
