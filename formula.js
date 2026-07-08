@@ -98,15 +98,19 @@ reasons.push(`Pitcher HR Risk ${pitcherHRRisk}/30`);
   // 3. Pitching Matchup — max 20
 let matchup = 0;
 
-if (era >= 5) matchup += 8;
-else if (era >= 4.25) matchup += 6;
+if (era >= 5) matchup += 7;
+else if (era >= 4.25) matchup += 5;
 else if (era >= 3.75) matchup += 3;
 
-if (whip >= 1.45) matchup += 8;
-else if (whip >= 1.30) matchup += 6;
-else if (whip >= 1.20) matchup += 3;
+if (whip >= 1.45) matchup += 6;
+else if (whip >= 1.30) matchup += 4;
+else if (whip >= 1.20) matchup += 2;
 
-if (lineupSpot >= 1 && lineupSpot <= 5) matchup += 4;
+if (hr9 >= 2.0) matchup += 5;
+else if (hr9 >= 1.5) matchup += 4;
+else if (hr9 >= 1.1) matchup += 2;
+
+if (lineupSpot >= 1 && lineupSpot <= 5) matchup += 2;
 
 matchup = Math.min(matchup, 20);
 score += matchup;
