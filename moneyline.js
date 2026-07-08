@@ -54,14 +54,20 @@ const Moneyline = {
       const awayRiskNum = Number(awayRisk.risk) || 50;
       const homeRiskNum = Number(homeRisk.risk) || 50;
 
-      const awayStarter =
-      awayRiskNum < homeRiskNum ||
-     (awayRiskNum === homeRiskNum && awayStats.era < homeStats.era);
+      const awayPitcherScore =
+      awayRiskNum +
+      Number(awayRisk.era || 5) * 3 +
+      Number(awayRisk.whip || 1.5) * 10;
 
-       const homeStarter =
-       homeRiskNum < awayRiskNum ||
-      (homeRiskNum === awayRiskNum && homeStats.era < awayStats.era);
-       const awayBullpen =
+      const homePitcherScore =
+      homeRiskNum +
+      Number(homeRisk.era || 5) * 3 +
+      Number(homeRisk.whip || 1.5) * 10;
+
+    const awayStarter = awayPitcherScore < homePitcherScore;
+    const homeStarter = homePitcherScore < awayPitcherScore;
+       
+      const awayBullpen =
         awayStats.era < homeStats.era &&
         awayStats.whip < homeStats.whip;
 
