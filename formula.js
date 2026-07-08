@@ -78,7 +78,7 @@ const Formula = {
 let batterPower = this.getBatterStatScore(extras.batterStats || {});
 
 if (this.isKnownPowerBat(playerName)) {
-  batterPower += 5;
+    batterPower += 8;
 }
 
 batterPower = Math.min(batterPower, 30);
