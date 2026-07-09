@@ -45,15 +45,19 @@ const API = {
 
   async getPlayerStats(playerId) {
     if (!playerId) return {};
+
     const url = `${this.base}/people/${playerId}/stats?stats=season&group=pitching`;
     const data = await this.fetchJSON(url);
+
     return data?.stats?.[0]?.splits?.[0]?.stat || {};
   },
 
   async getBatterStats(playerId) {
     if (!playerId) return {};
+
     const url = `${this.base}/people/${playerId}/stats?stats=season&group=hitting`;
     const data = await this.fetchJSON(url);
+
     return data?.stats?.[0]?.splits?.[0]?.stat || {};
   },
 
@@ -62,6 +66,7 @@ const API = {
 
     const url = `${this.base}/teams/${teamId}/stats?stats=season&group=hitting,pitching`;
     const data = await this.fetchJSON(url);
+
     const splits = data?.stats?.flatMap(s => s.splits || []) || [];
 
     return {
@@ -72,6 +77,7 @@ const API = {
 
   async getLiveGame(gameId) {
     if (!gameId) return null;
+
     const url = `${this.base}/game/${gameId}/feed/live`;
     return await this.fetchJSON(url);
   },
@@ -125,46 +131,55 @@ const API = {
     const season = new Date().getFullYear();
     const url = `${this.base}/people/${playerId}/stats?stats=gameLog&group=hitting&season=${season}`;
     const data = await this.fetchJSON(url);
-    const logs = data?.stats?.[0]?.splits || [];
+
+    let logs = data?.stats?.[0]?.splits || [];
+
+    logs = logs
+      .filter(game => game.date)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     let streak = 0;
 
     for (const game of logs) {
       const hits = Number(game.stat?.hits || 0);
-      if (hits >= 1) streak++;
-      else break;
+
+      if (hits >= 1) {
+        streak++;
+      } else {
+        break;
+      }
     }
 
     return streak;
   },
 
   async getBvPHR(batterId, pitcherId) {
-  if (!batterId || !pitcherId) return 0;
+    if (!batterId || !pitcherId) return 0;
 
-  const season = new Date().getFullYear();
+    const season = new Date().getFullYear();
 
-  const url =
-    `${this.base}/people/${batterId}/stats?stats=vsPlayer&group=hitting&opposingPlayerId=${pitcherId}&season=${season}`;
+    const url =
+      `${this.base}/people/${batterId}/stats?stats=vsPlayer&group=hitting&opposingPlayerId=${pitcherId}&season=${season}`;
 
-  const data = await this.fetchJSON(url);
-  const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
+    const data = await this.fetchJSON(url);
+    const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
 
-  return Number(stat.homeRuns || 0);
-},
+    return Number(stat.homeRuns || 0);
+  },
 
-async getPlayerInfo(playerId) {
-  if (!playerId) return {};
+  async getPlayerInfo(playerId) {
+    if (!playerId) return {};
 
-  const url = `${this.base}/people/${playerId}`;
-  const data = await this.fetchJSON(url);
+    const url = `${this.base}/people/${playerId}`;
+    const data = await this.fetchJSON(url);
 
-  const person = data?.people?.[0];
+    const person = data?.people?.[0];
 
-  return {
-    id: person?.id,
-    name: person?.fullName,
-    batSide: person?.batSide?.code || "",
-    pitchHand: person?.pitchHand?.code || ""
-  };
-}
+    return {
+      id: person?.id || playerId,
+      name: person?.fullName || "",
+      batSide: person?.batSide?.code || "",
+      pitchHand: person?.pitchHand?.code || ""
+    };
+  }
 };
