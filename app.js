@@ -122,13 +122,15 @@ async function loadHRPicks() {
   hrPicks = [];
 
   for (const target of pitcherTargets) {
-    const lineup = await getTeamLineup(
+    let lineup = await getTeamLineup(
       target.gameId,
       target.targetTeamId,
       target.targetTeam
     );
 
-    if (!lineup.length) continue;
+    if (!lineup.length) {
+    lineup = getProjectedLineup(target.targetTeam);
+    }
 
       for (const batter of lineup) {
       const batterStats = await API.getBatterStats(batter.id);
