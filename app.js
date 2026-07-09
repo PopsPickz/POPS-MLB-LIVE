@@ -102,34 +102,21 @@ async function getTeamLineup(gameId, teamId, teamName) {
 
 async function getProjectedLineup(teamId, teamName) {
   const roster = await API.getRoster(teamId);
-  const hitters = [];
 
-  for (const player of roster) {
-    if (["P", "SP", "RP"].includes(player.position)) continue;
+  const hitters = roster
+    .filter(player => !["P", "SP", "RP"].includes(player.position))
+    .slice(0, 9);
 
-    const stats = await API.getBatterStats(player.id);
-
-    hitters.push({
-      id: player.id,
-      name: player.name,
-      position: player.position,
-      team: teamName,
-      confirmed: false,
-      stats,
-      powerScore:
-        Number(stats.homeRuns || 0) * 3 +
-        Number(stats.ops || 0) * 100 +
-        Number(stats.slg || 0) * 100
-    });
-  }
-
-  return hitters
-    .sort((a, b) => b.powerScore - a.powerScore)
-    .slice(0, 9)
-    .map((player, index) => ({
-      ...player,
-      lineupSpot: index + 1
-    }));
+  return hitters.map((player, index) => ({
+    id: player.id,
+    name: player.name,
+    position: player.position,
+    team: teamName,
+    confirmed: false,
+    stats: {},
+    lineupSpot: index + 1
+  }));
+}
 }
 
 async function getLineupForTarget(target) {
