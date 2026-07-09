@@ -353,7 +353,7 @@ async function init() {
     await loadGames();
     await loadPitcherTargets();
     await loadHRPicks();
-    loadHitPicks();
+    await loadHitPicks();
     await loadMoneyline();
   } catch (err) {
     console.error("POPS app error:", err);
