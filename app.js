@@ -8,6 +8,9 @@ let pitcherTargets = [];
 let hrPicks = [];
 let hitPicks = [];
 
+const playerInfoCache = {};
+const bvpCache = {};
+
 function formatTime(dateString) {
   return new Date(dateString).toLocaleString([], {
     weekday: "short",
@@ -16,6 +19,33 @@ function formatTime(dateString) {
     hour: "numeric",
     minute: "2-digit"
   });
+}
+
+async function safePlayerInfo(playerId) {
+  if (!playerId) return {};
+  if (playerInfoCache[playerId]) return playerInfoCache[playerId];
+
+  try {
+    const info = API.getPlayerInfo ? await API.getPlayerInfo(playerId) : {};
+    playerInfoCache[playerId] = info || {};
+    return playerInfoCache[playerId];
+  } catch {
+    return {};
+  }
+}
+
+async function safeBvPHR(batterId, pitcherId) {
+  const key = `${batterId}-${pitcherId}`;
+  if (bvpCache[key] !== undefined) return bvpCache[key];
+
+  try {
+    const hr = API.getBvPHR ? await API.getBvPHR(batterId, pitcherId) : 0;
+    bvpCache[key] = Number(hr || 0);
+    return bvpCache[key];
+  } catch {
+    bvpCache[key] = 0;
+    return 0;
+  }
 }
 
 async function loadGames() {
@@ -29,6 +59,7 @@ async function buildPitcherTargets() {
   for (const game of games) {
     if (game.awayPitcherId) {
       const stats = await API.getPlayerStats(game.awayPitcherId);
+
       pitcherTargets.push({
         gameId: game.id,
         pitcher: game.awayPitcher,
@@ -42,6 +73,7 @@ async function buildPitcherTargets() {
 
     if (game.homePitcherId) {
       const stats = await API.getPlayerStats(game.homePitcherId);
+
       pitcherTargets.push({
         gameId: game.id,
         pitcher: game.homePitcher,
@@ -142,13 +174,8 @@ async function loadHRPicks() {
     for (const batter of lineup) {
       const batterStats = await getMergedBatterStats(batter);
 
-      const batterInfo = API.getPlayerInfo
-    ? (await API.getPlayerInfo(batter.id)) || {}
-  : {};
-
-      const pitcherInfo = API.getPlayerInfo
-   ? (await API.getPlayerInfo(target.pitcherId)) || {}
-  : {};
+      const batterInfo = await safePlayerInfo(batter.id);
+      const pitcherInfo = await safePlayerInfo(target.pitcherId);
 
       const batterHand = batterInfo.batSide || "";
       const pitcherHand = pitcherInfo.pitchHand || "";
@@ -158,9 +185,7 @@ async function loadHRPicks() {
         (batterHand === "R" && pitcherHand === "L") ||
         batterHand === "S";
 
-      const bvpHR = API.getBvPHR
-        ? await API.getBvPHR(batter.id, target.pitcherId)
-        : 0;
+      const bvpHR = await safeBvPHR(batter.id, target.pitcherId);
 
       const result = Formula.getHrScore(
         batter.name,
@@ -202,6 +227,7 @@ async function loadHRPicks() {
   hrPicksBox.innerHTML = hrPicks.slice(0, 20).map((pick, index) => `
     <div class="hr-card">
       <div class="hr-rank">#${index + 1}</div>
+
       <h3>💣 ${pick.player}</h3>
 
       <p><strong>Team:</strong> ${pick.team}</p>
@@ -215,6 +241,7 @@ async function loadHRPicks() {
       <p><strong>Batter Hand:</strong> ${pick.batterHand || "N/A"}</p>
       <p><strong>Pitcher Hand:</strong> ${pick.pitcherHand || "N/A"}</p>
       <p><strong>Platoon Edge:</strong> ${pick.hasPlatoonAdvantage ? "✅ Yes" : "❌ No"}</p>
+
       <p><strong>POPS HR Score:</strong> <span class="score">${pick.score}/100</span></p>
 
       <p class="small">${pick.reasons}</p>
@@ -230,12 +257,12 @@ async function loadHitPicks() {
     const lineup = await getLineupForTarget(target);
 
     for (const batter of lineup) {
-      const hitStreak = API.getHitStreak ? await API.getHitStreak(batter.id) : 0;
-      const batterStats = await getMergedBatterStats(batter);
-
-      const bvpHR = API.getBvPHR
-        ? await API.getBvPHR(batter.id, target.pitcherId)
+      const hitStreak = API.getHitStreak
+        ? await API.getHitStreak(batter.id)
         : 0;
+
+      const batterStats = await getMergedBatterStats(batter);
+      const bvpHR = await safeBvPHR(batter.id, target.pitcherId);
 
       if (hitStreak >= 2 || bvpHR > 0) {
         const score = Formula.getHitScore(
@@ -346,10 +373,13 @@ async function loadMoneyline() {
 
     if (awayBetterSP) awayChecks++;
     if (homeBetterSP) homeChecks++;
+
     if (awayBetterBullpen) awayChecks++;
     if (homeBetterBullpen) homeChecks++;
+
     if (awayBetterOffense) awayChecks++;
     if (homeBetterOffense) homeChecks++;
+
     if (awayBetterDefense) awayChecks++;
     if (homeBetterDefense) homeChecks++;
 
@@ -406,6 +436,7 @@ async function init() {
     await loadMoneyline();
   } catch (err) {
     console.error("POPS app error:", err);
+
     hrPicksBox.innerHTML = `
       <div class="pick-card">
         <h3>⚠️ Site loading error</h3>
