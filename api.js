@@ -1,73 +1,105 @@
 const API = {
-  season: new Date().getFullYear(),
+  base: "https://statsapi.mlb.com/api/v1",
 
   today() {
-    return new Date().toLocaleDateString("en-CA", {
-      timeZone: "America/New_York"
-    });
-  },
-
-  async fetchJSON(url, label = "API") {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(label + " failed");
-    return await res.json();
+    return new Date().toISOString().split("T")[0];
   },
 
   async getSchedule() {
+    const date = this.today();
+
     const url =
-      "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=" +
-      this.today() +
-      "&hydrate=probablePitcher";
+      `${this.base}/schedule?sportId=1&date=${date}&hydrate=team,probablePitcher,venue`;
 
-    return await this.fetchJSON(url, "Schedule API");
-  },
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
 
-  async getGame(gamePk) {
-    const url =
-      "https://statsapi.mlb.com/api/v1.1/game/" +
-      gamePk +
-      "/feed/live";
+      const games = data.dates?.[0]?.games || [];
 
-    return await this.fetchJSON(url, "Game API");
-  },
+      return games.map(game => {
+        const away = game.teams.away;
+        const home = game.teams.home;
 
-  async getPitcherStats(playerId) {
-    const url =
-      "https://statsapi.mlb.com/api/v1/people/" +
-      playerId +
-      "/stats?stats=season&group=pitching&sportId=1&season=" +
-      this.season;
+        return {
+          id: game.gamePk,
+          date: game.gameDate,
+          status: game.status?.detailedState || "Scheduled",
+          venue: game.venue?.name || "TBD",
 
-    return await this.fetchJSON(url, "Pitcher API");
-  },
+          awayTeam: away.team.name,
+          homeTeam: home.team.name,
 
-  async getBatterVsPitcher(batterId, pitcherId) {
-    const url =
-      "https://statsapi.mlb.com/api/v1/people/" +
-      batterId +
-      "/stats?stats=vsPlayer&group=hitting&opposingPlayerId=" +
-      pitcherId;
+          awayRecord: away.leagueRecord
+            ? `${away.leagueRecord.wins}-${away.leagueRecord.losses}`
+            : "0-0",
 
-    return await this.fetchJSON(url, "BvP API");
-  },
+          homeRecord: home.leagueRecord
+            ? `${home.leagueRecord.wins}-${home.leagueRecord.losses}`
+            : "0-0",
 
-  async getHitterGameLog(playerId) {
-    const url =
-      "https://statsapi.mlb.com/api/v1/people/" +
-      playerId +
-      "/stats?stats=gameLog&group=hitting&season=" +
-      this.season;
+          awayPitcher: away.probablePitcher?.fullName || "TBD",
+          homePitcher: home.probablePitcher?.fullName || "TBD",
 
-    return await this.fetchJSON(url, "Hitter Game Log API");
+          awayPitcherId: away.probablePitcher?.id || null,
+          homePitcherId: home.probablePitcher?.id || null,
+
+          awayTeamId: away.team.id,
+          homeTeamId: home.team.id
+        };
+      });
+    } catch (err) {
+      console.error("Schedule error:", err);
+      return [];
+    }
   },
 
   async getTeamStats(teamId) {
     const url =
-      "https://statsapi.mlb.com/api/v1/teams/" +
-      teamId +
-      "/stats?stats=season&group=hitting,pitching&season=" +
-      this.season;
+      `${this.base}/teams/${teamId}/stats?stats=season&group=hitting,pitching`;
 
-    return await this.fetchJSON(url, "Team Stats API");
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const splits = data.stats?.flatMap(s => s.splits || []) || [];
+
+      return {
+        hitting: splits.find(s => s.group?.displayName === "hitting")?.stat || {},
+        pitching: splits.find(s => s.group?.displayName === "pitching")?.stat || {}
+      };
+    } catch (err) {
+      console.error("Team stats error:", err);
+      return { hitting: {}, pitching: {} };
+    }
+  },
+
+  async getPlayerStats(playerId) {
+    if (!playerId) return {};
+
+    const url =
+      `${this.base}/people/${playerId}/stats?stats=season&group=pitching,hitting`;
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+
+      return data.stats?.[0]?.splits?.[0]?.stat || {};
+    } catch (err) {
+      console.error("Player stats error:", err);
+      return {};
+    }
+  },
+
+  async getLiveGame(gameId) {
+    const url = `${this.base}/game/${gameId}/feed/live`;
+
+    try {
+      const res = await fetch(url);
+      return await res.json();
+    } catch (err) {
+      console.error("Live game error:", err);
+      return null;
+    }
   }
 };
