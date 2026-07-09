@@ -275,7 +275,7 @@ async function loadHitPicks() {
   hitPicksBox.innerHTML = "<p>Loading Hit Pickz...</p>";
   hitPicks = [];
 
-  for (const target of targets.slice(0, 10)) {
+  for (const target of targets) {
     const lineup = await getLineup(target);
 
     for (const batter of lineup) {
