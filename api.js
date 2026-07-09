@@ -165,16 +165,35 @@ const API = {
     return streak;
   },
 
-  async getBvPHR(batterId, pitcherId) {
-    if (!batterId || !pitcherId) return 0;
+  async getBvPStats(batterId, pitcherId) {
+    if (!batterId || !pitcherId) {
+      return {
+        atBats: 0,
+        hits: 0,
+        avg: ".000",
+        homeRuns: 0
+      };
+    }
 
     const season = new Date().getFullYear();
-    const url = `${this.base}/people/${batterId}/stats?stats=vsPlayer&group=hitting&opposingPlayerId=${pitcherId}&season=${season}`;
+
+    const url =
+      `${this.base}/people/${batterId}/stats?stats=vsPlayer&group=hitting&opposingPlayerId=${pitcherId}&season=${season}`;
 
     const data = await this.fetchJSON(url);
     const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
 
-    return Number(stat.homeRuns || 0);
+    return {
+      atBats: Number(stat.atBats || 0),
+      hits: Number(stat.hits || 0),
+      avg: stat.avg || ".000",
+      homeRuns: Number(stat.homeRuns || 0)
+    };
+  },
+
+  async getBvPHR(batterId, pitcherId) {
+    const stats = await this.getBvPStats(batterId, pitcherId);
+    return Number(stats.homeRuns || 0);
   },
 
   async getPlayerInfo(playerId) {
