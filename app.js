@@ -311,6 +311,26 @@ async function loadMoneyline() {
 
   const cards = [];
 
+  const num = value => {
+    const n = Number(String(value ?? "").replace(/,/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  function compareCategory(awayValue, homeValue, higherIsBetter = true) {
+    let awayBetter = higherIsBetter
+      ? awayValue > homeValue
+      : awayValue < homeValue;
+
+    let homeBetter = higherIsBetter
+      ? homeValue > awayValue
+      : homeValue < awayValue;
+
+    // If exact tie, give home team the edge
+    if (!awayBetter && !homeBetter) homeBetter = true;
+
+    return { awayBetter, homeBetter };
+  }
+
   for (const game of games) {
     const awayStats = await safe(() => API.getTeamStats(game.awayTeamId), {});
     const homeStats = await safe(() => API.getTeamStats(game.homeTeamId), {});
@@ -318,65 +338,72 @@ async function loadMoneyline() {
     const awayPitcherStats = await safe(() => API.getPlayerStats(game.awayPitcherId), {});
     const homePitcherStats = await safe(() => API.getPlayerStats(game.homePitcherId), {});
 
-    const num = value => Number(value) || 0;
+    const awaySP = game.awayPitcherId
+      ? Number(Formula.pitcherRisk(awayPitcherStats).score) || 99
+      : 99;
 
-const awaySP = Number(Formula.pitcherRisk(awayPitcherStats).score) || 99;
-const homeSP = Number(Formula.pitcherRisk(homePitcherStats).score) || 99;
+    const homeSP = game.homePitcherId
+      ? Number(Formula.pitcherRisk(homePitcherStats).score) || 99
+      : 99;
 
-const awayOffense =
-  num(awayStats.hitting?.runs) +
-  num(awayStats.hitting?.ops) * 100;
+    // Higher is better
+    const awayOffense =
+      num(awayStats.hitting?.runs) +
+      num(awayStats.hitting?.ops) * 1000;
 
-const homeOffense =
-  num(homeStats.hitting?.runs) +
-  num(homeStats.hitting?.ops) * 100;
+    const homeOffense =
+      num(homeStats.hitting?.runs) +
+      num(homeStats.hitting?.ops) * 1000;
 
-const awayPitching =
-  num(awayStats.pitching?.era) +
-  num(awayStats.pitching?.whip);
+    // Lower is better
+    const awayBullpen =
+      num(awayStats.pitching?.era) +
+      num(awayStats.pitching?.whip);
 
-const homePitching =
-  num(homeStats.pitching?.era) +
-  num(homeStats.pitching?.whip);
+    const homeBullpen =
+      num(homeStats.pitching?.era) +
+      num(homeStats.pitching?.whip);
 
-const awayDefense =
-  num(awayStats.pitching?.runsAllowed) +
-  num(awayStats.pitching?.era);
+    // Higher is better
+    const awayDefense =
+      num(awayStats.fielding?.fielding) * 1000 -
+      num(awayStats.fielding?.errors);
 
-const homeDefense =
-  num(homeStats.pitching?.runsAllowed) +
-  num(homeStats.pitching?.era);
+    const homeDefense =
+      num(homeStats.fielding?.fielding) * 1000 -
+      num(homeStats.fielding?.errors);
 
+    const sp = compareCategory(awaySP, homeSP, false);
+    const bullpen = compareCategory(awayBullpen, homeBullpen, false);
+    const offense = compareCategory(awayOffense, homeOffense, true);
+    const defense = compareCategory(awayDefense, homeDefense, true);
 
-    // POPS Moneyline 2.0
-    // Each category now forces one ✅ and one ❌
+    const awayBetterSP = sp.awayBetter;
+    const homeBetterSP = sp.homeBetter;
 
-    const awayBetterSP = awaySP <= homeSP;
-    const homeBetterSP = !awayBetterSP;
+    const awayBetterBullpen = bullpen.awayBetter;
+    const homeBetterBullpen = bullpen.homeBetter;
 
-    const awayBetterBullpen = awayPitching <= homePitching;
-    const homeBetterBullpen = !awayBetterBullpen;
+    const awayBetterOffense = offense.awayBetter;
+    const homeBetterOffense = offense.homeBetter;
 
-    const awayBetterOffense = awayOffense >= homeOffense;
-    const homeBetterOffense = !awayBetterOffense;
+    const awayBetterDefense = defense.awayBetter;
+    const homeBetterDefense = defense.homeBetter;
 
-    const awayBetterDefense = awayDefense <= homeDefense;
-    const homeBetterDefense = !awayBetterDefense;
-
-    let awayChecks =
+    const awayChecks =
       Number(awayBetterSP) +
       Number(awayBetterBullpen) +
       Number(awayBetterOffense) +
       Number(awayBetterDefense);
 
-    let homeChecks =
+    const homeChecks =
       Number(homeBetterSP) +
       Number(homeBetterBullpen) +
       Number(homeBetterOffense) +
       Number(homeBetterDefense);
 
-    // Home team wins exact 2-2 ties
-    let pick = awayChecks > homeChecks ? game.awayTeam : game.homeTeam;
+    const pick =
+      awayChecks > homeChecks ? game.awayTeam : game.homeTeam;
 
     cards.push({
       game,
@@ -418,7 +445,6 @@ const homeDefense =
     </div>
   `).join("");
 }
-
 async function init() {
   hrPicksBox.innerHTML = "<p>Starting POPS Pickz 8.1...</p>";
 
