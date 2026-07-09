@@ -139,16 +139,32 @@ const API = {
   },
 
   async getBvPHR(batterId, pitcherId) {
-    if (!batterId || !pitcherId) return 0;
+  if (!batterId || !pitcherId) return 0;
 
-    const season = new Date().getFullYear();
+  const season = new Date().getFullYear();
 
-    const url =
-      `${this.base}/people/${batterId}/stats?stats=vsPlayer&group=hitting&opposingPlayerId=${pitcherId}&season=${season}`;
+  const url =
+    `${this.base}/people/${batterId}/stats?stats=vsPlayer&group=hitting&opposingPlayerId=${pitcherId}&season=${season}`;
 
-    const data = await this.fetchJSON(url);
-    const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
+  const data = await this.fetchJSON(url);
+  const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
 
-    return Number(stat.homeRuns || 0);
-  }
+  return Number(stat.homeRuns || 0);
+},
+
+async getPlayerInfo(playerId) {
+  if (!playerId) return {};
+
+  const url = `${this.base}/people/${playerId}`;
+  const data = await this.fetchJSON(url);
+
+  const person = data?.people?.[0];
+
+  return {
+    id: person?.id,
+    name: person?.fullName,
+    batSide: person?.batSide?.code || "",
+    pitchHand: person?.pitchHand?.code || ""
+  };
+}
 };
