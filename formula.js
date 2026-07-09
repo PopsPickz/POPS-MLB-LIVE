@@ -17,10 +17,8 @@ const Formula = {
 
   getLineupBoost(spot = 9) {
     spot = Number(spot);
-    if (spot === 3 || spot === 4) return 10;
     if (spot >= 1 && spot <= 5) return 8;
-    if (spot >= 6 && spot <= 7) return 5;
-    return 2;
+    return 3;
   },
 
   pitcherRisk(stats = {}) {
@@ -30,20 +28,20 @@ const Formula = {
     const innings = Number(stats.inningsPitched || 0);
     const hr9 = innings > 0 ? (hrAllowed * 9) / innings : 0;
 
-    let score = 25;
+    let score = 0;
 
     if (hr9 >= 1.8) score += 35;
-    else if (hr9 >= 1.5) score += 28;
-    else if (hr9 >= 1.2) score += 20;
-    else if (hr9 >= 1.0) score += 14;
-    else if (hr9 >= 0.8) score += 8;
+    else if (hr9 >= 1.5) score += 30;
+    else if (hr9 >= 1.2) score += 25;
+    else if (hr9 >= 1.0) score += 18;
+    else if (hr9 >= 0.8) score += 10;
+    else score += 5;
 
-    if (era >= 5) score += 12;
-    else if (era >= 4.5) score += 8;
-    else if (era >= 4) score += 5;
+    if (era >= 5.00) score += 8;
+    else if (era >= 4.50) score += 5;
+    else if (era >= 4.00) score += 3;
 
-    if (whip >= 1.45) score += 8;
-    else if (whip >= 1.35) score += 5;
+    if (whip >= 1.40) score += 5;
 
     return {
       score: Math.min(100, Math.round(score)),
@@ -59,120 +57,69 @@ const Formula = {
     const reasons = [];
     const stats = extras.batterStats || {};
 
-    const hr = Number(stats.homeRuns || 0);
-    const ops = Number(stats.ops || 0);
-    const slg = Number(stats.slg || 0);
-    const avg = Number(stats.avg || 0);
-
     const barrelRate = Number(stats.barrelRate || 0);
     const hardHitRate = Number(stats.hardHitRate || 0);
-    const exitVelocity = Number(stats.exitVelocity || 0);
-    const flyBallRate = Number(stats.flyBallRate || 0);
+    const recentHardHitRate = Number(
+      stats.recentHardHitRate || hardHitRate || 0
+    );
 
-    const hasStatcast =
-      barrelRate > 0 ||
-      hardHitRate > 0 ||
-      exitVelocity > 0 ||
-      flyBallRate > 0;
-
-    const knownPower = this.isKnownPowerBat(playerName);
     const bvpHR = Number(extras.bvpHR || 0);
-    const platoon = Boolean(extras.hasPlatoonAdvantage);
+    const hasPlatoonAdvantage = Boolean(extras.hasPlatoonAdvantage);
+    const knownPower = this.isKnownPowerBat(playerName);
 
-    let pitcherScore = Math.round((Number(pitcherRisk.score || 0) / 100) * 25);
+    const hr9 = Number(pitcherRisk.hr9 || 0);
+
+    const pitcherScore =
+      hr9 >= 1.8 ? 35 :
+      hr9 >= 1.5 ? 30 :
+      hr9 >= 1.2 ? 25 :
+      hr9 >= 1.0 ? 18 :
+      hr9 >= 0.8 ? 10 : 5;
+
     score += pitcherScore;
-    reasons.push(`Pitcher HR Risk ${pitcherScore}/25`);
+    reasons.push(`Pitcher HR Risk ${pitcherScore}/35`);
 
     let powerScore =
-      hr >= 35 ? 20 :
-      hr >= 25 ? 17 :
-      hr >= 18 ? 14 :
-      hr >= 12 ? 10 :
-      hr >= 6 ? 7 :
-      knownPower ? 12 : 4;
+      barrelRate >= 15 ? 25 :
+      barrelRate >= 12 ? 20 :
+      barrelRate >= 9 ? 15 :
+      barrelRate >= 6 ? 10 :
+      knownPower ? 15 : 5;
 
-    if (knownPower) powerScore += 4;
-    powerScore = Math.min(powerScore, 20);
+    powerScore = Math.min(powerScore, 25);
     score += powerScore;
-    reasons.push(`HR Power ${powerScore}/20`);
+    reasons.push(`Batter Power ${powerScore}/25`);
 
-    let contactScore = 0;
+    const hardContactScore =
+      hardHitRate >= 50 ? 15 :
+      hardHitRate >= 45 ? 12 :
+      hardHitRate >= 40 ? 9 :
+      hardHitRate >= 35 ? 6 :
+      knownPower ? 8 : 3;
 
-    if (hasStatcast) {
-      contactScore +=
-        barrelRate >= 18 ? 10 :
-        barrelRate >= 15 ? 8 :
-        barrelRate >= 12 ? 6 :
-        barrelRate >= 9 ? 4 :
-        barrelRate >= 6 ? 2 : 0;
+    score += hardContactScore;
+    reasons.push(`Hard Contact ${hardContactScore}/15`);
 
-      contactScore +=
-        hardHitRate >= 55 ? 8 :
-        hardHitRate >= 50 ? 6 :
-        hardHitRate >= 45 ? 4 :
-        hardHitRate >= 40 ? 2 : 0;
-
-      contactScore +=
-        exitVelocity >= 94 ? 5 :
-        exitVelocity >= 92 ? 4 :
-        exitVelocity >= 90 ? 3 :
-        exitVelocity >= 88 ? 1 : 0;
-
-      contactScore +=
-        flyBallRate >= 45 ? 4 :
-        flyBallRate >= 40 ? 3 :
-        flyBallRate >= 35 ? 2 :
-        flyBallRate >= 30 ? 1 : 0;
-    } else {
-      contactScore =
-        knownPower ? 14 :
-        hr >= 20 ? 12 :
-        hr >= 10 ? 9 :
-        ops >= .800 ? 7 : 4;
-    }
-
-    contactScore = Math.min(contactScore, 27);
-    score += contactScore;
-    reasons.push(`Contact Quality ${contactScore}/27`);
-
-    let productionScore = 0;
-
-    if (slg >= .550) productionScore += 6;
-    else if (slg >= .500) productionScore += 5;
-    else if (slg >= .450) productionScore += 3;
-    else if (slg >= .400) productionScore += 1;
-    else if (knownPower) productionScore += 3;
-
-    if (ops >= .900) productionScore += 5;
-    else if (ops >= .825) productionScore += 4;
-    else if (ops >= .775) productionScore += 3;
-    else if (ops >= .725) productionScore += 1;
-    else if (knownPower) productionScore += 2;
-
-    productionScore = Math.min(productionScore, 11);
-    score += productionScore;
-    reasons.push(`SLG/OPS ${productionScore}/11`);
+    const platoonScore = hasPlatoonAdvantage ? 10 : 0;
+    score += platoonScore;
+    reasons.push(`Platoon ${platoonScore}/10`);
 
     const lineupScore = this.getLineupBoost(lineupSpot);
     score += lineupScore;
-    reasons.push(`Lineup ${lineupScore}/10`);
+    reasons.push(`Lineup ${lineupScore}/8`);
 
-    const platoonScore = platoon ? 5 : 0;
-    score += platoonScore;
-    reasons.push(`Platoon ${platoonScore}/5`);
+    const recentContactScore =
+      recentHardHitRate >= 50 ? 7 :
+      recentHardHitRate >= 45 ? 5 :
+      recentHardHitRate >= 40 ? 3 :
+      knownPower ? 3 : 0;
+
+    score += recentContactScore;
+    reasons.push(`Recent Quality Contact ${recentContactScore}/7`);
 
     const bvpScore = Math.min(bvpHR * 3, 6);
     score += bvpScore;
-    reasons.push(`BvP HR ${bvpScore}/6`);
-
-    let avgScore =
-      avg >= .300 ? 3 :
-      avg >= .275 ? 2 :
-      avg >= .250 ? 1 :
-      knownPower ? 1 : 0;
-
-    score += avgScore;
-    reasons.push(`AVG ${avgScore}/3`);
+    reasons.push(`Previous HR vs Pitcher ${bvpScore}/6`);
 
     return {
       score: Math.min(100, Math.round(score)),
