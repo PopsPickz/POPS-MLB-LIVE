@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>POPS Pickz MLB Auto</title>
+
+  <title>POPS Pickz MLB</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -11,53 +12,63 @@
   <div class="app">
 
     <header class="hero">
-      <h1>⚾ POPS Pickz<br>6.0 Auto</h1>
-      <p>Automatic MLB Matchups • HR Pickz • Hit Pickz • Moneyline Edges</p>
+      <h1>⚾ POPS Pickz MLB</h1>
+      <p>Automatic MLB games, pitcher targets, HR picks, hit picks, moneyline, scouting reports, and weather</p>
     </header>
 
-    <nav class="tabs">
-      <button onclick="showTab('pitchersSection')">🎯 Pitchers</button>
-      <button onclick="showTab('hrSection')">💣 HR Pickz</button>
-      <button onclick="showTab('hitsSection')">🔥 Hit Pickz</button>
-      <button onclick="showTab('moneylineSection')">💰 Moneyline</button>
-      <button onclick="showTab('weatherSection')">🌦️ Weather</button>
-    </nav>
-
-    <section id="pitchersSection">
-      <h2>🎯 Pitchers To Target</h2>
-      <div id="pitcherTargetsBox">Loading pitcher targets...</div>
+    <section class="card">
+      <h2>🎯 POPS Pitchers To Target</h2>
+      <div id="pitcherTargetsBox">
+        <p>Loading pitcher targets...</p>
+      </div>
     </section>
 
-    <section id="hrSection">
-      <h2>💣 Top 20 HR Pickz</h2>
-      <div id="hrPicksBox">Loading HR picks...</div>
+    <section class="card">
+      <h2>💣 POPS Home Run Pickz</h2>
+      <div id="hrPicksBox">
+        <p>Loading home run picks...</p>
+      </div>
     </section>
 
-    <section id="hitsSection">
+    <section class="card">
       <h2>🔥 POPS Hit Pickz</h2>
-      <p class="section-note">
-        Hitters with a 2+ game hit streak or previous HR vs today’s pitcher.
-      </p>
-      <div id="hitPicksBox">Loading hit picks...</div>
+      <div id="hitPicksBox">
+        <p>Loading hit picks...</p>
+      </div>
     </section>
 
-    <section id="moneylineSection">
-      <h2>💰 POPS Moneyline Model</h2>
-      <div id="moneylineBox">Loading moneyline edges...</div>
+    <section class="card">
+      <h2>💰 POPS Moneyline Pickz</h2>
+      <div id="moneylineBox">
+        <p>Loading moneyline picks...</p>
+      </div>
     </section>
 
+    <section class="card">
+      <h2>🌦️ Weather Center</h2>
+      <div id="weatherBox">
+        <p>Loading weather...</p>
+      </div>
+    </section>
 
-    <section id="scoutingSection">
-      <h2>🔎 Scouting Report</h2>
+    <section class="card">
+      <h2>📋 Today’s MLB Games</h2>
+      <div id="gamesBox">
+        <p>Loading games...</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🔎 Game Scouting Report</h2>
       <div id="scoutingBox">
-        Tap a pitcher card to load the scouting report.
+        <p>Tap a game to view scouting report.</p>
       </div>
     </section>
 
   </div>
 
   <script src="api.js"></script>
-  <script src="formula.js?v=3"></script>
+  <script src="formula.js"></script>
   <script src="pitchers.js"></script>
   <script src="homeruns.js"></script>
   <script src="hits.js"></script>
