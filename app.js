@@ -3,17 +3,10 @@ const hrPicksBox = document.getElementById("hrPicksBox");
 const hitPicksBox = document.getElementById("hitPicksBox");
 const moneylineBox = document.getElementById("moneylineBox");
 
+let todayData = null;
 let games = [];
-let targets = [];
 let hrPicks = [];
 let hitPicks = [];
-
-const cache = {
-  playerInfo: {},
-  batterStats: {},
-  bvp: {},
-  lineup: {}
-};
 
 function formatTime(dateString) {
   return new Date(dateString).toLocaleString([], {
@@ -34,200 +27,140 @@ async function safe(fn, fallback) {
   }
 }
 
-async function getBatterStats(playerId, playerName) {
-  if (!playerId) return {};
+async function loadTodayData() {
+  const res = await fetch(`data/today.json?cache=${Date.now()}`);
+  if (!res.ok) throw new Error("Could not load data/today.json");
+  todayData = await res.json();
 
-  if (!cache.batterStats[playerId]) {
-    const seasonStats = await safe(() => API.getBatterStats(playerId), {});
+  games = todayData.games.map(game => ({
+    id: game.gamePk,
+    gamePk: game.gamePk,
+    date: game.date,
+    venue: game.venue,
 
-    const manualStatcast =
-      typeof StatcastData !== "undefined"
-        ? StatcastData[playerName] || {}
-        : {};
+    awayTeam: game.awayTeam,
+    homeTeam: game.homeTeam,
+    awayTeamId: game.awayTeamId,
+    homeTeamId: game.homeTeamId,
 
-    const liveStatcast =
-      typeof StatcastAPI !== "undefined"
-        ? await safe(() => StatcastAPI.getPlayerPowerStats(playerId), {})
-        : {};
+    awayPitcher: game.awayPitcher,
+    homePitcher: game.homePitcher,
+    awayPitcherId: game.awayPitcherId,
+    homePitcherId: game.homePitcherId,
 
-    cache.batterStats[playerId] = {
-      ...seasonStats,
-      ...manualStatcast,
-      ...liveStatcast
-    };
-  }
-
-  return cache.batterStats[playerId];
+    awayPitcherStats: game.awayPitcherStats || {},
+    homePitcherStats: game.homePitcherStats || {}
+  }));
 }
 
-async function getPlayerInfo(playerId) {
-  if (!playerId) return {};
+function mergeBatterStats(batter = {}) {
+  const hitting = batter.hitting || {};
+  const statcast = batter.statcast || {};
 
-  if (!cache.playerInfo[playerId]) {
-    cache.playerInfo[playerId] = await safe(
-      () => API.getPlayerInfo ? API.getPlayerInfo(playerId) : {},
-      {}
-    );
-  }
+  const avg = Number(hitting.avg || 0);
+  const slg = Number(hitting.slg || 0);
+  const ops = Number(hitting.ops || 0);
 
-  return cache.playerInfo[playerId];
+  return {
+    ...hitting,
+    ...statcast,
+    avg,
+    slg,
+    ops,
+    homeRuns: Number(hitting.homeRuns || 0),
+    hits: Number(hitting.hits || 0),
+    atBats: Number(hitting.atBats || 0),
+    iso: slg && avg ? Number((slg - avg).toFixed(3)) : 0
+  };
 }
 
-async function getBvPStats(batterId, pitcherId) {
-  if (!batterId || !pitcherId) {
-    return { atBats: 0, hits: 0, avg: ".000", homeRuns: 0 };
-  }
+function addHRPick(game, batter, pitcherName, pitcherStats, pitcherHand = "") {
+  const batterStats = mergeBatterStats(batter);
+  const bvpStats = batter.bvp || { atBats: 0, hits: 0, avg: ".000", homeRuns: 0 };
+  const bvpHR = Number(bvpStats.homeRuns || 0);
+  const hitStreak = Number(batter.hitStreak || 0);
+  const batterHand = batter.batSide || "";
 
-  const key = `bvpstats-${batterId}-${pitcherId}`;
+  const hasPlatoonAdvantage =
+    batterHand === "S" ||
+    (batterHand === "L" && pitcherHand === "R") ||
+    (batterHand === "R" && pitcherHand === "L");
 
-  if (cache.bvp[key] === undefined) {
-    cache.bvp[key] = await safe(
-      () => API.getBvPStats ? API.getBvPStats(batterId, pitcherId) : {
-        atBats: 0,
-        hits: 0,
-        avg: ".000",
-        homeRuns: 0
-      },
-      {
-        atBats: 0,
-        hits: 0,
-        avg: ".000",
-        homeRuns: 0
-      }
-    );
-  }
+  const risk = Formula.pitcherRisk(pitcherStats);
 
-  return cache.bvp[key];
-}
-
-async function loadGames() {
-  gamesBox.innerHTML = "";
-  games = await safe(() => API.getSchedule(), []);
-}
-
-async function buildTargets() {
-  targets = [];
-
-  for (const game of games) {
-    if (game.awayPitcherId) {
-      const stats = await safe(() => API.getPlayerStats(game.awayPitcherId), {});
-      targets.push({
-        game,
-        pitcher: game.awayPitcher,
-        pitcherId: game.awayPitcherId,
-        targetTeam: game.homeTeam,
-        targetTeamId: game.homeTeamId,
-        risk: Formula.pitcherRisk(stats)
-      });
+  const result = Formula.getHrScore(
+    batter.name,
+    batter.lineupSpot,
+    risk,
+    {
+      batterStats,
+      bvpHR,
+      hitStreak,
+      hasPlatoonAdvantage
     }
-
-    if (game.homePitcherId) {
-      const stats = await safe(() => API.getPlayerStats(game.homePitcherId), {});
-      targets.push({
-        game,
-        pitcher: game.homePitcher,
-        pitcherId: game.homePitcherId,
-        targetTeam: game.awayTeam,
-        targetTeamId: game.awayTeamId,
-        risk: Formula.pitcherRisk(stats)
-      });
-    }
-  }
-}
-
-async function getLineup(target) {
-  const key = `${target.game.id}-${target.targetTeamId}`;
-
-  if (cache.lineup[key]) return cache.lineup[key];
-
-  let lineup = await safe(
-    () => API.getLineup(target.game.id, target.targetTeamId),
-    []
   );
 
-  if (lineup.length) {
-    lineup = lineup.map(p => ({
-      ...p,
-      team: target.targetTeam,
-      confirmed: true
-    }));
-  } else {
-    const roster = await safe(() => API.getRoster(target.targetTeamId), []);
-
-    lineup = roster
-  .filter(p => !["P", "SP", "RP"].includes(p.position))
-  .sort((a, b) => a.name.localeCompare(b.name))
-  .slice(0, 9)
-  .map((p, index) => ({
-    ...p,
-    team: target.targetTeam,
-    lineupSpot: index + 1,
-    confirmed: false
-  }));
-    
-  }
-
-  cache.lineup[key] = lineup;
-  return lineup;
+  hrPicks.push({
+    player: batter.name,
+    team: batter.team,
+    position: batter.position,
+    pitcher: pitcherName,
+    game: `${game.awayTeam} vs ${game.homeTeam}`,
+    gameTime: formatTime(game.date),
+    lineupSpot: batter.lineupSpot,
+    confirmed: batter.confirmed,
+    batterHand,
+    pitcherHand,
+    hasPlatoonAdvantage,
+    bvpHR,
+    bvpStats,
+    hitStreak,
+    score: result.score,
+    reasons: result.reasons
+  });
 }
 
 async function loadHRPicks() {
   hrPicksBox.innerHTML = "<p>Loading HR Pickz...</p>";
   hrPicks = [];
 
-  for (const target of targets) {
-    const lineup = await getLineup(target);
-    const pitcherInfo = await getPlayerInfo(target.pitcherId);
-    const pitcherHand = pitcherInfo.pitchHand || "";
+  for (const game of todayData.games) {
+    const awayPitcherInfo = game.awayPitcherId && API?.getPlayerInfo
+      ? await safe(() => API.getPlayerInfo(game.awayPitcherId), {})
+      : {};
 
-    for (const batter of lineup) {
-      const batterStats = await getBatterStats(batter.id, batter.name);
-      const batterInfo = await getPlayerInfo(batter.id);
-      const batterHand = batterInfo.batSide || "";
+    const homePitcherInfo = game.homePitcherId && API?.getPlayerInfo
+      ? await safe(() => API.getPlayerInfo(game.homePitcherId), {})
+      : {};
 
-      const hasPlatoonAdvantage =
-        batterHand === "S" ||
-        (batterHand === "L" && pitcherHand === "R") ||
-        (batterHand === "R" && pitcherHand === "L");
+    const awayLineup = (game.awayLineup || []).map(b => ({
+      ...b,
+      team: game.awayTeam
+    }));
 
-      const bvpStats = await getBvPStats(batter.id, target.pitcherId);
-      const bvpHR = Number(bvpStats.homeRuns || 0);
+    const homeLineup = (game.homeLineup || []).map(b => ({
+      ...b,
+      team: game.homeTeam
+    }));
 
-      const hitStreak = await safe(
-        () => API.getHitStreak ? API.getHitStreak(batter.id) : 0,
-        0
+    for (const batter of awayLineup) {
+      addHRPick(
+        game,
+        batter,
+        game.homePitcher,
+        game.homePitcherStats || {},
+        homePitcherInfo.pitchHand || ""
       );
+    }
 
-      const result = Formula.getHrScore(
-        batter.name,
-        batter.lineupSpot,
-        target.risk,
-        {
-          batterStats,
-          bvpHR,
-          hitStreak,
-          hasPlatoonAdvantage
-        }
+    for (const batter of homeLineup) {
+      addHRPick(
+        game,
+        batter,
+        game.awayPitcher,
+        game.awayPitcherStats || {},
+        awayPitcherInfo.pitchHand || ""
       );
-
-      hrPicks.push({
-        player: batter.name,
-        team: batter.team,
-        position: batter.position,
-        pitcher: target.pitcher,
-        game: `${target.game.awayTeam} vs ${target.game.homeTeam}`,
-        gameTime: formatTime(target.game.date),
-        lineupSpot: batter.lineupSpot,
-        confirmed: batter.confirmed,
-        batterHand,
-        pitcherHand,
-        hasPlatoonAdvantage,
-        bvpHR,
-        bvpStats,
-        hitStreak,
-        score: result.score,
-        reasons: result.reasons
-      });
     }
   }
 
@@ -235,14 +168,12 @@ async function loadHRPicks() {
 
   hrPicks.forEach(pick => {
     const key = `${pick.player}-${pick.team}`;
-
     if (!uniquePlayers[key] || pick.score > uniquePlayers[key].score) {
       uniquePlayers[key] = pick;
     }
   });
 
-  hrPicks = Object.values(uniquePlayers);
-  hrPicks.sort((a, b) => b.score - a.score);
+  hrPicks = Object.values(uniquePlayers).sort((a, b) => b.score - a.score);
 
   if (!hrPicks.length) {
     hrPicksBox.innerHTML = "<p>No HR Pickz found.</p>";
@@ -271,52 +202,58 @@ async function loadHRPicks() {
   `).join("");
 }
 
+function addHitPick(game, batter, pitcherName) {
+  const stats = mergeBatterStats(batter);
+  const bvpStats = batter.bvp || { atBats: 0, hits: 0, avg: ".000", homeRuns: 0 };
+  const bvpHR = Number(bvpStats.homeRuns || 0);
+  const hitStreak = Number(batter.hitStreak || 0);
+
+  if (hitStreak >= 2 || bvpHR > 0 || Number(bvpStats.hits || 0) > 0) {
+    const score = Formula.getHitScore(
+      batter.name,
+      batter.lineupSpot,
+      hitStreak,
+      bvpHR,
+      stats
+    );
+
+    hitPicks.push({
+      player: batter.name,
+      team: batter.team,
+      pitcher: pitcherName,
+      lineupSpot: batter.lineupSpot,
+      confirmed: batter.confirmed,
+      hitStreak,
+      bvpHR,
+      bvpStats,
+      score
+    });
+  }
+}
+
 async function loadHitPicks() {
   hitPicksBox.innerHTML = "<p>Loading Hit Pickz...</p>";
   hitPicks = [];
 
-  for (const target of targets) {
-    const lineup = await getLineup(target);
+  for (const game of todayData.games) {
+    const awayLineup = (game.awayLineup || []).map(b => ({
+      ...b,
+      team: game.awayTeam
+    }));
 
-    for (const batter of lineup) {
-      const hitStreak = await safe(
-        () => API.getHitStreak ? API.getHitStreak(batter.id) : 0,
-        0
-      );
+    const homeLineup = (game.homeLineup || []).map(b => ({
+      ...b,
+      team: game.homeTeam
+    }));
 
-      const bvpStats = await getBvPStats(batter.id, target.pitcherId);
-      const bvpHR = Number(bvpStats.homeRuns || 0);
-      const stats = await getBatterStats(batter.id, batter.name);
-
-      if (hitStreak >= 2 || bvpHR > 0 || Number(bvpStats.hits || 0) > 0) {
-        const score = Formula.getHitScore(
-          batter.name,
-          batter.lineupSpot,
-          hitStreak,
-          bvpHR,
-          stats
-        );
-
-        hitPicks.push({
-          player: batter.name,
-          team: batter.team,
-          pitcher: target.pitcher,
-          lineupSpot: batter.lineupSpot,
-          confirmed: batter.confirmed,
-          hitStreak,
-          bvpHR,
-          bvpStats,
-          score
-        });
-      }
-    }
+    awayLineup.forEach(batter => addHitPick(game, batter, game.homePitcher));
+    homeLineup.forEach(batter => addHitPick(game, batter, game.awayPitcher));
   }
 
   const uniqueHitPlayers = {};
 
   hitPicks.forEach(pick => {
     const key = `${pick.player}-${pick.team}`;
-
     if (!uniqueHitPlayers[key] || pick.score > uniqueHitPlayers[key].score) {
       uniqueHitPlayers[key] = pick;
     }
@@ -363,19 +300,15 @@ async function loadHitPicks() {
 }
 
 async function init() {
-  hrPicksBox.innerHTML = "<p>Starting POPS Pickz 9.0...</p>";
+  hrPicksBox.innerHTML = "<p>Starting POPS Pickz 10.0...</p>";
 
-  await loadGames();
-  await buildTargets();
+  await loadTodayData();
   await loadHRPicks();
+  await loadHitPicks();
 
-  setTimeout(async () => {
-    await loadHitPicks();
-
-    if (typeof Moneyline !== "undefined") {
-      await Moneyline.load(games);
-    }
-  }, 500);
+  if (typeof Moneyline !== "undefined") {
+    await Moneyline.load(games);
+  }
 }
 
 init().catch(err => {
