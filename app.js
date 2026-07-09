@@ -130,18 +130,18 @@ async function loadHRPicks() {
 
     if (!lineup.length) continue;
 
-    lineup.forEach(batter => {
-      const result = Formula.getHrScore(
+      for (const batter of lineup) {
+      const batterStats = await API.getBatterStats(batter.id);
+      
+        const result = Formula.getHrScore(
         batter.name,
         batter.lineupSpot,
         target.risk,
         {
-          batterStats: {},
-          bvpHR: 0,
-          hitStreak: 0,
-          hasPlatoonAdvantage: false
+       
+          batterStats
         }
-      );
+        );
 
       hrPicks.push({
         player: batter.name,
@@ -152,20 +152,14 @@ async function loadHRPicks() {
         score: result.score,
         reasons: result.reasons
       });
-    });
+    }
   }
 
   hrPicks.sort((a, b) => b.score - a.score);
 
-  if (!hrPicks.length) {
-    hrPicksBox.innerHTML = `
-      <div class="pick-card">
-        <h3>No confirmed lineups yet</h3>
-        <p>HR Pickz will appear once MLB posts official batting orders.</p>
-      </div>
-    `;
-    return;
-  }
+  if (!lineup.length) {
+  lineup = getProjectedLineup(target.targetTeam);
+}
 
   hrPicksBox.innerHTML = hrPicks.slice(0, 20).map((pick, index) => `
     <div class="pick-card">
