@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>POPS Pickz MLB</title>
+  <title>POPS Pickz MLB 7.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -12,20 +12,27 @@
   <div class="app">
 
     <header class="hero">
-      <h1>⚾ POPS Pickz MLB</h1>
-      <p>Automatic MLB games, pitcher targets, HR picks, hit picks, moneyline, scouting reports, and weather</p>
+      <h1>⚾ POPS Pickz 7.0</h1>
+      <p>Automatic MLB Games • HR Pickz • Hit Pickz • Moneyline • Scouting Reports</p>
     </header>
 
     <nav class="tabs">
+      <button onclick="showTab('games')">📋 Games</button>
       <button onclick="showTab('pitchers')">🎯 Pitchers</button>
       <button onclick="showTab('homeruns')">💣 HR Pickz</button>
       <button onclick="showTab('hits')">🔥 Hit Pickz</button>
       <button onclick="showTab('moneyline')">💰 Moneyline</button>
-      <button onclick="showTab('weather')">🌦️ Weather</button>
-      <button onclick="showTab('games')">📋 Games</button>
+      <button onclick="showTab('scouting')">🔎 Scouting</button>
     </nav>
 
-    <section class="card tab-section active" id="pitchers">
+    <section class="card tab-section active" id="games">
+      <h2>📋 Today’s MLB Games</h2>
+      <div id="gamesBox">
+        <p>Loading games...</p>
+      </div>
+    </section>
+
+    <section class="card tab-section" id="pitchers">
       <h2>🎯 POPS Pitchers To Target</h2>
       <div id="pitcherTargetsBox">
         <p>Loading pitcher targets...</p>
@@ -53,20 +60,6 @@
       </div>
     </section>
 
-    <section class="card tab-section" id="weather">
-      <h2>🌦️ Weather Center</h2>
-      <div id="weatherBox">
-        <p>Loading weather...</p>
-      </div>
-    </section>
-
-    <section class="card tab-section" id="games">
-      <h2>📋 Today’s MLB Games</h2>
-      <div id="gamesBox">
-        <p>Loading games...</p>
-      </div>
-    </section>
-
     <section class="card tab-section" id="scouting">
       <h2>🔎 Game Scouting Report</h2>
       <div id="scoutingBox">
@@ -89,12 +82,6 @@
 
   <script src="api.js"></script>
   <script src="formula.js"></script>
-  <script src="pitchers.js"></script>
-  <script src="homeruns.js"></script>
-  <script src="hits.js"></script>
-  <script src="moneyline.js"></script>
-  <script src="scouting.js"></script>
-  <script src="weather.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
