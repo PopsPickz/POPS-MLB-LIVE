@@ -51,6 +51,9 @@ async function loadTodayData() {
     awayPitcherStats: game.awayPitcherStats || {},
     homePitcherStats: game.homePitcherStats || {}
   }));
+ 
+  window.games = games;
+  window.todayData = todayData;
 }
 
 function mergeBatterStats(batter = {}) {
@@ -303,8 +306,14 @@ async function init() {
   hrPicksBox.innerHTML = "<p>Starting POPS Pickz 10.0...</p>";
 
   await loadTodayData();
-  await loadHRPicks();
-  await loadHitPicks();
+
+if (typeof Pitchers !== "undefined") {
+  Pitchers.box = document.getElementById("pitchersBox");
+  await Pitchers.loadPitcherTargets();
+}
+
+await loadHRPicks();
+await loadHitPicks();
 
   if (typeof Moneyline !== "undefined") {
     await Moneyline.load(games);
