@@ -66,9 +66,9 @@ const API = {
   },
 
   async getTeamStats(teamId) {
-    if (!teamId) return { hitting: {}, pitching: {} };
+    if (!teamId) return { hitting: {}, pitching: {}, fielding: {} };
 
-    const url = `${this.base}/teams/${teamId}/stats?stats=season&group=hitting,pitching`;
+    const url = `${this.base}/teams/${teamId}/stats?stats=season&group=hitting,pitching,fielding`;
     const data = await this.fetchJSON(url);
 
     const hittingGroup = data?.stats?.find(
@@ -79,9 +79,14 @@ const API = {
       item => item.group?.displayName?.toLowerCase() === "pitching"
     );
 
+    const fieldingGroup = data?.stats?.find(
+      item => item.group?.displayName?.toLowerCase() === "fielding"
+    );
+
     return {
       hitting: hittingGroup?.splits?.[0]?.stat || {},
-      pitching: pitchingGroup?.splits?.[0]?.stat || {}
+      pitching: pitchingGroup?.splits?.[0]?.stat || {},
+      fielding: fieldingGroup?.splits?.[0]?.stat || {}
     };
   },
 
@@ -153,11 +158,8 @@ const API = {
     for (const game of logs) {
       const hits = Number(game.stat?.hits || 0);
 
-      if (hits >= 1) {
-        streak++;
-      } else {
-        break;
-      }
+      if (hits >= 1) streak++;
+      else break;
     }
 
     return streak;
@@ -167,9 +169,7 @@ const API = {
     if (!batterId || !pitcherId) return 0;
 
     const season = new Date().getFullYear();
-
-    const url =
-      `${this.base}/people/${batterId}/stats?stats=vsPlayer&group=hitting&opposingPlayerId=${pitcherId}&season=${season}`;
+    const url = `${this.base}/people/${batterId}/stats?stats=vsPlayer&group=hitting&opposingPlayerId=${pitcherId}&season=${season}`;
 
     const data = await this.fetchJSON(url);
     const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
