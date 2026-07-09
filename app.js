@@ -117,8 +117,40 @@ async function getTeamLineup(gameId, teamId, teamName) {
   }));
 }
 
+async function getProjectedLineup(teamId, teamName) {
+  const roster = await API.getRoster(teamId);
+  const hitters = [];
+
+  for (const player of roster) {
+    if (["P", "SP", "RP"].includes(player.position)) continue;
+
+    const stats = await API.getBatterStats(player.id);
+
+    hitters.push({
+      id: player.id,
+      name: player.name,
+      position: player.position,
+      team: teamName,
+      confirmed: false,
+      stats,
+      powerScore:
+        Number(stats.homeRuns || 0) * 3 +
+        Number(stats.ops || 0) * 100 +
+        Number(stats.slg || 0) * 100
+    });
+  }
+
+  return hitters
+    .sort((a, b) => b.powerScore - a.powerScore)
+    .slice(0, 9)
+    .map((player, index) => ({
+      ...player,
+      lineupSpot: index + 1
+    }));
+}
+
 async function loadHRPicks() {
-  hrPicksBox.innerHTML = "<p>Loading HR Pickz from confirmed lineups...</p>";
+  hrPicksBox.innerHTML = "<p>Loading HR Pickz...</p>";
   hrPicks = [];
 
   for (const target of pitcherTargets) {
@@ -129,21 +161,21 @@ async function loadHRPicks() {
     );
 
     if (!lineup.length) {
-    lineup = getProjectedLineup(target.targetTeam);
+      lineup = await getProjectedLineup(
+        target.targetTeamId,
+        target.targetTeam
+      );
     }
 
-      for (const batter of lineup) {
-      const batterStats = await API.getBatterStats(batter.id);
-      
-        const result = Formula.getHrScore(
+    for (const batter of lineup) {
+      const batterStats = batter.stats || await API.getBatterStats(batter.id);
+
+      const result = Formula.getHrScore(
         batter.name,
         batter.lineupSpot,
         target.risk,
-        {
-       
-          batterStats
-        }
-        );
+        { batterStats }
+      );
 
       hrPicks.push({
         player: batter.name,
@@ -151,6 +183,7 @@ async function loadHRPicks() {
         position: batter.position,
         pitcher: target.pitcher,
         lineupSpot: batter.lineupSpot,
+        confirmed: batter.confirmed,
         score: result.score,
         reasons: result.reasons
       });
@@ -159,9 +192,10 @@ async function loadHRPicks() {
 
   hrPicks.sort((a, b) => b.score - a.score);
 
-  if (!lineup.length) {
-  lineup = getProjectedLineup(target.targetTeam);
-}
+  if (!hrPicks.length) {
+    hrPicksBox.innerHTML = "<p>No HR Pickz found.</p>";
+    return;
+  }
 
   hrPicksBox.innerHTML = hrPicks.slice(0, 20).map((pick, index) => `
     <div class="pick-card">
@@ -171,6 +205,7 @@ async function loadHRPicks() {
       <p>⚾ vs ${pick.pitcher}</p>
       <p>📍 Batting spot: ${pick.lineupSpot}</p>
       <p>🧢 Position: ${pick.position || "N/A"}</p>
+      <p>${pick.confirmed ? "✅ Confirmed lineup" : "🟡 Projected lineup"}</p>
       <p class="small">${pick.reasons}</p>
     </div>
   `).join("");
@@ -202,12 +237,7 @@ function loadHitPicks() {
   hitPicks.sort((a, b) => b.score - a.score);
 
   if (!hitPicks.length) {
-    hitPicksBox.innerHTML = `
-      <div class="pick-card">
-        <h3>No Hit Pickz yet</h3>
-        <p>Hit Pickz will appear once confirmed lineups are posted.</p>
-      </div>
-    `;
+    hitPicksBox.innerHTML = "<p>No Hit Pickz found.</p>";
     return;
   }
 
@@ -218,19 +248,13 @@ function loadHitPicks() {
       <p>🔥 Hit Score: <span class="score">${pick.score}/100</span></p>
       <p>⚾ vs ${pick.pitcher}</p>
       <p>📍 Batting spot: ${pick.lineupSpot}</p>
-      <p>📈 Hit streak: ${pick.hitStreak} games</p>
-      <p>💣 Previous HR vs pitcher: ${pick.previousHR > 0 ? "Yes" : "No"}</p>
+      <p>${pick.confirmed ? "✅ Confirmed lineup" : "🟡 Projected lineup"}</p>
     </div>
   `).join("");
 }
 
 async function loadMoneyline() {
   moneylineBox.innerHTML = "<p>Loading moneyline model...</p>";
-
-  if (!games.length) {
-    moneylineBox.innerHTML = "<p>No games found.</p>";
-    return;
-  }
 
   const picks = [];
 
@@ -241,13 +265,11 @@ async function loadMoneyline() {
     const awayScore = Formula.moneylineScore(awayStats, homeStats);
     const homeScore = Formula.moneylineScore(homeStats, awayStats) + 1;
 
-    const pick = homeScore >= awayScore ? game.homeTeam : game.awayTeam;
-
     picks.push({
       game,
       awayScore,
       homeScore,
-      pick
+      pick: homeScore >= awayScore ? game.homeTeam : game.awayTeam
     });
   }
 
@@ -257,7 +279,6 @@ async function loadMoneyline() {
       <p>💰 POPS Pick: <span class="score">${item.pick}</span></p>
       <p>${item.game.awayTeam}: ${item.awayScore} checks</p>
       <p>${item.game.homeTeam}: ${item.homeScore} checks</p>
-      <p class="small">Checklist: runs, OPS, ERA, WHIP, home-field edge.</p>
     </div>
   `).join("");
 }
@@ -268,8 +289,8 @@ async function showScouting(gameId) {
 
   showTab("scouting");
 
-  const awayLineup = await API.getLineup(game.id, game.awayTeamId);
-  const homeLineup = await API.getLineup(game.id, game.homeTeamId);
+  const awayLineup = await getTeamLineup(game.id, game.awayTeamId, game.awayTeam);
+  const homeLineup = await getTeamLineup(game.id, game.homeTeamId, game.homeTeam);
 
   scoutingBox.innerHTML = makeCard(
     `${game.awayTeam} vs ${game.homeTeam}`,
@@ -283,14 +304,14 @@ async function showScouting(gameId) {
       <h3>${game.awayTeam} Lineup</h3>
       ${
         awayLineup.length
-          ? awayLineup.map(p => `<p>${p.lineupSpot}. ${p.name} ${p.position ? `(${p.position})` : ""}</p>`).join("")
+          ? awayLineup.map(p => `<p>${p.lineupSpot}. ${p.name} (${p.position})</p>`).join("")
           : "<p>Lineup not posted yet.</p>"
       }
       <hr>
       <h3>${game.homeTeam} Lineup</h3>
       ${
         homeLineup.length
-          ? homeLineup.map(p => `<p>${p.lineupSpot}. ${p.name} ${p.position ? `(${p.position})` : ""}</p>`).join("")
+          ? homeLineup.map(p => `<p>${p.lineupSpot}. ${p.name} (${p.position})</p>`).join("")
           : "<p>Lineup not posted yet.</p>"
       }
     `
@@ -299,8 +320,6 @@ async function showScouting(gameId) {
 
 async function init() {
   try {
-    gamesBox.innerHTML = "<p>Starting POPS Pickz 8.0...</p>";
-
     await loadGames();
     await loadPitcherTargets();
     await loadHRPicks();
