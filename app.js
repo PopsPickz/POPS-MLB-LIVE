@@ -164,7 +164,13 @@ const result = Formula.getHrScore(
         lineupSpot: batter.lineupSpot,
         confirmed: batter.confirmed,
         bvpHR,
+
+        batterHand,
+        pitcherHand,
+        hasPlatoonAdvantage,
+
         score: result.score,
+        reasons: result.reasons
         reasons: result.reasons
       });
     }
