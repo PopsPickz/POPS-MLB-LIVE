@@ -204,8 +204,8 @@ const Pitchers = {
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
+},
     
-}
   
   renderCard(card) {
     const stats = card.stats || {};
