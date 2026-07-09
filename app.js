@@ -267,39 +267,47 @@ async function loadMoneyline() {
     const awayStarterStats = await API.getPlayerStats(game.awayPitcherId);
     const homeStarterStats = await API.getPlayerStats(game.homePitcherId);
 
-    const awaySP = Formula.pitcherRisk(awayStarterStats).score;
-    const homeSP = Formula.pitcherRisk(homeStarterStats).score;
+    const awaySPRisk = Formula.pitcherRisk(awayStarterStats).score;
+    const homeSPRisk = Formula.pitcherRisk(homeStarterStats).score;
 
-    const awayOffense =
-      Number(awayStats.hitting?.runs || 0) +
-      Number(awayStats.hitting?.ops || 0) * 100;
-
-    const homeOffense =
-      Number(homeStats.hitting?.runs || 0) +
-      Number(homeStats.hitting?.ops || 0) * 100;
-
-    const awayPitching =
+    const awayBullpenScore =
       Number(awayStats.pitching?.era || 99) +
       Number(awayStats.pitching?.whip || 99);
 
-    const homePitching =
+    const homeBullpenScore =
       Number(homeStats.pitching?.era || 99) +
       Number(homeStats.pitching?.whip || 99);
+
+    const awayOffenseScore =
+      Number(awayStats.hitting?.runs || 0) +
+      Number(awayStats.hitting?.ops || 0) * 100;
+
+    const homeOffenseScore =
+      Number(homeStats.hitting?.runs || 0) +
+      Number(homeStats.hitting?.ops || 0) * 100;
+
+    const awayDefenseScore =
+      Number(awayStats.pitching?.runsAllowed || 999) +
+      Number(awayStats.pitching?.era || 99);
+
+    const homeDefenseScore =
+      Number(homeStats.pitching?.runsAllowed || 999) +
+      Number(homeStats.pitching?.era || 99);
 
     let awayChecks = 0;
     let homeChecks = 0;
 
-    const awayBetterSP = awaySP < homeSP;
-    const homeBetterSP = homeSP < awaySP;
+    const awayBetterSP = awaySPRisk < homeSPRisk;
+    const homeBetterSP = homeSPRisk < awaySPRisk;
 
-    const awayBetterBullpen = awayPitching < homePitching;
-    const homeBetterBullpen = homePitching < awayPitching;
+    const awayBetterBullpen = awayBullpenScore < homeBullpenScore;
+    const homeBetterBullpen = homeBullpenScore < awayBullpenScore;
 
-    const awayBetterOffense = awayOffense > homeOffense;
-    const homeBetterOffense = homeOffense > awayOffense;
+    const awayBetterOffense = awayOffenseScore > homeOffenseScore;
+    const homeBetterOffense = homeOffenseScore > awayOffenseScore;
 
-    const awayBetterDefense = awayPitching < homePitching;
-    const homeBetterDefense = homePitching < awayPitching;
+    const awayBetterDefense = awayDefenseScore < homeDefenseScore;
+    const homeBetterDefense = homeDefenseScore < awayDefenseScore;
 
     if (awayBetterSP) awayChecks++;
     if (homeBetterSP) homeChecks++;
@@ -313,7 +321,9 @@ async function loadMoneyline() {
     if (awayBetterDefense) awayChecks++;
     if (homeBetterDefense) homeChecks++;
 
-    homeChecks += 0.5;
+    if (awayChecks === homeChecks) {
+      homeChecks += 0.5;
+    }
 
     picks.push({
       game,
@@ -336,6 +346,7 @@ async function loadMoneyline() {
       <h3>${item.game.awayTeam} vs ${item.game.homeTeam}</h3>
       <p>⏰ ${formatTime(item.game.date)}</p>
       <p>💰 POPS Pick: <span class="score">${item.pick}</span></p>
+      <p class="small">Checklist winner: ${item.awayChecks} - ${item.homeChecks}</p>
 
       <hr>
 
