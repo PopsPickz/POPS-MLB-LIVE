@@ -23,6 +23,7 @@ const API = {
 
     return games.map(game => ({
       id: game.gamePk,
+      gamePk: game.gamePk,
       date: game.gameDate,
       status: game.status?.detailedState || "Scheduled",
       venue: game.venue?.name || "TBD",
@@ -61,8 +62,26 @@ const API = {
 
     const url = `${this.base}/people/${playerId}/stats?stats=season&group=hitting`;
     const data = await this.fetchJSON(url);
+    const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
 
-    return data?.stats?.[0]?.splits?.[0]?.stat || {};
+    const avg = Number(stat.avg || 0);
+    const slg = Number(stat.slg || 0);
+    const ops = Number(stat.ops || 0);
+
+    return {
+      ...stat,
+      avg,
+      slg,
+      ops,
+      homeRuns: Number(stat.homeRuns || 0),
+      hits: Number(stat.hits || 0),
+      atBats: Number(stat.atBats || 0),
+      rbi: Number(stat.rbi || 0),
+      doubles: Number(stat.doubles || 0),
+      triples: Number(stat.triples || 0),
+      iso: slg && avg ? Number((slg - avg).toFixed(3)) : 0,
+      hasSeasonPowerData: Boolean(stat.homeRuns || stat.slg || stat.ops)
+    };
   },
 
   async getTeamStats(teamId) {
@@ -167,12 +186,7 @@ const API = {
 
   async getBvPStats(batterId, pitcherId) {
     if (!batterId || !pitcherId) {
-      return {
-        atBats: 0,
-        hits: 0,
-        avg: ".000",
-        homeRuns: 0
-      };
+      return { atBats: 0, hits: 0, avg: ".000", homeRuns: 0 };
     }
 
     const season = new Date().getFullYear();
