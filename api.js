@@ -26,17 +26,21 @@ const API = {
       date: game.gameDate,
       status: game.status?.detailedState || "Scheduled",
       venue: game.venue?.name || "TBD",
+
       awayTeam: game.teams.away.team.name,
       homeTeam: game.teams.home.team.name,
       awayTeamId: game.teams.away.team.id,
       homeTeamId: game.teams.home.team.id,
+
       awayPitcher: game.teams.away.probablePitcher?.fullName || "TBD",
       homePitcher: game.teams.home.probablePitcher?.fullName || "TBD",
       awayPitcherId: game.teams.away.probablePitcher?.id || null,
       homePitcherId: game.teams.home.probablePitcher?.id || null,
+
       awayRecord: game.teams.away.leagueRecord
         ? `${game.teams.away.leagueRecord.wins}-${game.teams.away.leagueRecord.losses}`
         : "0-0",
+
       homeRecord: game.teams.home.leagueRecord
         ? `${game.teams.home.leagueRecord.wins}-${game.teams.home.leagueRecord.losses}`
         : "0-0"
@@ -67,11 +71,17 @@ const API = {
     const url = `${this.base}/teams/${teamId}/stats?stats=season&group=hitting,pitching`;
     const data = await this.fetchJSON(url);
 
-    const splits = data?.stats?.flatMap(s => s.splits || []) || [];
+    const hittingGroup = data?.stats?.find(
+      item => item.group?.displayName?.toLowerCase() === "hitting"
+    );
+
+    const pitchingGroup = data?.stats?.find(
+      item => item.group?.displayName?.toLowerCase() === "pitching"
+    );
 
     return {
-      hitting: splits.find(s => s.group?.displayName === "hitting")?.stat || {},
-      pitching: splits.find(s => s.group?.displayName === "pitching")?.stat || {}
+      hitting: hittingGroup?.splits?.[0]?.stat || {},
+      pitching: pitchingGroup?.splits?.[0]?.stat || {}
     };
   },
 
