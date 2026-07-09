@@ -197,7 +197,10 @@ const result = Formula.getHrScore(
       <p><strong>Position:</strong> ${pick.position || "N/A"}</p>
       <p><strong>Lineup:</strong> ${pick.confirmed ? "✅ Confirmed" : "🟡 Projected"}</p>
       <p><strong>Previous HR vs Pitcher:</strong> ${pick.bvpHR || 0}</p>
-
+      <p><strong>Batter Hand:</strong> ${pick.batterHand || "N/A"}</p>
+      <p><strong>Pitcher Hand:</strong> ${pick.pitcherHand || "N/A"}</p>
+      <p><strong>Platoon Edge:</strong> ${pick.hasPlatoonAdvantage ? "✅ Yes" : "❌ No"}</p>  
+      
       <p><strong>POPS HR Score:</strong> <span class="score">${pick.score}/100</span></p>
 
       <p class="small">${pick.reasons}</p>
