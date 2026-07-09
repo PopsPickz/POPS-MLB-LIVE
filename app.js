@@ -359,9 +359,20 @@ async function init() {
 
   setTimeout(async () => {
     await loadHitPicks();
-    await loadMoneyline();
+    await Moneyline.load(games);
   }, 500);
 }
+
+init().catch(err => {
+  console.error("POPS app error:", err);
+
+  hrPicksBox.innerHTML = `
+    <div class="pick-card">
+      <h3>⚠️ Site loading error</h3>
+      <p>${err.message}</p>
+    </div>
+  `;
+});
 
 init().catch(err => {
   console.error("POPS app error:", err);
