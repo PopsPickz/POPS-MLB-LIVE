@@ -175,7 +175,7 @@ async function loadHRPicks() {
   hrPicksBox.innerHTML = "<p>Loading HR Pickz...</p>";
   hrPicks = [];
 
-  for (const target of targets.slice(0, 10)) {
+  for (const target of targets) {
     const lineup = await getLineup(target);
     const pitcherInfo = await getPlayerInfo(target.pitcherId);
     const pitcherHand = pitcherInfo.pitchHand || "";
