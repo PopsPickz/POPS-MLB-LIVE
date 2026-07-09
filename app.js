@@ -117,6 +117,20 @@ async function getLineupForTarget(target) {
   return lineup;
 }
 
+async function getMergedBatterStats(batter) {
+  const baseStats = batter.stats || await API.getBatterStats(batter.id);
+
+  const statcastStats =
+    typeof StatcastData !== "undefined"
+      ? StatcastData[batter.name] || {}
+      : {};
+
+  return {
+    ...baseStats,
+    ...statcastStats
+  };
+}
+
 async function loadHRPicks() {
   hrPicksBox.innerHTML = "<p>Loading HR Pickz...</p>";
   hrPicks = [];
@@ -126,42 +140,38 @@ async function loadHRPicks() {
     const game = games.find(g => String(g.id) === String(target.gameId));
 
     for (const batter of lineup) {
-      const baseStats = batter.stats || await API.getBatterStats(batter.id);
+      const batterStats = await getMergedBatterStats(batter);
 
-const statcastStats = typeof StatcastData !== "undefined"
-  ? StatcastData[batter.name] || {}
-  : {};
+      const batterInfo = API.getPlayerInfo
+        ? await API.getPlayerInfo(batter.id)
+        : {};
 
-const batterStats = {
-  ...baseStats,
-  ...statcastStats
-};
-      
-     const batterInfo = await API.getPlayerInfo(batter.id);
-     const pitcherInfo = await API.getPlayerInfo(target.pitcherId);
+      const pitcherInfo = API.getPlayerInfo
+        ? await API.getPlayerInfo(target.pitcherId)
+        : {};
 
-    const batterHand = batterInfo.batSide || "";
-    const pitcherHand = pitcherInfo.pitchHand || "";
+      const batterHand = batterInfo.batSide || "";
+      const pitcherHand = pitcherInfo.pitchHand || "";
 
-    const hasPlatoonAdvantage =
-  (batterHand === "L" && pitcherHand === "R") ||
-  (batterHand === "R" && pitcherHand === "L") ||
-  batterHand === "S";
+      const hasPlatoonAdvantage =
+        (batterHand === "L" && pitcherHand === "R") ||
+        (batterHand === "R" && pitcherHand === "L") ||
+        batterHand === "S";
 
-const bvpHR = API.getBvPHR
-  ? await API.getBvPHR(batter.id, target.pitcherId)
-  : 0;
+      const bvpHR = API.getBvPHR
+        ? await API.getBvPHR(batter.id, target.pitcherId)
+        : 0;
 
-const result = Formula.getHrScore(
-  batter.name,
-  batter.lineupSpot,
-  target.risk,
-  {
-    batterStats,
-    bvpHR,
-    hasPlatoonAdvantage
-  }
-);
+      const result = Formula.getHrScore(
+        batter.name,
+        batter.lineupSpot,
+        target.risk,
+        {
+          batterStats,
+          bvpHR,
+          hasPlatoonAdvantage
+        }
+      );
 
       hrPicks.push({
         player: batter.name,
@@ -173,11 +183,9 @@ const result = Formula.getHrScore(
         lineupSpot: batter.lineupSpot,
         confirmed: batter.confirmed,
         bvpHR,
-
         batterHand,
         pitcherHand,
         hasPlatoonAdvantage,
-
         score: result.score,
         reasons: result.reasons
       });
@@ -194,7 +202,6 @@ const result = Formula.getHrScore(
   hrPicksBox.innerHTML = hrPicks.slice(0, 20).map((pick, index) => `
     <div class="hr-card">
       <div class="hr-rank">#${index + 1}</div>
-
       <h3>💣 ${pick.player}</h3>
 
       <p><strong>Team:</strong> ${pick.team}</p>
@@ -207,8 +214,7 @@ const result = Formula.getHrScore(
       <p><strong>Previous HR vs Pitcher:</strong> ${pick.bvpHR || 0}</p>
       <p><strong>Batter Hand:</strong> ${pick.batterHand || "N/A"}</p>
       <p><strong>Pitcher Hand:</strong> ${pick.pitcherHand || "N/A"}</p>
-      <p><strong>Platoon Edge:</strong> ${pick.hasPlatoonAdvantage ? "✅ Yes" : "❌ No"}</p>  
-      
+      <p><strong>Platoon Edge:</strong> ${pick.hasPlatoonAdvantage ? "✅ Yes" : "❌ No"}</p>
       <p><strong>POPS HR Score:</strong> <span class="score">${pick.score}/100</span></p>
 
       <p class="small">${pick.reasons}</p>
@@ -224,16 +230,8 @@ async function loadHitPicks() {
     const lineup = await getLineupForTarget(target);
 
     for (const batter of lineup) {
-      const hitStreak = await API.getHitStreak(batter.id);
-      const baseStats = batter.stats || await API.getBatterStats(batter.id);
-      const statcastStats = typeof StatcastData !== "undefined"
-     ? StatcastData[batter.name] || {}
-     : {};
-
-   const batterStats = {
-  ...baseStats,
-  ...statcastStats
-};
+      const hitStreak = API.getHitStreak ? await API.getHitStreak(batter.id) : 0;
+      const batterStats = await getMergedBatterStats(batter);
 
       const bvpHR = API.getBvPHR
         ? await API.getBvPHR(batter.id, target.pitcherId)
@@ -295,7 +293,6 @@ async function loadHitPicks() {
 
 async function loadMoneyline() {
   moneylineBox.innerHTML = "<p>Loading Moneyline Pickz...</p>";
-
   const picks = [];
 
   for (const game of games) {
@@ -349,19 +346,14 @@ async function loadMoneyline() {
 
     if (awayBetterSP) awayChecks++;
     if (homeBetterSP) homeChecks++;
-
     if (awayBetterBullpen) awayChecks++;
     if (homeBetterBullpen) homeChecks++;
-
     if (awayBetterOffense) awayChecks++;
     if (homeBetterOffense) homeChecks++;
-
     if (awayBetterDefense) awayChecks++;
     if (homeBetterDefense) homeChecks++;
 
-    if (awayChecks === homeChecks) {
-      homeChecks += 0.5;
-    }
+    if (awayChecks === homeChecks) homeChecks += 0.5;
 
     picks.push({
       game,
@@ -414,7 +406,6 @@ async function init() {
     await loadMoneyline();
   } catch (err) {
     console.error("POPS app error:", err);
-
     hrPicksBox.innerHTML = `
       <div class="pick-card">
         <h3>⚠️ Site loading error</h3>
