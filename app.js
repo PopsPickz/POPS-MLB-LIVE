@@ -316,37 +316,50 @@ async function loadMoneyline() {
     return Number.isFinite(n) ? n : 0;
   };
 
-  function compareCategory(awayValue, homeValue, higherIsBetter = true) {
-    let awayBetter = higherIsBetter
-      ? awayValue > homeValue
-      : awayValue < homeValue;
+  const winner = (awayVal, homeVal, higherIsBetter = true) => {
+    if (awayVal === homeVal) {
+      return { away: false, home: false, tie: true };
+    }
 
-    let homeBetter = higherIsBetter
-      ? homeValue > awayValue
-      : homeValue < awayValue;
+    if (higherIsBetter) {
+      return {
+        away: awayVal > homeVal,
+        home: homeVal > awayVal,
+        tie: false
+      };
+    }
 
-    // If exact tie, give home team the edge
-    if (!awayBetter && !homeBetter) homeBetter = true;
-
-    return { awayBetter, homeBetter };
-  }
+    return {
+      away: awayVal < homeVal,
+      home: homeVal < awayVal,
+      tie: false
+    };
+  };
 
   for (const game of games) {
-    const awayStats = await safe(() => API.getTeamStats(game.awayTeamId), {});
-    const homeStats = await safe(() => API.getTeamStats(game.homeTeamId), {});
+    const awayStats = await safe(() => API.getTeamStats(game.awayTeamId), {
+      hitting: {},
+      pitching: {},
+      fielding: {}
+    });
+
+    const homeStats = await safe(() => API.getTeamStats(game.homeTeamId), {
+      hitting: {},
+      pitching: {},
+      fielding: {}
+    });
 
     const awayPitcherStats = await safe(() => API.getPlayerStats(game.awayPitcherId), {});
     const homePitcherStats = await safe(() => API.getPlayerStats(game.homePitcherId), {});
 
     const awaySP = game.awayPitcherId
-      ? Number(Formula.pitcherRisk(awayPitcherStats).score) || 99
+      ? num(Formula.pitcherRisk(awayPitcherStats).score)
       : 99;
 
     const homeSP = game.homePitcherId
-      ? Number(Formula.pitcherRisk(homePitcherStats).score) || 99
+      ? num(Formula.pitcherRisk(homePitcherStats).score)
       : 99;
 
-    // Higher is better
     const awayOffense =
       num(awayStats.hitting?.runs) +
       num(awayStats.hitting?.ops) * 1000;
@@ -355,7 +368,6 @@ async function loadMoneyline() {
       num(homeStats.hitting?.runs) +
       num(homeStats.hitting?.ops) * 1000;
 
-    // Lower is better
     const awayBullpen =
       num(awayStats.pitching?.era) +
       num(awayStats.pitching?.whip);
@@ -364,7 +376,6 @@ async function loadMoneyline() {
       num(homeStats.pitching?.era) +
       num(homeStats.pitching?.whip);
 
-    // Higher is better
     const awayDefense =
       num(awayStats.fielding?.fielding) * 1000 -
       num(awayStats.fielding?.errors);
@@ -373,51 +384,49 @@ async function loadMoneyline() {
       num(homeStats.fielding?.fielding) * 1000 -
       num(homeStats.fielding?.errors);
 
-    const sp = compareCategory(awaySP, homeSP, false);
-    const bullpen = compareCategory(awayBullpen, homeBullpen, false);
-    const offense = compareCategory(awayOffense, homeOffense, true);
-    const defense = compareCategory(awayDefense, homeDefense, true);
-
-    const awayBetterSP = sp.awayBetter;
-    const homeBetterSP = sp.homeBetter;
-
-    const awayBetterBullpen = bullpen.awayBetter;
-    const homeBetterBullpen = bullpen.homeBetter;
-
-    const awayBetterOffense = offense.awayBetter;
-    const homeBetterOffense = offense.homeBetter;
-
-    const awayBetterDefense = defense.awayBetter;
-    const homeBetterDefense = defense.homeBetter;
+    const sp = winner(awaySP, homeSP, false);
+    const bullpen = winner(awayBullpen, homeBullpen, false);
+    const offense = winner(awayOffense, homeOffense, true);
+    const defense = winner(awayDefense, homeDefense, true);
 
     const awayChecks =
-      Number(awayBetterSP) +
-      Number(awayBetterBullpen) +
-      Number(awayBetterOffense) +
-      Number(awayBetterDefense);
+      Number(sp.away) +
+      Number(bullpen.away) +
+      Number(offense.away) +
+      Number(defense.away);
 
     const homeChecks =
-      Number(homeBetterSP) +
-      Number(homeBetterBullpen) +
-      Number(homeBetterOffense) +
-      Number(homeBetterDefense);
+      Number(sp.home) +
+      Number(bullpen.home) +
+      Number(offense.home) +
+      Number(defense.home);
 
     const pick =
-      awayChecks > homeChecks ? game.awayTeam : game.homeTeam;
+      awayChecks > homeChecks
+        ? game.awayTeam
+        : homeChecks > awayChecks
+        ? game.homeTeam
+        : "No Clear Edge";
 
     cards.push({
       game,
       pick,
       awayChecks,
       homeChecks,
-      awayBetterSP,
-      homeBetterSP,
-      awayBetterBullpen,
-      homeBetterBullpen,
-      awayBetterOffense,
-      homeBetterOffense,
-      awayBetterDefense,
-      homeBetterDefense
+      sp,
+      bullpen,
+      offense,
+      defense,
+      values: {
+        awaySP,
+        homeSP,
+        awayOffense,
+        homeOffense,
+        awayBullpen,
+        homeBullpen,
+        awayDefense,
+        homeDefense
+      }
     });
   }
 
@@ -430,21 +439,22 @@ async function loadMoneyline() {
       <hr>
 
       <p><strong>${item.game.awayTeam}</strong></p>
-      <p>Starting Pitcher ${item.awayBetterSP ? "✅" : "❌"}</p>
-      <p>Better Bullpen ${item.awayBetterBullpen ? "✅" : "❌"}</p>
-      <p>Offense ${item.awayBetterOffense ? "✅" : "❌"}</p>
-      <p>Defense ${item.awayBetterDefense ? "✅" : "❌"}</p>
+      <p>Starting Pitcher ${item.sp.away ? "✅" : item.sp.tie ? "➖" : "❌"} <span class="small">Risk: ${item.values.awaySP}</span></p>
+      <p>Better Bullpen ${item.bullpen.away ? "✅" : item.bullpen.tie ? "➖" : "❌"} <span class="small">Score: ${item.values.awayBullpen.toFixed(2)}</span></p>
+      <p>Offense ${item.offense.away ? "✅" : item.offense.tie ? "➖" : "❌"} <span class="small">Score: ${item.values.awayOffense.toFixed(1)}</span></p>
+      <p>Defense ${item.defense.away ? "✅" : item.defense.tie ? "➖" : "❌"} <span class="small">Score: ${item.values.awayDefense.toFixed(1)}</span></p>
 
       <hr>
 
       <p><strong>${item.game.homeTeam}</strong></p>
-      <p>Starting Pitcher ${item.homeBetterSP ? "✅" : "❌"}</p>
-      <p>Better Bullpen ${item.homeBetterBullpen ? "✅" : "❌"}</p>
-      <p>Offense ${item.homeBetterOffense ? "✅" : "❌"}</p>
-      <p>Defense ${item.homeBetterDefense ? "✅" : "❌"}</p>
+      <p>Starting Pitcher ${item.sp.home ? "✅" : item.sp.tie ? "➖" : "❌"} <span class="small">Risk: ${item.values.homeSP}</span></p>
+      <p>Better Bullpen ${item.bullpen.home ? "✅" : item.bullpen.tie ? "➖" : "❌"} <span class="small">Score: ${item.values.homeBullpen.toFixed(2)}</span></p>
+      <p>Offense ${item.offense.home ? "✅" : item.offense.tie ? "➖" : "❌"} <span class="small">Score: ${item.values.homeOffense.toFixed(1)}</span></p>
+      <p>Defense ${item.defense.home ? "✅" : item.defense.tie ? "➖" : "❌"} <span class="small">Score: ${item.values.homeDefense.toFixed(1)}</span></p>
     </div>
   `).join("");
 }
+
 async function init() {
   hrPicksBox.innerHTML = "<p>Starting POPS Pickz 8.1...</p>";
 
