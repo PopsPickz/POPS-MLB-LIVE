@@ -246,3 +246,5 @@ const Pitchers = {
     `;
   }
 };
+
+     window.Pitchers = Pitchers;
