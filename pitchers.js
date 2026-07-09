@@ -162,33 +162,49 @@ const Pitchers = {
   },
 
   getBestTargets(hitters = [], pitcherStats = {}, previousHR = [], hotHitters = [], recentHR = []) {
-    return hitters
-      .map(hitter => {
-        let score = 50;
+  const pitcherRisk = typeof Formula !== "undefined" && Formula.pitcherRisk
+    ? Formula.pitcherRisk(pitcherStats)
+    : this.calculateRisk(pitcherStats);
 
-        const prev = previousHR.find(p => p.name === hitter.name);
-        const hot = hotHitters.find(h => h.name === hitter.name);
-        const recent = recentHR.find(r => r.name === hitter.name);
+  return hitters
+    .map(hitter => {
+      const prev = previousHR.find(p => p.name === hitter.name);
+      const hot = hotHitters.find(h => h.name === hitter.name);
+      const recent = recentHR.find(r => r.name === hitter.name);
 
-        score += Number(pitcherStats.hr9 || 0) * 12;
-        score += Number(pitcherStats.era || 0) * 2;
+      const batterStats = {
+        ...(hitter.hitting || {}),
+        ...(hitter.statcast || {})
+      };
 
-        if (prev) score += prev.hr * 10;
-        if (hot) score += Math.min(15, hot.streak * 3);
-        if (recent) score += recent.hr * 8;
+      const bvpHR = Number(prev?.hr || hitter.bvp?.homeRuns || hitter.bvp?.hr || 0);
+      const hitStreak = Number(hot?.streak || hitter.hitStreak || 0);
 
-        if (hitter.lineupSpot >= 1 && hitter.lineupSpot <= 5) score += 8;
-        if (typeof Formula !== "undefined" && Formula.isKnownPowerBat?.(hitter.name)) score += 10;
+      const result = Formula.getHrScore(
+        hitter.name,
+        hitter.lineupSpot,
+        pitcherRisk,
+        {
+          batterStats,
+          bvpHR,
+          hitStreak,
+          hasPlatoonAdvantage: false
+        }
+      );
 
-        return {
-          name: hitter.name,
-          score: Math.min(100, Math.round(score))
-        };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
-  },
+      let score = Number(result.score || 0);
 
+      if (recent) score += Number(recent.hr || 0) * 3;
+
+      return {
+        name: hitter.name,
+        score: Math.min(100, Math.round(score)),
+        reasons: result.reasons || ""
+      };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+}
   renderCard(card) {
     const stats = card.stats || {};
     const color = this.getColorClass(card.risk);
