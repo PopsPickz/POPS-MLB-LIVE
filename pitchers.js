@@ -19,32 +19,45 @@ const Pitchers = {
     return "green";
   },
 
+  normalizeStats(stats = {}) {
+    const ip = Number(stats.ip || stats.inningsPitched || 0);
+    const hrAllowed = Number(stats.hrAllowed || stats.homeRuns || stats.hr || 0);
+    const hr9 = Number(stats.hr9) || (ip > 0 && hrAllowed > 0 ? Number(((hrAllowed * 9) / ip).toFixed(2)) : 0);
+
+    return {
+      ...stats,
+      era: Number(stats.era || 0),
+      whip: Number(stats.whip || 0),
+      ip,
+      inningsPitched: ip,
+      hrAllowed,
+      homeRuns: hrAllowed,
+      hr9
+    };
+  },
+
   calculateRisk(stats = {}) {
+    const s = this.normalizeStats(stats);
     let risk = 45;
 
-    const era = Number(stats.era) || 0;
-    const whip = Number(stats.whip) || 0;
-    const hr9 = Number(stats.hr9) || 0;
-    const hrAllowed = Number(stats.hrAllowed || stats.homeRuns || 0);
+    if (s.hr9 >= 2.0) risk += 35;
+    else if (s.hr9 >= 1.7) risk += 30;
+    else if (s.hr9 >= 1.4) risk += 24;
+    else if (s.hr9 >= 1.1) risk += 18;
+    else if (s.hr9 >= 0.9) risk += 10;
 
-    if (hr9 >= 2.0) risk += 35;
-    else if (hr9 >= 1.7) risk += 30;
-    else if (hr9 >= 1.4) risk += 24;
-    else if (hr9 >= 1.1) risk += 18;
-    else if (hr9 >= 0.9) risk += 10;
+    if (s.era >= 6.0) risk += 18;
+    else if (s.era >= 5.0) risk += 14;
+    else if (s.era >= 4.5) risk += 10;
+    else if (s.era >= 4.0) risk += 6;
 
-    if (era >= 6.0) risk += 18;
-    else if (era >= 5.0) risk += 14;
-    else if (era >= 4.5) risk += 10;
-    else if (era >= 4.0) risk += 6;
+    if (s.whip >= 1.55) risk += 12;
+    else if (s.whip >= 1.4) risk += 9;
+    else if (s.whip >= 1.3) risk += 5;
 
-    if (whip >= 1.55) risk += 12;
-    else if (whip >= 1.4) risk += 9;
-    else if (whip >= 1.3) risk += 5;
-
-    if (hrAllowed >= 20) risk += 10;
-    else if (hrAllowed >= 15) risk += 7;
-    else if (hrAllowed >= 10) risk += 4;
+    if (s.hrAllowed >= 20) risk += 10;
+    else if (s.hrAllowed >= 15) risk += 7;
+    else if (s.hrAllowed >= 10) risk += 4;
 
     return Math.min(100, Math.round(risk));
   },
@@ -70,7 +83,7 @@ const Pitchers = {
           {
             pitcherName: game.awayPitcher,
             pitcherId: game.awayPitcherId,
-            stats: game.awayPitcherStats || {},
+            stats: this.normalizeStats(game.awayPitcherStats || {}),
             targetTeam: game.homeTeam,
             gameText: `${game.awayTeam} vs ${game.homeTeam}`,
             opponentHitters: game.homeLineup || []
@@ -78,7 +91,7 @@ const Pitchers = {
           {
             pitcherName: game.homePitcher,
             pitcherId: game.homePitcherId,
-            stats: game.homePitcherStats || {},
+            stats: this.normalizeStats(game.homePitcherStats || {}),
             targetTeam: game.awayTeam,
             gameText: `${game.awayTeam} vs ${game.homeTeam}`,
             opponentHitters: game.awayLineup || []
@@ -162,53 +175,51 @@ const Pitchers = {
   },
 
   getBestTargets(hitters = [], pitcherStats = {}, previousHR = [], hotHitters = [], recentHR = []) {
-  const pitcherRisk = typeof Formula !== "undefined" && Formula.pitcherRisk
-    ? Formula.pitcherRisk(pitcherStats)
-    : this.calculateRisk(pitcherStats);
+    const pitcherRisk =
+      typeof Formula !== "undefined" && Formula.pitcherRisk
+        ? Formula.pitcherRisk(pitcherStats)
+        : this.calculateRisk(pitcherStats);
 
-  return hitters
-    .map(hitter => {
-      const prev = previousHR.find(p => p.name === hitter.name);
-      const hot = hotHitters.find(h => h.name === hitter.name);
-      const recent = recentHR.find(r => r.name === hitter.name);
+    return hitters
+      .map(hitter => {
+        const prev = previousHR.find(p => p.name === hitter.name);
+        const hot = hotHitters.find(h => h.name === hitter.name);
+        const recent = recentHR.find(r => r.name === hitter.name);
 
-      const batterStats = {
-        ...(hitter.hitting || {}),
-        ...(hitter.statcast || {})
-      };
+        const batterStats = {
+          ...(hitter.hitting || {}),
+          ...(hitter.statcast || {})
+        };
 
-      const bvpHR = Number(prev?.hr || hitter.bvp?.homeRuns || hitter.bvp?.hr || 0);
-      const hitStreak = Number(hot?.streak || hitter.hitStreak || 0);
+        const bvpHR = Number(prev?.hr || hitter.bvp?.homeRuns || hitter.bvp?.hr || 0);
+        const hitStreak = Number(hot?.streak || hitter.hitStreak || 0);
 
-      const result = Formula.getHrScore(
-        hitter.name,
-        hitter.lineupSpot,
-        pitcherRisk,
-        {
-          batterStats,
-          bvpHR,
-          hitStreak,
-          hasPlatoonAdvantage: false
-        }
-      );
+        const result =
+          typeof Formula !== "undefined" && Formula.getHrScore
+            ? Formula.getHrScore(hitter.name, hitter.lineupSpot, pitcherRisk, {
+                batterStats,
+                bvpHR,
+                hitStreak,
+                hasPlatoonAdvantage: false
+              })
+            : { score: 0, reasons: "" };
 
-      let score = Number(result.score || 0);
+        let score = Number(result.score || 0);
 
-      if (recent) score += Number(recent.hr || 0) * 3;
+        if (recent) score += Number(recent.hr || 0) * 3;
 
-      return {
-        name: hitter.name,
-        score: Math.min(100, Math.round(score)),
-        reasons: result.reasons || ""
-      };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
-},
-    
-  
+        return {
+          name: hitter.name,
+          score: Math.min(100, Math.round(score)),
+          reasons: result.reasons || ""
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+  },
+
   renderCard(card) {
-    const stats = card.stats || {};
+    const stats = this.normalizeStats(card.stats || {});
     const color = this.getColorClass(card.risk);
 
     return `
@@ -226,7 +237,7 @@ const Pitchers = {
           WHIP: ${stats.whip || "N/A"} |
           HR/9: ${stats.hr9 || "N/A"} |
           HR Allowed: ${stats.hrAllowed || "N/A"} |
-          IP: ${stats.ip || stats.inningsPitched || "N/A"}
+          IP: ${stats.ip || "N/A"}
         </p>
 
         <div class="pitcher-grid">
@@ -265,4 +276,4 @@ const Pitchers = {
   }
 };
 
-     window.Pitchers = Pitchers;
+window.Pitchers = Pitchers;
