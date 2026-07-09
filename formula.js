@@ -1,21 +1,4 @@
 const Formula = {
-  powerNames: [
-    "Judge", "Ohtani", "Schwarber", "Alonso", "Olson",
-    "Devers", "Raleigh", "Guerrero", "Tatis", "Soto",
-    "Alvarez", "Marte", "Carroll", "Machado", "Freeman",
-    "Betts", "Goodman", "Contreras", "Seager", "Stanton",
-    "Harper", "Trout", "Ward", "Langford", "Garcia", "Riley",
-    "Acuña", "Lindor", "Turner", "O'Hoppe", "Bellinger",
-    "Greene", "Buxton", "Ramírez", "Ramirez", "Crow-Armstrong",
-    "Lowe"
-  ],
-
-  isKnownPowerBat(name = "") {
-    return this.powerNames.some(p =>
-      name.toLowerCase().includes(p.toLowerCase())
-    );
-  },
-
   num(value) {
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
@@ -36,14 +19,13 @@ const Formula = {
     const innings = this.num(stats.inningsPitched);
     const hr9 = innings > 0 ? (hrAllowed * 9) / innings : 0;
 
-    let score = 0;
+    let score = 5;
 
-    if (hr9 >= 1.8) score += 25;
-    else if (hr9 >= 1.5) score += 22;
-    else if (hr9 >= 1.2) score += 18;
-    else if (hr9 >= 1.0) score += 14;
-    else if (hr9 >= 0.8) score += 9;
-    else score += 5;
+    if (hr9 >= 1.8) score = 25;
+    else if (hr9 >= 1.5) score = 22;
+    else if (hr9 >= 1.2) score = 18;
+    else if (hr9 >= 1.0) score = 14;
+    else if (hr9 >= 0.8) score = 9;
 
     if (era >= 5.00) score += 3;
     else if (era >= 4.50) score += 2;
@@ -60,44 +42,75 @@ const Formula = {
     };
   },
 
-  getBatterPowerScore(playerName, stats = {}) {
-    const knownPower = this.isKnownPowerBat(playerName);
-
+  getBatterPowerScore(stats = {}) {
     const hr = this.num(stats.homeRuns);
     const slg = this.num(stats.slg);
     const ops = this.num(stats.ops);
     const iso = this.num(stats.iso);
     const barrelRate = this.num(stats.barrelRate);
+    const hardHitRate = this.num(stats.hardHitRate);
+    const exitVelocity = this.num(stats.exitVelocity || stats.avgExitVelo);
 
     let score = 0;
 
-    if (hr >= 30) score += 12;
-    else if (hr >= 20) score += 10;
-    else if (hr >= 15) score += 8;
-    else if (hr >= 10) score += 6;
-    else if (hr >= 5) score += 3;
+    if (hr >= 30) score += 10;
+    else if (hr >= 20) score += 8;
+    else if (hr >= 15) score += 6;
+    else if (hr >= 10) score += 4;
+    else if (hr >= 5) score += 2;
 
-    if (slg >= .550) score += 8;
-    else if (slg >= .500) score += 7;
-    else if (slg >= .460) score += 5;
-    else if (slg >= .420) score += 3;
+    if (slg >= .550) score += 7;
+    else if (slg >= .500) score += 6;
+    else if (slg >= .460) score += 4;
+    else if (slg >= .420) score += 2;
 
-    if (ops >= .900) score += 6;
-    else if (ops >= .850) score += 5;
-    else if (ops >= .800) score += 4;
+    if (ops >= .900) score += 5;
+    else if (ops >= .850) score += 4;
+    else if (ops >= .800) score += 3;
     else if (ops >= .750) score += 2;
 
     if (iso >= .250) score += 5;
     else if (iso >= .220) score += 4;
     else if (iso >= .180) score += 3;
+    else if (iso >= .150) score += 1;
 
-    if (barrelRate >= 15) score += 4;
-    else if (barrelRate >= 12) score += 3;
-    else if (barrelRate >= 9) score += 2;
+    if (barrelRate >= 15) score += 5;
+    else if (barrelRate >= 12) score += 4;
+    else if (barrelRate >= 9) score += 3;
+    else if (barrelRate >= 6) score += 1;
 
-    if (knownPower && score < 18) score = 18;
+    if (hardHitRate >= 50) score += 2;
+    else if (hardHitRate >= 45) score += 1;
+
+    if (exitVelocity >= 93) score += 1;
 
     return Math.min(35, Math.round(score));
+  },
+
+  getHardContactScore(stats = {}) {
+    const hardHitRate = this.num(stats.hardHitRate);
+    const barrelRate = this.num(stats.barrelRate);
+    const exitVelocity = this.num(stats.exitVelocity || stats.avgExitVelo);
+    const flyBallRate = this.num(stats.flyBallRate);
+
+    let score = 0;
+
+    if (hardHitRate >= 50) score += 7;
+    else if (hardHitRate >= 45) score += 6;
+    else if (hardHitRate >= 40) score += 4;
+    else if (hardHitRate >= 35) score += 2;
+
+    if (barrelRate >= 15) score += 5;
+    else if (barrelRate >= 12) score += 4;
+    else if (barrelRate >= 9) score += 3;
+    else if (barrelRate >= 6) score += 1;
+
+    if (exitVelocity >= 94) score += 2;
+    else if (exitVelocity >= 91) score += 1;
+
+    if (flyBallRate >= 35 && flyBallRate <= 48) score += 1;
+
+    return Math.min(15, Math.round(score));
   },
 
   getHrScore(playerName, lineupSpot, pitcherRisk = {}, extras = {}) {
@@ -105,15 +118,11 @@ const Formula = {
     const reasons = [];
     const stats = extras.batterStats || {};
 
-    const hardHitRate = this.num(stats.hardHitRate);
-    const barrelRate = this.num(stats.barrelRate);
-    const recentHardHitRate = this.num(stats.recentHardHitRate || hardHitRate);
-
     const bvpHR = this.num(extras.bvpHR);
     const hitStreak = this.num(extras.hitStreak);
     const hasPlatoonAdvantage = Boolean(extras.hasPlatoonAdvantage);
 
-    const powerScore = this.getBatterPowerScore(playerName, stats);
+    const powerScore = this.getBatterPowerScore(stats);
     score += powerScore;
     reasons.push(`Batter Power ${powerScore}/35`);
 
@@ -121,17 +130,7 @@ const Formula = {
     score += pitcherScore;
     reasons.push(`Pitcher HR Risk ${pitcherScore}/25`);
 
-    let hardContactScore = 0;
-    if (hardHitRate >= 50) hardContactScore += 10;
-    else if (hardHitRate >= 45) hardContactScore += 8;
-    else if (hardHitRate >= 40) hardContactScore += 6;
-    else if (hardHitRate >= 35) hardContactScore += 4;
-
-    if (barrelRate >= 15) hardContactScore += 5;
-    else if (barrelRate >= 12) hardContactScore += 4;
-    else if (barrelRate >= 9) hardContactScore += 3;
-
-    hardContactScore = Math.min(15, hardContactScore);
+    const hardContactScore = this.getHardContactScore(stats);
     score += hardContactScore;
     reasons.push(`Hard Contact ${hardContactScore}/15`);
 
@@ -177,7 +176,6 @@ const Formula = {
 
     score += this.getLineupBoost(lineupSpot);
 
-    if (this.isKnownPowerBat(playerName)) score += 4;
     if (hitStreak >= 2) score += Math.min(hitStreak * 2, 10);
     if (previousHR > 0) score += Math.min(previousHR * 3, 10);
 
