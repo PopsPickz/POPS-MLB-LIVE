@@ -14,7 +14,6 @@ const API = {
       }
 
       return await res.json();
-
     } catch (err) {
       console.error("API Error:", err);
       return null;
@@ -26,7 +25,6 @@ const API = {
       `${this.base}/schedule?sportId=1&date=${this.today()}&hydrate=team,probablePitcher,venue`;
 
     const data = await this.fetchJSON(url);
-
     const games = data?.dates?.[0]?.games || [];
 
     return games.map(game => ({
@@ -41,17 +39,11 @@ const API = {
       awayTeamId: game.teams.away.team.id,
       homeTeamId: game.teams.home.team.id,
 
-      awayPitcher:
-        game.teams.away.probablePitcher?.fullName || "TBD",
+      awayPitcher: game.teams.away.probablePitcher?.fullName || "TBD",
+      homePitcher: game.teams.home.probablePitcher?.fullName || "TBD",
 
-      homePitcher:
-        game.teams.home.probablePitcher?.fullName || "TBD",
-
-      awayPitcherId:
-        game.teams.away.probablePitcher?.id || null,
-
-      homePitcherId:
-        game.teams.home.probablePitcher?.id || null,
+      awayPitcherId: game.teams.away.probablePitcher?.id || null,
+      homePitcherId: game.teams.home.probablePitcher?.id || null,
 
       awayRecord: game.teams.away.leagueRecord
         ? `${game.teams.away.leagueRecord.wins}-${game.teams.away.leagueRecord.losses}`
@@ -64,7 +56,6 @@ const API = {
   },
 
   async getPlayerStats(playerId) {
-
     if (!playerId) return {};
 
     const url =
@@ -76,7 +67,6 @@ const API = {
   },
 
   async getBatterStats(playerId) {
-
     if (!playerId) return {};
 
     const url =
@@ -88,12 +78,12 @@ const API = {
   },
 
   async getTeamStats(teamId) {
-
-    if (!teamId)
+    if (!teamId) {
       return {
         hitting: {},
         pitching: {}
       };
+    }
 
     const url =
       `${this.base}/teams/${teamId}/stats?stats=season&group=hitting,pitching`;
@@ -104,35 +94,25 @@ const API = {
       data?.stats?.flatMap(s => s.splits || []) || [];
 
     return {
-
       hitting:
-        splits.find(s =>
-          s.group?.displayName === "hitting"
-        )?.stat || {},
+        splits.find(s => s.group?.displayName === "hitting")?.stat || {},
 
       pitching:
-        splits.find(s =>
-          s.group?.displayName === "pitching"
-        )?.stat || {}
+        splits.find(s => s.group?.displayName === "pitching")?.stat || {}
     };
   },
 
   async getLiveGame(gameId) {
-
     if (!gameId) return null;
 
-    const url =
-      `${this.base}/game/${gameId}/feed/live`;
+    const url = `${this.base}/game/${gameId}/feed/live`;
 
     return await this.fetchJSON(url);
   },
 
   async getLineup(gameId, teamId) {
-
     const live = await this.getLiveGame(gameId);
-
-    const boxscore =
-      live?.liveData?.boxscore;
+    const boxscore = live?.liveData?.boxscore;
 
     if (!boxscore) return [];
 
@@ -141,28 +121,31 @@ const API = {
         ? boxscore.teams.away
         : boxscore.teams.home;
 
-    const battingOrder =
-      side.battingOrder || [];
+    const battingOrder = side.battingOrder || [];
 
     return battingOrder.map((playerId, index) => {
-
-      const player =
-        side.players[`ID${playerId}`];
+      const player = side.players[`ID${playerId}`];
 
       return {
-
         id: playerId,
-
-        name:
-          player?.person?.fullName ||
-          "Unknown",
-
-        position:
-          player?.position?.abbreviation ||
-          "",
-
+        name: player?.person?.fullName || "Unknown",
+        position: player?.position?.abbreviation || "",
         lineupSpot: index + 1
       };
     });
+  },
+
+  async getRoster(teamId) {
+    if (!teamId) return [];
+
+    const url = `${this.base}/teams/${teamId}/roster?rosterType=active`;
+
+    const data = await this.fetchJSON(url);
+
+    return data?.roster?.map(item => ({
+      id: item.person.id,
+      name: item.person.fullName,
+      position: item.position.abbreviation
+    })) || [];
   }
 };
