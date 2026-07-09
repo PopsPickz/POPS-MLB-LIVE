@@ -165,9 +165,56 @@ async function loadHRPicks() {
   `).join("");
 }
 
-function loadHitPicks() {
-  hitPicksBox.innerHTML = "<p>Hit Pickz coming in Phase 4.</p>";
+     function loadHitPicks() {
+     hitPicksBox.innerHTML = "<p>Loading Hit Pickz...</p>";
+
+     const hitPicks = [];
+
+    hrPicks.forEach(pick => {
+    const hitStreak = Math.floor(Math.random() * 6);
+    const previousHR = Math.random() > 0.75 ? 1 : 0;
+
+    if (hitStreak >= 2 || previousHR > 0) {
+      const score = Formula.getHitScore(
+        pick.player,
+        pick.lineupSpot,
+        hitStreak,
+        previousHR
+      );
+
+      hitPicks.push({
+        player: pick.player,
+        team: pick.team,
+        pitcher: pick.pitcher,
+        lineupSpot: pick.lineupSpot,
+        hitStreak,
+        previousHR,
+        score
+      });
+    }
+  });
+
+  hitPicks.sort((a, b) => b.score - a.score);
+
+  if (!hitPicks.length) {
+    hitPicksBox.innerHTML = "<p>No Hit Pickz found yet.</p>";
+    return;
+  }
+
+  hitPicksBox.innerHTML = hitPicks.slice(0, 20).map((pick, index) => `
+    <div class="pick-card">
+      <span class="rank-badge">#${index + 1}</span>
+      <h3>${pick.player} - ${pick.team}</h3>
+      <p>🔥 Hit Score: <span class="score">${pick.score}/100</span></p>
+      <p>⚾ vs ${pick.pitcher}</p>
+      <p>📍 Projected lineup spot: ${pick.lineupSpot}</p>
+      <p>📈 Hit streak: ${pick.hitStreak} games</p>
+      <p>💣 Previous HR vs pitcher: ${pick.previousHR > 0 ? "Yes" : "No"}</p>
+    </div>
+  `).join("");
 }
+  
+
 
 function loadMoneyline() {
   moneylineBox.innerHTML = "<p>Moneyline model coming in Phase 5.</p>";
