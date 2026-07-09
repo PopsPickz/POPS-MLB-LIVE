@@ -26,17 +26,14 @@ const API = {
       date: game.gameDate,
       status: game.status?.detailedState || "Scheduled",
       venue: game.venue?.name || "TBD",
-
       awayTeam: game.teams.away.team.name,
       homeTeam: game.teams.home.team.name,
       awayTeamId: game.teams.away.team.id,
       homeTeamId: game.teams.home.team.id,
-
       awayPitcher: game.teams.away.probablePitcher?.fullName || "TBD",
       homePitcher: game.teams.home.probablePitcher?.fullName || "TBD",
       awayPitcherId: game.teams.away.probablePitcher?.id || null,
       homePitcherId: game.teams.home.probablePitcher?.id || null,
-
       awayRecord: game.teams.away.leagueRecord
         ? `${game.teams.away.leagueRecord.wins}-${game.teams.away.leagueRecord.losses}`
         : "0-0",
@@ -134,14 +131,24 @@ const API = {
 
     for (const game of logs) {
       const hits = Number(game.stat?.hits || 0);
-
-      if (hits >= 1) {
-        streak++;
-      } else {
-        break;
-      }
+      if (hits >= 1) streak++;
+      else break;
     }
 
     return streak;
+  },
+
+  async getBvPHR(batterId, pitcherId) {
+    if (!batterId || !pitcherId) return 0;
+
+    const season = new Date().getFullYear();
+
+    const url =
+      `${this.base}/people/${batterId}/stats?stats=vsPlayer&group=hitting&opposingPlayerId=${pitcherId}&season=${season}`;
+
+    const data = await this.fetchJSON(url);
+    const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
+
+    return Number(stat.homeRuns || 0);
   }
 };
