@@ -101,5 +101,36 @@ const API = {
       console.error("Live game error:", err);
       return null;
     }
+  },
+
+  async getLineup(gameId, teamId) {
+    const live = await this.getLiveGame(gameId);
+    const boxscore = live?.liveData?.boxscore;
+
+    if (!boxscore) return [];
+
+    const teams = boxscore.teams;
+
+    const side =
+      teams.away.team.id === teamId
+        ? teams.away
+        : teams.home.team.id === teamId
+        ? teams.home
+        : null;
+
+    if (!side) return [];
+
+    const battingOrder = side.battingOrder || [];
+
+    return battingOrder.map((playerId, index) => {
+      const player = side.players[`ID${playerId}`];
+
+      return {
+        id: playerId,
+        name: player?.person?.fullName || "Unknown Player",
+        position: player?.position?.abbreviation || "",
+        lineupSpot: index + 1
+      };
+    });
   }
 };
