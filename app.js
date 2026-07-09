@@ -38,9 +38,53 @@ async function loadGames() {
   `).join("");
 }
 
+async function loadPitcherTargets() {
+  pitcherTargetsBox.innerHTML = "<p>Loading pitcher targets...</p>";
+
+  const targets = [];
+
+  for (const game of games) {
+    const awayStats = await API.getPlayerStats(game.awayPitcherId);
+    const homeStats = await API.getPlayerStats(game.homePitcherId);
+
+    if (game.awayPitcherId) {
+      targets.push({
+        pitcher: game.awayPitcher,
+        teamToTarget: game.homeTeam,
+        risk: Formula.pitcherRisk(awayStats),
+        stats: awayStats
+      });
+    }
+
+    if (game.homePitcherId) {
+      targets.push({
+        pitcher: game.homePitcher,
+        teamToTarget: game.awayTeam,
+        risk: Formula.pitcherRisk(homeStats),
+        stats: homeStats
+      });
+    }
+  }
+
+  targets.sort((a, b) => b.risk - a.risk);
+
+  if (!targets.length) {
+    pitcherTargetsBox.innerHTML = "<p>No probable pitchers found yet.</p>";
+    return;
+  }
+
+  pitcherTargetsBox.innerHTML = targets.slice(0, 10).map((item, index) => `
+    <div class="pick-card">
+      <span class="rank-badge">#${index + 1}</span>
+      <h3>${item.teamToTarget} vs ${item.pitcher}</h3>
+      <p>🎯 Pitcher Risk: <span class="score">${item.risk}/100</span></p>
+      <p>ERA: ${item.stats.era || "N/A"} | WHIP: ${item.stats.whip || "N/A"} | HR Allowed: ${item.stats.homeRuns || "N/A"}</p>
+    </div>
+  `).join("");
+}
+
 function showScouting(gameId) {
   const game = games.find(g => String(g.id) === String(gameId));
-
   if (!game) return;
 
   showTab("scouting");
@@ -60,14 +104,14 @@ function showScouting(gameId) {
 }
 
 function loadPlaceholders() {
-  pitcherTargetsBox.innerHTML = "<p>Pitcher targets coming in Phase 2.</p>";
   hrPicksBox.innerHTML = "<p>HR Pickz coming in Phase 3.</p>";
   hitPicksBox.innerHTML = "<p>Hit Pickz coming in Phase 4.</p>";
   moneylineBox.innerHTML = "<p>Moneyline model coming in Phase 5.</p>";
 }
 
-function init() {
-  loadGames();
+async function init() {
+  await loadGames();
+  await loadPitcherTargets();
   loadPlaceholders();
 }
 
