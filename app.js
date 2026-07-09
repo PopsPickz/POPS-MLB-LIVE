@@ -311,28 +311,34 @@ async function loadMoneyline() {
     const awayPitcherStats = await safe(() => API.getPlayerStats(game.awayPitcherId), {});
     const homePitcherStats = await safe(() => API.getPlayerStats(game.homePitcherId), {});
 
-    const awaySP = Formula.pitcherRisk(awayPitcherStats).score;
-    const homeSP = Formula.pitcherRisk(homePitcherStats).score;
+    const num = value => Number(value) || 0;
 
-    const awayOffense =
-      Number(awayStats.hitting?.runs || 0) +
-      Number(awayStats.hitting?.ops || 0) * 100;
+const awaySP = Number(Formula.pitcherRisk(awayPitcherStats).score) || 99;
+const homeSP = Number(Formula.pitcherRisk(homePitcherStats).score) || 99;
 
-    const homeOffense =
-      Number(homeStats.hitting?.runs || 0) +
-      Number(homeStats.hitting?.ops || 0) * 100;
+const awayOffense =
+  num(awayStats.hitting?.runs) +
+  num(awayStats.hitting?.ops) * 100;
 
-    const awayPitching =
-      Number(awayStats.pitching?.era || 99) +
-      Number(awayStats.pitching?.whip || 99);
+const homeOffense =
+  num(homeStats.hitting?.runs) +
+  num(homeStats.hitting?.ops) * 100;
 
-    const homePitching =
-      Number(homeStats.pitching?.era || 99) +
-      Number(homeStats.pitching?.whip || 99);
+const awayPitching =
+  num(awayStats.pitching?.era) +
+  num(awayStats.pitching?.whip);
 
-    const awayDefense =
-      Number(awayStats.pitching?.runsAllowed || 999) +
-      Number(awayStats.pitching?.era || 99);
+const homePitching =
+  num(homeStats.pitching?.era) +
+  num(homeStats.pitching?.whip);
+
+const awayDefense =
+  num(awayStats.pitching?.runsAllowed) +
+  num(awayStats.pitching?.era);
+
+const homeDefense =
+  num(homeStats.pitching?.runsAllowed) +
+  num(homeStats.pitching?.era);
 
     const homeDefense =
       Number(homeStats.pitching?.runsAllowed || 999) +
