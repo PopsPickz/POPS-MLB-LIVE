@@ -7,7 +7,6 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  scroll-behavior: smooth;
 }
 
 body {
@@ -15,7 +14,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   color: white;
   background:
-    linear-gradient(rgba(0,0,0,.65), rgba(0,0,0,.96)),
+    linear-gradient(rgba(0,0,0,.78), rgba(0,0,0,.96)),
     url("https://images.unsplash.com/photo-1508344928928-7165b67de128?auto=format&fit=crop&w=1600&q=80");
   background-size: cover;
   background-position: center;
@@ -26,258 +25,149 @@ body {
   width: 100%;
   max-width: 1080px;
   margin: auto;
-  padding: 16px 12px 110px;
+  padding: 16px 12px 100px;
 }
-
-/* HERO */
 
 .hero {
   text-align: center;
-  padding: 32px 18px;
-  border-radius: 28px;
-  background:
-    linear-gradient(rgba(0,0,0,.82), rgba(20,5,0,.92));
-  border: 2px solid rgba(255, 115, 0, .85);
-  box-shadow:
-    0 0 24px rgba(255, 94, 0, .45),
-    inset 0 0 30px rgba(255, 115, 0, .12);
-  margin-bottom: 24px;
-  animation: fireGlow 3s infinite ease-in-out;
+  padding: 28px 16px;
+  border-radius: 26px;
+  background: rgba(0,0,0,.78);
+  border: 2px solid #ff7a00;
+  box-shadow: 0 0 26px rgba(255,115,0,.45);
+  margin-bottom: 18px;
 }
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(42px, 9vw, 84px);
-  letter-spacing: 4px;
+  font-size: clamp(38px, 9vw, 72px);
   color: #ff8a00;
-  text-shadow:
-    0 0 12px #ff6600,
-    0 0 32px #ff2200;
+  text-shadow: 0 0 18px #ff5e00;
 }
 
 .hero p {
-  font-size: clamp(18px, 4vw, 34px);
-  margin: 14px 0 0;
-  color: #f4f4f4;
+  font-size: clamp(16px, 4vw, 26px);
+  margin: 12px 0 0;
 }
 
-/* NAV BUTTONS */
-
-.top-nav {
+.tabs {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin: 18px 0 30px;
+  margin: 18px 0 24px;
 }
 
-.top-nav button,
+.tabs button,
 button {
-  border: 2px solid rgba(255, 115, 0, .9);
+  border: 2px solid rgba(255,115,0,.9);
   background: linear-gradient(180deg, #2a0d00, #080808);
   color: white;
   border-radius: 999px;
-  padding: 10px 18px;
-  font-size: 17px;
+  padding: 10px 16px;
+  font-size: 16px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 0 12px rgba(255, 115, 0, .25);
-  transition: .25s ease;
+  box-shadow: 0 0 12px rgba(255,115,0,.25);
 }
 
-.top-nav button:hover,
+.tabs button:hover,
 button:hover {
-  transform: scale(1.06);
   background: linear-gradient(180deg, #ff7a00, #d93600);
   color: black;
-  box-shadow: 0 0 20px rgba(255, 115, 0, .8);
+  transform: scale(1.04);
 }
 
-/* SECTIONS */
-
-section {
+.card {
+  display: block;
   margin-top: 18px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(10,10,10,.88);
+  border: 2px solid rgba(255,115,0,.75);
+  box-shadow: 0 0 18px rgba(255,115,0,.25);
 }
 
-section h2 {
-  font-size: clamp(32px, 7vw, 56px);
-  margin: 22px 0;
-  color: white;
-  text-shadow: 0 0 18px rgba(255, 94, 0, .45);
+.card h2 {
+  margin-top: 0;
+  font-size: clamp(28px, 6vw, 48px);
+  color: #ffb347;
 }
 
-.section-note,
-.small {
-  color: rgba(255,255,255,.72);
-  line-height: 1.45;
+.tab-section {
+  display: none;
 }
 
-/* CARDS */
+.tab-section.active {
+  display: block;
+}
 
 .pick-card,
-.weather-card {
-  position: relative;
-  background:
-    linear-gradient(180deg, rgba(16,16,16,.96), rgba(5,5,5,.98));
-  border: 2px solid rgba(255, 115, 0, .75);
-  border-radius: 26px;
-  padding: 22px;
-  margin: 18px 0;
-  box-shadow:
-    0 0 20px rgba(255, 94, 0, .28),
-    inset 0 0 22px rgba(255, 115, 0, .08);
-  overflow: hidden;
-}
-
-.pick-card::before,
-.weather-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at top left, rgba(255,115,0,.22), transparent 35%);
-  pointer-events: none;
-}
-
-.pick-card:hover,
-.weather-card:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 0 36px rgba(255, 94, 0, .65),
-    inset 0 0 25px rgba(255, 115, 0, .12);
+.game-card,
+.player-card {
+  margin: 14px 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,115,0,.5);
 }
 
 .pick-card h3,
-.weather-card h3 {
+.game-card h3,
+.player-card h3 {
   margin-top: 0;
-  font-size: clamp(28px, 6vw, 48px);
   color: #ff8a00;
-  text-shadow: 0 0 18px rgba(255, 94, 0, .75);
+  font-size: 24px;
 }
 
 .pick-card p,
-.weather-card p {
-  font-size: clamp(18px, 4vw, 30px);
-  line-height: 1.42;
+.game-card p,
+.player-card p,
+.card p {
+  font-size: 17px;
+  line-height: 1.45;
 }
 
-.pick-card strong,
-.weather-card strong {
-  color: white;
+.game-card {
+  cursor: pointer;
 }
 
-hr {
-  border: none;
-  border-top: 1px solid rgba(255,255,255,.22);
-  margin: 22px 0;
-}
-
-/* SCORE + BADGES */
-
-.hr-score {
-  color: #ff8a00;
-  font-size: clamp(38px, 8vw, 64px);
-  font-weight: 900;
-  text-shadow:
-    0 0 12px #ff7300,
-    0 0 28px #ff2200;
+.game-card:hover,
+.pick-card:hover,
+.player-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(255,115,0,.35);
 }
 
 .rank-badge {
-  position: absolute;
-  top: 22px;
-  right: 22px;
-  background: linear-gradient(180deg, #ff9a00, #ff3c00);
-  color: white;
-  border: 2px solid rgba(255,255,255,.3);
-  border-radius: 18px;
-  padding: 10px 18px;
-  font-size: 28px;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ff7a00;
+  color: black;
   font-weight: 900;
-  box-shadow: 0 0 18px rgba(255, 94, 0, .85);
+  margin-bottom: 8px;
 }
 
-.gold {
+.score {
   color: #00ff73;
   font-weight: 900;
-  text-shadow: 0 0 14px rgba(0,255,115,.7);
 }
 
-/* PITCHER GRID */
-
-.pitcher-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 18px;
+.small {
+  color: rgba(255,255,255,.72);
 }
-
-.pitcher-grid > div {
-  border: 1px solid rgba(255, 115, 0, .45);
-  border-radius: 20px;
-  padding: 16px;
-  background: rgba(255, 115, 0, .08);
-}
-
-/* WEATHER */
-
-.weather-card {
-  border-color: rgba(255, 174, 0, .85);
-}
-
-.weather-card h3 {
-  color: #ffb000;
-}
-
-/* MOBILE FIXES */
 
 @media (max-width: 700px) {
   .app {
-    padding: 12px 10px 100px;
+    padding: 12px 10px 90px;
   }
 
-  .hero {
-    padding: 26px 12px;
-    border-radius: 24px;
+  .tabs button {
+    font-size: 14px;
+    padding: 9px 12px;
   }
 
-  .top-nav {
-    gap: 8px;
-  }
-
-  .top-nav button {
-    font-size: 15px;
-    padding: 8px 14px;
-  }
-
-  .pick-card,
-  .weather-card {
-    padding: 18px;
-    border-radius: 22px;
-  }
-
-  .rank-badge {
-    font-size: 20px;
-    padding: 8px 14px;
-  }
-}
-
-/* ANIMATIONS */
-
-@keyframes fireGlow {
-  0% {
-    box-shadow:
-      0 0 18px rgba(255, 94, 0, .35),
-      inset 0 0 20px rgba(255, 115, 0, .1);
-  }
-
-  50% {
-    box-shadow:
-      0 0 42px rgba(255, 94, 0, .8),
-      inset 0 0 32px rgba(255, 115, 0, .18);
-  }
-
-  100% {
-    box-shadow:
-      0 0 18px rgba(255, 94, 0, .35),
-      inset 0 0 20px rgba(255, 115, 0, .1);
+  .card {
+    padding: 15px;
   }
 }
