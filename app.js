@@ -6,6 +6,8 @@ const moneylineBox = document.getElementById("moneylineBox");
 const scoutingBox = document.getElementById("scoutingBox");
 
 let games = [];
+let pitcherTargets = [];
+let hrPicks = [];
 
 function formatTime(dateString) {
   return new Date(dateString).toLocaleString([], {
@@ -13,6 +15,15 @@ function formatTime(dateString) {
     hour: "numeric",
     minute: "2-digit"
   });
+}
+
+function makeCard(title, body) {
+  return `
+    <div class="pick-card">
+      <h3>${title}</h3>
+      ${body}
+    </div>
+  `;
 }
 
 async function loadGames() {
@@ -40,47 +51,126 @@ async function loadGames() {
 
 async function loadPitcherTargets() {
   pitcherTargetsBox.innerHTML = "<p>Loading pitcher targets...</p>";
-
-  const targets = [];
+  pitcherTargets = [];
 
   for (const game of games) {
-    const awayStats = await API.getPlayerStats(game.awayPitcherId);
-    const homeStats = await API.getPlayerStats(game.homePitcherId);
-
     if (game.awayPitcherId) {
-      targets.push({
+      const stats = await API.getPlayerStats(game.awayPitcherId);
+      const risk = Formula.pitcherRisk(stats);
+
+      pitcherTargets.push({
+        gameId: game.id,
         pitcher: game.awayPitcher,
-        teamToTarget: game.homeTeam,
-        risk: Formula.pitcherRisk(awayStats),
-        stats: awayStats
+        pitcherId: game.awayPitcherId,
+        targetTeam: game.homeTeam,
+        targetTeamId: game.homeTeamId,
+        risk,
+        stats
       });
     }
 
     if (game.homePitcherId) {
-      targets.push({
+      const stats = await API.getPlayerStats(game.homePitcherId);
+      const risk = Formula.pitcherRisk(stats);
+
+      pitcherTargets.push({
+        gameId: game.id,
         pitcher: game.homePitcher,
-        teamToTarget: game.awayTeam,
-        risk: Formula.pitcherRisk(homeStats),
-        stats: homeStats
+        pitcherId: game.homePitcherId,
+        targetTeam: game.awayTeam,
+        targetTeamId: game.awayTeamId,
+        risk,
+        stats
       });
     }
   }
 
-  targets.sort((a, b) => b.risk - a.risk);
+  pitcherTargets.sort((a, b) => b.risk.score - a.risk.score);
 
-  if (!targets.length) {
+  if (!pitcherTargets.length) {
     pitcherTargetsBox.innerHTML = "<p>No probable pitchers found yet.</p>";
     return;
   }
 
-  pitcherTargetsBox.innerHTML = targets.slice(0, 10).map((item, index) => `
+  pitcherTargetsBox.innerHTML = pitcherTargets.slice(0, 10).map((item, index) => `
     <div class="pick-card">
       <span class="rank-badge">#${index + 1}</span>
-      <h3>${item.teamToTarget} vs ${item.pitcher}</h3>
-      <p>🎯 Pitcher Risk: <span class="score">${item.risk}/100</span></p>
+      <h3>${item.targetTeam} vs ${item.pitcher}</h3>
+      <p>🎯 Pitcher Risk: <span class="score">${item.risk.score}/100</span></p>
+      <p>HR/9: ${item.risk.hr9.toFixed(2)}</p>
       <p>ERA: ${item.stats.era || "N/A"} | WHIP: ${item.stats.whip || "N/A"} | HR Allowed: ${item.stats.homeRuns || "N/A"}</p>
     </div>
   `).join("");
+}
+
+async function getProjectedPowerBats(teamName) {
+  const bats = Formula.powerNames
+    .filter(name => true)
+    .slice(0, 12);
+
+  return bats.map((name, index) => ({
+    name,
+    lineupSpot: index + 1,
+    team: teamName
+  }));
+}
+
+async function loadHRPicks() {
+  hrPicksBox.innerHTML = "<p>Loading HR Pickz...</p>";
+  hrPicks = [];
+
+  for (const target of pitcherTargets) {
+    const projectedBats = await getProjectedPowerBats(target.targetTeam);
+
+    projectedBats.forEach(batter => {
+      const result = Formula.getHrScore(
+        batter.name,
+        batter.lineupSpot,
+        target.risk,
+        {
+          batterStats: {},
+          bvpHR: 0,
+          hitStreak: 0,
+          hasPlatoonAdvantage: false
+        }
+      );
+
+      hrPicks.push({
+        player: batter.name,
+        team: target.targetTeam,
+        pitcher: target.pitcher,
+        lineupSpot: batter.lineupSpot,
+        score: result.score,
+        reasons: result.reasons
+      });
+    });
+  }
+
+  hrPicks.sort((a, b) => b.score - a.score);
+
+  if (!hrPicks.length) {
+    hrPicksBox.innerHTML = "<p>No HR Pickz found yet.</p>";
+    return;
+  }
+
+  hrPicksBox.innerHTML = hrPicks.slice(0, 20).map((pick, index) => `
+    <div class="pick-card">
+      <span class="rank-badge">#${index + 1}</span>
+      <h3>${pick.player} - ${pick.team}</h3>
+      <p>💣 HR Score: <span class="score">${pick.score}/100</span></p>
+      <p>⚾ vs ${pick.pitcher}</p>
+      <p>📍 Projected lineup spot: ${pick.lineupSpot}</p>
+      <p class="small">${pick.reasons}</p>
+    </div>
+  `).join("");
+}
+
+function loadHitPicks() {
+  hitPicksBox.innerHTML = "<p>Hit Pickz coming in Phase 4.</p>";
+}
+
+function loadMoneyline() {
+  moneylineBox.innerHTML = "<p>Moneyline model coming in Phase 5.</p>";
 }
 
 function showScouting(gameId) {
@@ -89,9 +179,9 @@ function showScouting(gameId) {
 
   showTab("scouting");
 
-  scoutingBox.innerHTML = `
-    <div class="player-card">
-      <h3>${game.awayTeam} vs ${game.homeTeam}</h3>
+  scoutingBox.innerHTML = makeCard(
+    `${game.awayTeam} vs ${game.homeTeam}`,
+    `
       <p>⏰ Game Time: ${formatTime(game.date)}</p>
       <p>📍 Stadium: ${game.venue}</p>
       <p>📊 Status: ${game.status}</p>
@@ -99,20 +189,16 @@ function showScouting(gameId) {
       <p>⚾ ${game.homeTeam} Pitcher: ${game.homePitcher}</p>
       <p>🏟️ ${game.awayTeam}: ${game.awayRecord}</p>
       <p>🏟️ ${game.homeTeam}: ${game.homeRecord}</p>
-    </div>
-  `;
-}
-
-function loadPlaceholders() {
-  hrPicksBox.innerHTML = "<p>HR Pickz coming in Phase 3.</p>";
-  hitPicksBox.innerHTML = "<p>Hit Pickz coming in Phase 4.</p>";
-  moneylineBox.innerHTML = "<p>Moneyline model coming in Phase 5.</p>";
+    `
+  );
 }
 
 async function init() {
   await loadGames();
   await loadPitcherTargets();
-  loadPlaceholders();
+  await loadHRPicks();
+  loadHitPicks();
+  loadMoneyline();
 }
 
 init();
