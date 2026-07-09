@@ -155,18 +155,16 @@ async function getLineup(target) {
     const roster = await safe(() => API.getRoster(target.targetTeamId), []);
 
     lineup = roster
-      .filter(p => !["P", "SP", "RP"].includes(p.position))
-      .sort((a, b) =>
-        Number(Formula.isKnownPowerBat(b.name)) -
-        Number(Formula.isKnownPowerBat(a.name))
-      )
-      .slice(0, 9)
-      .map((p, index) => ({
-        ...p,
-        team: target.targetTeam,
-        lineupSpot: index + 1,
-        confirmed: false
-      }));
+  .filter(p => !["P", "SP", "RP"].includes(p.position))
+  .sort((a, b) => a.name.localeCompare(b.name))
+  .slice(0, 9)
+  .map((p, index) => ({
+    ...p,
+    team: target.targetTeam,
+    lineupSpot: index + 1,
+    confirmed: false
+  }));
+    
   }
 
   cache.lineup[key] = lineup;
