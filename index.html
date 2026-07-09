@@ -17,57 +17,57 @@
     </header>
 
     <nav class="tabs">
-      <button onclick="scrollToSection('pitchers')">🎯 Pitchers</button>
-      <button onclick="scrollToSection('homeruns')">💣 HR Pickz</button>
-      <button onclick="scrollToSection('hits')">🔥 Hit Pickz</button>
-      <button onclick="scrollToSection('moneyline')">💰 Moneyline</button>
-      <button onclick="scrollToSection('weather')">🌦️ Weather</button>
-      <button onclick="scrollToSection('games')">📋 Games</button>
+      <button onclick="showTab('pitchers')">🎯 Pitchers</button>
+      <button onclick="showTab('homeruns')">💣 HR Pickz</button>
+      <button onclick="showTab('hits')">🔥 Hit Pickz</button>
+      <button onclick="showTab('moneyline')">💰 Moneyline</button>
+      <button onclick="showTab('weather')">🌦️ Weather</button>
+      <button onclick="showTab('games')">📋 Games</button>
     </nav>
 
-    <section class="card" id="pitchers">
+    <section class="card tab-section active" id="pitchers">
       <h2>🎯 POPS Pitchers To Target</h2>
       <div id="pitcherTargetsBox">
         <p>Loading pitcher targets...</p>
       </div>
     </section>
 
-    <section class="card" id="homeruns">
+    <section class="card tab-section" id="homeruns">
       <h2>💣 POPS Home Run Pickz</h2>
       <div id="hrPicksBox">
         <p>Loading home run picks...</p>
       </div>
     </section>
 
-    <section class="card" id="hits">
+    <section class="card tab-section" id="hits">
       <h2>🔥 POPS Hit Pickz</h2>
       <div id="hitPicksBox">
         <p>Loading hit picks...</p>
       </div>
     </section>
 
-    <section class="card" id="moneyline">
+    <section class="card tab-section" id="moneyline">
       <h2>💰 POPS Moneyline Pickz</h2>
       <div id="moneylineBox">
         <p>Loading moneyline picks...</p>
       </div>
     </section>
 
-    <section class="card" id="weather">
+    <section class="card tab-section" id="weather">
       <h2>🌦️ Weather Center</h2>
       <div id="weatherBox">
         <p>Loading weather...</p>
       </div>
     </section>
 
-    <section class="card" id="games">
+    <section class="card tab-section" id="games">
       <h2>📋 Today’s MLB Games</h2>
       <div id="gamesBox">
         <p>Loading games...</p>
       </div>
     </section>
 
-    <section class="card" id="scouting">
+    <section class="card tab-section" id="scouting">
       <h2>🔎 Game Scouting Report</h2>
       <div id="scoutingBox">
         <p>Tap a game to view scouting report.</p>
@@ -77,11 +77,13 @@
   </div>
 
   <script>
-    function scrollToSection(id) {
-      document.getElementById(id).scrollIntoView({
-        behavior: "smooth",
-        block: "start"
+    function showTab(id) {
+      document.querySelectorAll(".tab-section").forEach(section => {
+        section.classList.remove("active");
       });
+
+      document.getElementById(id).classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   </script>
 
