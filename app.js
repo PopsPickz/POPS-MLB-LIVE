@@ -143,12 +143,12 @@ async function loadHRPicks() {
       const batterStats = await getMergedBatterStats(batter);
 
       const batterInfo = API.getPlayerInfo
-        ? await API.getPlayerInfo(batter.id)
-        : {};
+    ? (await API.getPlayerInfo(batter.id)) || {}
+  : {};
 
       const pitcherInfo = API.getPlayerInfo
-        ? await API.getPlayerInfo(target.pitcherId)
-        : {};
+   ? (await API.getPlayerInfo(target.pitcherId)) || {}
+  : {};
 
       const batterHand = batterInfo.batSide || "";
       const pitcherHand = pitcherInfo.pitchHand || "";
