@@ -217,7 +217,15 @@ async function loadHitPicks() {
 
     for (const batter of lineup) {
       const hitStreak = await API.getHitStreak(batter.id);
-      const batterStats = batter.stats || await API.getBatterStats(batter.id);
+      const baseStats = batter.stats || await API.getBatterStats(batter.id);
+      const statcastStats = typeof StatcastData !== "undefined"
+     ? StatcastData[batter.name] || {}
+     : {};
+
+   const batterStats = {
+  ...baseStats,
+  ...statcastStats
+};
 
       const bvpHR = API.getBvPHR
         ? await API.getBvPHR(batter.id, target.pitcherId)
