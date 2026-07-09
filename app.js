@@ -38,21 +38,26 @@ async function getBatterStats(playerId, playerName) {
   if (!playerId) return {};
 
   if (!cache.batterStats[playerId]) {
-    cache.batterStats[playerId] = await safe(
-      () => API.getBatterStats(playerId),
-      {}
-    );
+    const seasonStats = await safe(() => API.getBatterStats(playerId), {});
+
+    const manualStatcast =
+      typeof StatcastData !== "undefined"
+        ? StatcastData[playerName] || {}
+        : {};
+
+    const liveStatcast =
+      typeof StatcastAPI !== "undefined"
+        ? await safe(() => StatcastAPI.getPlayerPowerStats(playerId), {})
+        : {};
+
+    cache.batterStats[playerId] = {
+      ...seasonStats,
+      ...manualStatcast,
+      ...liveStatcast
+    };
   }
 
-  const statcast =
-    typeof StatcastData !== "undefined"
-      ? StatcastData[playerName] || {}
-      : {};
-
-  return {
-    ...cache.batterStats[playerId],
-    ...statcast
-  };
+  return cache.batterStats[playerId];
 }
 
 async function getPlayerInfo(playerId) {
@@ -70,27 +75,19 @@ async function getPlayerInfo(playerId) {
 
 async function getBvPStats(batterId, pitcherId) {
   if (!batterId || !pitcherId) {
-    return {
-      atBats: 0,
-      hits: 0,
-      avg: ".000",
-      homeRuns: 0
-    };
+    return { atBats: 0, hits: 0, avg: ".000", homeRuns: 0 };
   }
 
   const key = `bvpstats-${batterId}-${pitcherId}`;
 
   if (cache.bvp[key] === undefined) {
     cache.bvp[key] = await safe(
-      () =>
-        API.getBvPStats
-          ? API.getBvPStats(batterId, pitcherId)
-          : {
-              atBats: 0,
-              hits: 0,
-              avg: ".000",
-              homeRuns: 0
-            },
+      () => API.getBvPStats ? API.getBvPStats(batterId, pitcherId) : {
+        atBats: 0,
+        hits: 0,
+        avg: ".000",
+        homeRuns: 0
+      },
       {
         atBats: 0,
         hits: 0,
@@ -101,11 +98,6 @@ async function getBvPStats(batterId, pitcherId) {
   }
 
   return cache.bvp[key];
-}
-
-async function getBvPHR(batterId, pitcherId) {
-  const stats = await getBvPStats(batterId, pitcherId);
-  return Number(stats.homeRuns || 0);
 }
 
 async function loadGames() {
@@ -240,20 +232,18 @@ async function loadHRPicks() {
       });
     }
   }
-  
-// Remove duplicate players (keep highest score)
-const uniquePlayers = {};
 
-hrPicks.forEach(pick => {
-  const key = `${pick.player}-${pick.team}`;
+  const uniquePlayers = {};
 
-  if (!uniquePlayers[key] || pick.score > uniquePlayers[key].score) {
-    uniquePlayers[key] = pick;
-  }
-});
+  hrPicks.forEach(pick => {
+    const key = `${pick.player}-${pick.team}`;
 
-hrPicks = Object.values(uniquePlayers);
-  
+    if (!uniquePlayers[key] || pick.score > uniquePlayers[key].score) {
+      uniquePlayers[key] = pick;
+    }
+  });
+
+  hrPicks = Object.values(uniquePlayers);
   hrPicks.sort((a, b) => b.score - a.score);
 
   if (!hrPicks.length) {
@@ -270,7 +260,7 @@ hrPicks = Object.values(uniquePlayers);
       <p><strong>Date/Time:</strong> ${pick.gameTime}</p>
       <p><strong>Vs Pitcher:</strong> ${pick.pitcher}</p>
       <p><strong>Batting Spot:</strong> ${pick.lineupSpot}</p>
-      <p><strong>Lineup:</strong> ${pick.confirmed ? "✅ Confirmed" : "🟡 Projected"}</p>
+      <p><strong>Lineup:</strong> ${pick.confirmed ? "✅ Confirmed lineup" : "🟡 Projected lineup"}</p>
       <p><strong>Batter Hand:</strong> ${pick.batterHand || "N/A"}</p>
       <p><strong>Pitcher Hand:</strong> ${pick.pitcherHand || "N/A"}</p>
       <p><strong>Platoon Edge:</strong> ${pick.hasPlatoonAdvantage ? "✅ Yes" : "❌ No"}</p>
@@ -323,20 +313,19 @@ async function loadHitPicks() {
       }
     }
   }
-  
-// Remove duplicate players (keep highest Hit Score)
-const uniqueHitPlayers = {};
 
-hitPicks.forEach(pick => {
-  const key = `${pick.player}-${pick.team}`;
+  const uniqueHitPlayers = {};
 
-  if (!uniqueHitPlayers[key] || pick.score > uniqueHitPlayers[key].score) {
-    uniqueHitPlayers[key] = pick;
-  }
-});
+  hitPicks.forEach(pick => {
+    const key = `${pick.player}-${pick.team}`;
 
-hitPicks = Object.values(uniqueHitPlayers);
-  
+    if (!uniqueHitPlayers[key] || pick.score > uniqueHitPlayers[key].score) {
+      uniqueHitPlayers[key] = pick;
+    }
+  });
+
+  hitPicks = Object.values(uniqueHitPlayers);
+
   hitPicks.sort((a, b) =>
     b.hitStreak - a.hitStreak ||
     b.bvpHR - a.bvpHR ||
@@ -375,9 +364,8 @@ hitPicks = Object.values(uniqueHitPlayers);
   `).join("");
 }
 
-
 async function init() {
-  hrPicksBox.innerHTML = "<p>Starting POPS Pickz 8.1...</p>";
+  hrPicksBox.innerHTML = "<p>Starting POPS Pickz 9.0...</p>";
 
   await loadGames();
   await buildTargets();
@@ -385,23 +373,16 @@ async function init() {
 
   setTimeout(async () => {
     await loadHitPicks();
-    await Moneyline.load(games);
+
+    if (typeof Moneyline !== "undefined") {
+      await Moneyline.load(games);
+    }
   }, 500);
 }
 
 init().catch(err => {
   console.error("POPS app error:", err);
 
-  hrPicksBox.innerHTML = `
-    <div class="pick-card">
-      <h3>⚠️ Site loading error</h3>
-      <p>${err.message}</p>
-    </div>
-  `;
-});
-
-init().catch(err => {
-  console.error("POPS app error:", err);
   hrPicksBox.innerHTML = `
     <div class="pick-card">
       <h3>⚠️ Site loading error</h3>
