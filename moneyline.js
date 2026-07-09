@@ -1,171 +1,221 @@
 const Moneyline = {
-  async getTeamStats(teamId) {
-    try {
-      const data = await API.getTeamStats(teamId);
+  num(value) {
+    const n = Number(String(value ?? "").replace(/,/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  },
 
-      const hitting =
-        data.stats?.find(s => s.group.displayName === "hitting")
-          ?.splits?.[0]?.stat || {};
+  pitcherScore(stats = {}) {
+    const era = this.num(stats.era);
+    const whip = this.num(stats.whip);
+    const innings = this.num(stats.inningsPitched);
+    const strikeouts = this.num(stats.strikeOuts);
+    const walks = this.num(stats.baseOnBalls);
+    const homeRuns = this.num(stats.homeRuns);
 
-      const pitching =
-        data.stats?.find(s => s.group.displayName === "pitching")
-          ?.splits?.[0]?.stat || {};
+    let score = 100;
 
-      return {
-        runs: Number(hitting.runs || 0),
-        ops: Number(hitting.ops || 0),
-        avg: Number(hitting.avg || 0),
-        era: Number(pitching.era || 99),
-        whip: Number(pitching.whip || 99)
-      };
-    } catch {
-      return {
-        runs: 0,
-        ops: 0,
-        avg: 0,
-        era: 99,
-        whip: 99
-      };
+    if (era > 0) score -= era * 6;
+    if (whip > 0) score -= whip * 15;
+    score -= homeRuns * 0.8;
+
+    if (innings > 0) {
+      const k9 = (strikeouts * 9) / innings;
+      const bb9 = (walks * 9) / innings;
+
+      score += k9 * 1.2;
+      score -= bb9 * 2;
     }
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  },
+
+  offenseScore(stats = {}) {
+    const runs = this.num(stats.runs);
+    const hits = this.num(stats.hits);
+    const homeRuns = this.num(stats.homeRuns);
+    const avg = this.num(stats.avg);
+    const ops = this.num(stats.ops);
+
+    let score = 0;
+
+    score += ops * 45;
+    score += avg * 80;
+    score += runs * 0.08;
+    score += hits * 0.04;
+    score += homeRuns * 0.25;
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  },
+
+  bullpenScore(stats = {}) {
+    const era = this.num(stats.era);
+    const whip = this.num(stats.whip);
+    const saves = this.num(stats.saves);
+    const blownSaves = this.num(stats.blownSaves);
+
+    let score = 100;
+
+    if (era > 0) score -= era * 7;
+    if (whip > 0) score -= whip * 18;
+    score += saves * 0.2;
+    score -= blownSaves * 1.5;
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  },
+
+  defenseScore(stats = {}) {
+    const fielding = this.num(stats.fielding);
+    const errors = this.num(stats.errors);
+    const doublePlays = this.num(stats.doublePlays);
+
+    let score = 0;
+
+    score += fielding * 100;
+    score -= errors * 0.45;
+    score += doublePlays * 0.12;
+
+    return Math.max(0, Math.min(100, Math.round(score)));
+  },
+
+  compareCategory(awayScore, homeScore) {
+    if (awayScore > homeScore) return "away";
+    if (homeScore > awayScore) return "home";
+    return "tie";
+  },
+
+  async buildCard(game) {
+    const awayStats = await safe(() => API.getTeamStats(game.awayTeamId), {
+      hitting: {},
+      pitching: {},
+      fielding: {}
+    });
+
+    const homeStats = await safe(() => API.getTeamStats(game.homeTeamId), {
+      hitting: {},
+      pitching: {},
+      fielding: {}
+    });
+
+    const awayPitcherStats = await safe(
+      () => API.getPlayerStats(game.awayPitcherId),
+      {}
+    );
+
+    const homePitcherStats = await safe(
+      () => API.getPlayerStats(game.homePitcherId),
+      {}
+    );
+
+    const awayScores = {
+      pitcher: game.awayPitcherId ? this.pitcherScore(awayPitcherStats) : 0,
+      bullpen: this.bullpenScore(awayStats.pitching),
+      offense: this.offenseScore(awayStats.hitting),
+      defense: this.defenseScore(awayStats.fielding)
+    };
+
+    const homeScores = {
+      pitcher: game.homePitcherId ? this.pitcherScore(homePitcherStats) : 0,
+      bullpen: this.bullpenScore(homeStats.pitching),
+      offense: this.offenseScore(homeStats.hitting),
+      defense: this.defenseScore(homeStats.fielding)
+    };
+
+    const categories = {
+      pitcher: this.compareCategory(awayScores.pitcher, homeScores.pitcher),
+      bullpen: this.compareCategory(awayScores.bullpen, homeScores.bullpen),
+      offense: this.compareCategory(awayScores.offense, homeScores.offense),
+      defense: this.compareCategory(awayScores.defense, homeScores.defense)
+    };
+
+    const awayChecks = Object.values(categories).filter(v => v === "away").length;
+    const homeChecks = Object.values(categories).filter(v => v === "home").length;
+
+    const awayTotal =
+      awayScores.pitcher * 0.35 +
+      awayScores.bullpen * 0.25 +
+      awayScores.offense * 0.25 +
+      awayScores.defense * 0.15;
+
+    const homeTotal =
+      homeScores.pitcher * 0.35 +
+      homeScores.bullpen * 0.25 +
+      homeScores.offense * 0.25 +
+      homeScores.defense * 0.15 +
+      2; // small home-field edge
+
+    const pick =
+      awayTotal > homeTotal
+        ? game.awayTeam
+        : homeTotal > awayTotal
+        ? game.homeTeam
+        : "No Clear Edge";
+
+    const confidence = Math.min(
+      90,
+      Math.max(50, Math.round(Math.abs(awayTotal - homeTotal) + 55))
+    );
+
+    return `
+      <div class="pick-card">
+        <h3>${game.awayTeam} vs ${game.homeTeam}</h3>
+        <p>⏰ ${formatTime(game.date)}</p>
+        <p>💰 POPS Pick: <span class="score">${pick}</span></p>
+        <p class="small">Checklist: ${awayChecks} - ${homeChecks}</p>
+        <p class="small">Confidence: ${confidence}%</p>
+        <hr>
+
+        <p><strong>${game.awayTeam}</strong></p>
+        <p>Starting Pitcher ${categories.pitcher === "away" ? "✅" : categories.pitcher === "tie" ? "➖" : "❌"} 
+          <span class="small">Score: ${awayScores.pitcher}</span>
+        </p>
+        <p>Better Bullpen ${categories.bullpen === "away" ? "✅" : categories.bullpen === "tie" ? "➖" : "❌"} 
+          <span class="small">Score: ${awayScores.bullpen}</span>
+        </p>
+        <p>Offense ${categories.offense === "away" ? "✅" : categories.offense === "tie" ? "➖" : "❌"} 
+          <span class="small">Score: ${awayScores.offense}</span>
+        </p>
+        <p>Defense ${categories.defense === "away" ? "✅" : categories.defense === "tie" ? "➖" : "❌"} 
+          <span class="small">Score: ${awayScores.defense}</span>
+        </p>
+        <p class="small">
+          Starter: ${game.awayPitcher} | Overall: ${Math.round(awayTotal)}
+        </p>
+
+        <hr>
+
+        <p><strong>${game.homeTeam}</strong></p>
+        <p>Starting Pitcher ${categories.pitcher === "home" ? "✅" : categories.pitcher === "tie" ? "➖" : "❌"} 
+          <span class="small">Score: ${homeScores.pitcher}</span>
+        </p>
+        <p>Better Bullpen ${categories.bullpen === "home" ? "✅" : categories.bullpen === "tie" ? "➖" : "❌"} 
+          <span class="small">Score: ${homeScores.bullpen}</span>
+        </p>
+        <p>Offense ${categories.offense === "home" ? "✅" : categories.offense === "tie" ? "➖" : "❌"} 
+          <span class="small">Score: ${homeScores.offense}</span>
+        </p>
+        <p>Defense ${categories.defense === "home" ? "✅" : categories.defense === "tie" ? "➖" : "❌"} 
+          <span class="small">Score: ${homeScores.defense}</span>
+        </p>
+        <p class="small">
+          Starter: ${game.homePitcher} | Overall: ${Math.round(homeTotal)}
+        </p>
+      </div>
+    `;
   },
 
   async load(games) {
-    let cards = [];
+    const cards = [];
 
     for (const game of games) {
-      const away = game.teams.away.team.name;
-      const home = game.teams.home.team.name;
-
-      const awayId = game.teams.away.team.id;
-      const homeId = game.teams.home.team.id;
-
-      const awayPitcher = game.teams.away.probablePitcher?.fullName || "TBD";
-      const homePitcher = game.teams.home.probablePitcher?.fullName || "TBD";
-
-      const awayPitcherId = game.teams.away.probablePitcher?.id || null;
-      const homePitcherId = game.teams.home.probablePitcher?.id || null;
-
-      const awayRisk = await pitcherRisk(awayPitcher, awayPitcherId);
-      const homeRisk = await pitcherRisk(homePitcher, homePitcherId);
-
-      const awayStats = await this.getTeamStats(awayId);
-      const homeStats = await this.getTeamStats(homeId);
-
-      const awayRiskNum = Number(awayRisk.risk) || 50;
-      const homeRiskNum = Number(homeRisk.risk) || 50;
-
-      const awayPitcherScore =
-      awayRiskNum +
-      Number(awayRisk.era || 5) * 3 +
-      Number(awayRisk.whip || 1.5) * 10;
-
-      const homePitcherScore =
-      homeRiskNum +
-      Number(homeRisk.era || 5) * 3 +
-      Number(homeRisk.whip || 1.5) * 10;
-
-     const awayStarter =
-     awayPitcherScore < homePitcherScore ||
-     (awayPitcherScore === homePitcherScore && awayStats.era < homeStats.era);
-
-     const homeStarter =
-     homePitcherScore < awayPitcherScore ||
-    (awayPitcherScore === homePitcherScore && homeStats.era < awayStats.era);
-       
-      const awayBullpen =
-        awayStats.era < homeStats.era &&
-        awayStats.whip < homeStats.whip;
-
-      const homeBullpen =
-        homeStats.era < awayStats.era &&
-        homeStats.whip < awayStats.whip;
-
-      const awayOffense = awayStats.ops > homeStats.ops;
-      const homeOffense = homeStats.ops > awayStats.ops;
-
-      const awayRunSupport = awayStats.runs > homeStats.runs;
-      const homeRunSupport = homeStats.runs > awayStats.runs;
-
-      let awayScore = 0;
-      let homeScore = 0;
-
-      // Starting Pitcher = 40%
-      if (awayStarter) awayScore += 40;
-      if (homeStarter) homeScore += 40;
-
-      // Bullpen = 25%
-      if (awayBullpen) awayScore += 25;
-      if (homeBullpen) homeScore += 25;
-
-      // Offense = 20%
-      if (awayOffense) awayScore += 20;
-      if (homeOffense) homeScore += 20;
-
-      // Run Support = 10%
-      if (awayRunSupport) awayScore += 10;
-      if (homeRunSupport) homeScore += 10;
-
-      // Home Field = 5%
-      homeScore += 5;
-
-      let pick = "No Clear Edge";
-      let confidence = 50;
-
-      const totalScore = awayScore + homeScore;
-
-      if (awayScore > homeScore) {
-        pick = away;
-        confidence = Math.round((awayScore / totalScore) * 100);
-      }
-
-      if (homeScore > awayScore) {
-        pick = home;
-        confidence = Math.round((homeScore / totalScore) * 100);
-      }
-
-      confidence = Math.max(50, Math.min(confidence, 90));
-
-      cards.push(`
-        <div class="pick-card">
-          <h3>💰 ${away} vs ${home}</h3>
-
-          <p><strong>POPS Moneyline Pick:</strong>
-            <span class="gold">${pick}</span>
-          </p>
-
-          <p><strong>Confidence:</strong>
-            <span class="hr-score">${confidence}%</span>
-          </p>
-
-          <hr>
-
-          <p><strong>${away}</strong></p>
-          <p>Starting Pitcher ${awayStarter ? "✅" : "❌"} — ${awayPitcher}</p>
-          <p>Bullpen ${awayBullpen ? "✅" : "❌"}</p>
-          <p>Offense ${awayOffense ? "✅" : "❌"}</p>
-          <p>Run Support ${awayRunSupport ? "✅" : "❌"}</p>
-          <p class="small">
-            OPS: ${awayStats.ops} | Runs: ${awayStats.runs} | ERA: ${awayStats.era} | WHIP: ${awayStats.whip}
-          </p>
-
-          <hr>
-
-          <p><strong>${home}</strong></p>
-          <p>Starting Pitcher ${homeStarter ? "✅" : "❌"} — ${homePitcher}</p>
-          <p>Bullpen ${homeBullpen ? "✅" : "❌"}</p>
-          <p>Offense ${homeOffense ? "✅" : "❌"}</p>
-          <p>Run Support ${homeRunSupport ? "✅" : "❌"}</p>
-          <p class="small">
-            OPS: ${homeStats.ops} | Runs: ${homeStats.runs} | ERA: ${homeStats.era} | WHIP: ${homeStats.whip}
-          </p>
-        </div>
-      `);
+      const card = await this.buildCard(game);
+      cards.push(card);
     }
 
-    updateBox(moneylineBox, "moneyline", cards.join(""));
+    moneylineBox.innerHTML = cards.join("");
   }
 };
 
-async function loadMoneyline(games) {
+async function loadMoneyline() {
+  moneylineBox.innerHTML = "<p>Loading Moneyline Pickz...</p>";
   return await Moneyline.load(games);
 }
