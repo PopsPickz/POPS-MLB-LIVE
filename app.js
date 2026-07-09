@@ -295,6 +295,8 @@ font-size:22px;
     <h3>💣 ${pick.player}</h3>
 
     <p><strong>Team:</strong> ${pick.team}</p>
+    <p><strong>Game:</strong> ${pick.game}</p>
+    <p><strong>Date/Time:</strong> ${pick.gameTime}</p>
     <p><strong>Vs Pitcher:</strong> ${pick.pitcher}</p>
     <p><strong>Batting Spot:</strong> ${pick.lineupSpot}</p>
     <p><strong>Position:</strong> ${pick.position || "N/A"}</p>
