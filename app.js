@@ -323,7 +323,20 @@ async function loadHitPicks() {
       }
     }
   }
+  
+// Remove duplicate players (keep highest Hit Score)
+const uniqueHitPlayers = {};
 
+hitPicks.forEach(pick => {
+  const key = `${pick.player}-${pick.team}`;
+
+  if (!uniqueHitPlayers[key] || pick.score > uniqueHitPlayers[key].score) {
+    uniqueHitPlayers[key] = pick;
+  }
+});
+
+hitPicks = Object.values(uniqueHitPlayers);
+  
   hitPicks.sort((a, b) =>
     b.hitStreak - a.hitStreak ||
     b.bvpHR - a.bvpHR ||
