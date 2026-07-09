@@ -4,6 +4,15 @@ const Formula = {
     return Number.isFinite(n) ? n : 0;
   },
 
+  pick(stats, names = []) {
+    for (const name of names) {
+      if (stats[name] !== undefined && stats[name] !== null && stats[name] !== "") {
+        return this.num(stats[name]);
+      }
+    }
+    return 0;
+  },
+
   getLineupBoost(spot = 9) {
     spot = Number(spot);
     if (spot >= 1 && spot <= 4) return 7;
@@ -15,9 +24,9 @@ const Formula = {
   pitcherRisk(stats = {}) {
     const era = this.num(stats.era);
     const whip = this.num(stats.whip);
-    const hrAllowed = this.num(stats.homeRuns);
-    const innings = this.num(stats.inningsPitched);
-    const hr9 = innings > 0 ? (hrAllowed * 9) / innings : 0;
+    const hrAllowed = this.num(stats.homeRuns || stats.hrAllowed || stats.hr);
+    const innings = this.num(stats.inningsPitched || stats.ip);
+    const hr9 = this.num(stats.hr9) || (innings > 0 ? (hrAllowed * 9) / innings : 0);
 
     let score = 5;
 
@@ -43,13 +52,38 @@ const Formula = {
   },
 
   getBatterPowerScore(stats = {}) {
-    const hr = this.num(stats.homeRuns);
-    const slg = this.num(stats.slg);
-    const ops = this.num(stats.ops);
-    const iso = this.num(stats.iso);
-    const barrelRate = this.num(stats.barrelRate);
-    const hardHitRate = this.num(stats.hardHitRate);
-    const exitVelocity = this.num(stats.exitVelocity || stats.avgExitVelo);
+    const hr = this.pick(stats, ["homeRuns", "hr", "HR"]);
+    const slg = this.pick(stats, ["slg", "slugging", "SLG"]);
+    const ops = this.pick(stats, ["ops", "OPS"]);
+    const avg = this.pick(stats, ["avg", "AVG"]);
+    const iso = this.pick(stats, ["iso", "ISO"]) || (slg && avg ? slg - avg : 0);
+
+    const barrelRate = this.pick(stats, [
+      "barrelRate",
+      "barrelPercent",
+      "barrelPct",
+      "barrelsPercent",
+      "barrel_percentage",
+      "barrel_batted_rate"
+    ]);
+
+    const hardHitRate = this.pick(stats, [
+      "hardHitRate",
+      "hardHitPercent",
+      "hardHitPct",
+      "hard_hit_percent",
+      "hardHitPercentage",
+      "hard_hit_rate"
+    ]);
+
+    const exitVelocity = this.pick(stats, [
+      "exitVelocity",
+      "avgExitVelo",
+      "avgExitVelocity",
+      "averageExitVelocity",
+      "launchSpeed",
+      "ev"
+    ]);
 
     let score = 0;
 
@@ -88,10 +122,41 @@ const Formula = {
   },
 
   getHardContactScore(stats = {}) {
-    const hardHitRate = this.num(stats.hardHitRate);
-    const barrelRate = this.num(stats.barrelRate);
-    const exitVelocity = this.num(stats.exitVelocity || stats.avgExitVelo);
-    const flyBallRate = this.num(stats.flyBallRate);
+    const hardHitRate = this.pick(stats, [
+      "hardHitRate",
+      "hardHitPercent",
+      "hardHitPct",
+      "hard_hit_percent",
+      "hardHitPercentage",
+      "hard_hit_rate"
+    ]);
+
+    const barrelRate = this.pick(stats, [
+      "barrelRate",
+      "barrelPercent",
+      "barrelPct",
+      "barrelsPercent",
+      "barrel_percentage",
+      "barrel_batted_rate"
+    ]);
+
+    const exitVelocity = this.pick(stats, [
+      "exitVelocity",
+      "avgExitVelo",
+      "avgExitVelocity",
+      "averageExitVelocity",
+      "launchSpeed",
+      "ev"
+    ]);
+
+    const flyBallRate = this.pick(stats, [
+      "flyBallRate",
+      "flyBallPercent",
+      "flyBallPct",
+      "fbPercent",
+      "fbRate",
+      "fly_ball_percent"
+    ]);
 
     let score = 0;
 
@@ -163,8 +228,8 @@ const Formula = {
   getHitScore(playerName, lineupSpot, hitStreak = 0, previousHR = 0, stats = {}) {
     let score = 65;
 
-    const avg = this.num(stats.avg);
-    const ops = this.num(stats.ops);
+    const avg = this.pick(stats, ["avg", "AVG"]);
+    const ops = this.pick(stats, ["ops", "OPS"]);
 
     if (avg >= .300) score += 12;
     else if (avg >= .275) score += 9;
