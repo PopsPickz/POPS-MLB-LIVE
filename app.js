@@ -68,19 +68,44 @@ async function getPlayerInfo(playerId) {
   return cache.playerInfo[playerId];
 }
 
-async function getBvPHR(batterId, pitcherId) {
-  if (!batterId || !pitcherId) return 0;
+async function getBvPStats(batterId, pitcherId) {
+  if (!batterId || !pitcherId) {
+    return {
+      atBats: 0,
+      hits: 0,
+      avg: ".000",
+      homeRuns: 0
+    };
+  }
 
-  const key = `${batterId}-${pitcherId}`;
+  const key = `bvpstats-${batterId}-${pitcherId}`;
 
   if (cache.bvp[key] === undefined) {
     cache.bvp[key] = await safe(
-      () => API.getBvPHR ? API.getBvPHR(batterId, pitcherId) : 0,
-      0
+      () =>
+        API.getBvPStats
+          ? API.getBvPStats(batterId, pitcherId)
+          : {
+              atBats: 0,
+              hits: 0,
+              avg: ".000",
+              homeRuns: 0
+            },
+      {
+        atBats: 0,
+        hits: 0,
+        avg: ".000",
+        homeRuns: 0
+      }
     );
   }
 
-  return Number(cache.bvp[key] || 0);
+  return cache.bvp[key];
+}
+
+async function getBvPHR(batterId, pitcherId) {
+  const stats = await getBvPStats(batterId, pitcherId);
+  return Number(stats.homeRuns || 0);
 }
 
 async function loadGames() {
@@ -138,19 +163,18 @@ async function getLineup(target) {
     const roster = await safe(() => API.getRoster(target.targetTeamId), []);
 
     lineup = roster
-  .filter(p => !["P", "SP", "RP"].includes(p.position))
-  .sort((a, b) =>
-    Number(Formula.isKnownPowerBat(b.name)) -
-    Number(Formula.isKnownPowerBat(a.name))
-  )
-  .slice(0, 9)
-  .map((p, index) => ({
-    ...p,
-    team: target.targetTeam,
-    lineupSpot: index + 1,
-    confirmed: false
-  }));
-    
+      .filter(p => !["P", "SP", "RP"].includes(p.position))
+      .sort((a, b) =>
+        Number(Formula.isKnownPowerBat(b.name)) -
+        Number(Formula.isKnownPowerBat(a.name))
+      )
+      .slice(0, 9)
+      .map((p, index) => ({
+        ...p,
+        team: target.targetTeam,
+        lineupSpot: index + 1,
+        confirmed: false
+      }));
   }
 
   cache.lineup[key] = lineup;
@@ -176,24 +200,26 @@ async function loadHRPicks() {
         (batterHand === "L" && pitcherHand === "R") ||
         (batterHand === "R" && pitcherHand === "L");
 
-      const bvpHR = await getBvPHR(batter.id, target.pitcherId);
+      const bvpStats = await getBvPStats(batter.id, target.pitcherId);
+      const bvpHR = Number(bvpStats.homeRuns || 0);
 
       const hitStreak = await safe(
-      () => API.getHitStreak ? API.getHitStreak(batter.id) : 0,
-      0
-   );
+        () => API.getHitStreak ? API.getHitStreak(batter.id) : 0,
+        0
+      );
 
- const result = Formula.getHrScore(
-  batter.name,
-  batter.lineupSpot,
-  target.risk,
-  {
-    batterStats,
-    bvpHR,
-    hitStreak,
-    hasPlatoonAdvantage
-  }
-);
+      const result = Formula.getHrScore(
+        batter.name,
+        batter.lineupSpot,
+        target.risk,
+        {
+          batterStats,
+          bvpHR,
+          hitStreak,
+          hasPlatoonAdvantage
+        }
+      );
+
       hrPicks.push({
         player: batter.name,
         team: batter.team,
@@ -207,6 +233,7 @@ async function loadHRPicks() {
         pitcherHand,
         hasPlatoonAdvantage,
         bvpHR,
+        bvpStats,
         hitStreak,
         score: result.score,
         reasons: result.reasons
@@ -235,6 +262,7 @@ async function loadHRPicks() {
       <p><strong>Pitcher Hand:</strong> ${pick.pitcherHand || "N/A"}</p>
       <p><strong>Platoon Edge:</strong> ${pick.hasPlatoonAdvantage ? "✅ Yes" : "❌ No"}</p>
       <p><strong>Previous HR vs Pitcher:</strong> ${pick.bvpHR}</p>
+      <p><strong>BvP History:</strong> ${pick.bvpStats?.hits || 0}/${pick.bvpStats?.atBats || 0}, AVG ${pick.bvpStats?.avg || ".000"}</p>
       <p><strong>Hit Streak:</strong> ${pick.hitStreak}+ games</p>
       <p><strong>POPS HR Score:</strong> <span class="score">${pick.score}/100</span></p>
       <p class="small">${pick.reasons}</p>
@@ -255,10 +283,11 @@ async function loadHitPicks() {
         0
       );
 
-      const bvpHR = await getBvPHR(batter.id, target.pitcherId);
+      const bvpStats = await getBvPStats(batter.id, target.pitcherId);
+      const bvpHR = Number(bvpStats.homeRuns || 0);
       const stats = await getBatterStats(batter.id, batter.name);
 
-      if (hitStreak >= 2 || bvpHR > 0) {
+      if (hitStreak >= 2 || bvpHR > 0 || Number(bvpStats.hits || 0) > 0) {
         const score = Formula.getHitScore(
           batter.name,
           batter.lineupSpot,
@@ -275,6 +304,7 @@ async function loadHitPicks() {
           confirmed: batter.confirmed,
           hitStreak,
           bvpHR,
+          bvpStats,
           score
         });
       }
@@ -284,6 +314,7 @@ async function loadHitPicks() {
   hitPicks.sort((a, b) =>
     b.hitStreak - a.hitStreak ||
     b.bvpHR - a.bvpHR ||
+    Number(b.bvpStats?.hits || 0) - Number(a.bvpStats?.hits || 0) ||
     b.score - a.score
   );
 
@@ -291,7 +322,7 @@ async function loadHitPicks() {
     hitPicksBox.innerHTML = `
       <div class="pick-card">
         <h3>No Hit Pickz Found</h3>
-        <p>No lineup batters currently have a 2+ game hit streak or previous HR vs pitcher.</p>
+        <p>No lineup batters currently have a 2+ game hit streak or previous success vs pitcher.</p>
       </div>
     `;
     return;
@@ -304,7 +335,14 @@ async function loadHitPicks() {
       <p>🔥 Hit Streak: <span class="score">${pick.hitStreak} games</span></p>
       <p>💣 Previous HR vs Pitcher: <span class="score">${pick.bvpHR}</span></p>
       <p>📊 Hit Score: <span class="score">${pick.score}/100</span></p>
-      <p>⚾ vs ${pick.pitcher}</p>
+      <p>
+        ⚾ vs ${pick.pitcher}<br>
+        <span class="small">
+          Previous vs Pitcher: ${pick.bvpStats?.hits || 0}/${pick.bvpStats?.atBats || 0},
+          AVG ${pick.bvpStats?.avg || ".000"},
+          HR ${pick.bvpStats?.homeRuns || 0}
+        </span>
+      </p>
       <p>📍 Batting spot: ${pick.lineupSpot}</p>
       <p>${pick.confirmed ? "✅ Confirmed lineup" : "🟡 Projected lineup"}</p>
     </div>
