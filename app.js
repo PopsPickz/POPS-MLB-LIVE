@@ -338,17 +338,20 @@ async function loadMoneyline() {
       Number(homeStats.pitching?.runsAllowed || 999) +
       Number(homeStats.pitching?.era || 99);
 
-    const awayBetterSP = awaySP < homeSP;
-    const homeBetterSP = homeSP < awaySP;
+    // POPS Moneyline 2.0
+    // Each category now forces one ✅ and one ❌
 
-    const awayBetterBullpen = awayPitching < homePitching;
-    const homeBetterBullpen = homePitching < awayPitching;
+    const awayBetterSP = awaySP <= homeSP;
+    const homeBetterSP = !awayBetterSP;
 
-    const awayBetterOffense = awayOffense > homeOffense;
-    const homeBetterOffense = homeOffense > awayOffense;
+    const awayBetterBullpen = awayPitching <= homePitching;
+    const homeBetterBullpen = !awayBetterBullpen;
 
-    const awayBetterDefense = awayDefense < homeDefense;
-    const homeBetterDefense = homeDefense < awayDefense;
+    const awayBetterOffense = awayOffense >= homeOffense;
+    const homeBetterOffense = !awayBetterOffense;
+
+    const awayBetterDefense = awayDefense <= homeDefense;
+    const homeBetterDefense = !awayBetterDefense;
 
     let awayChecks =
       Number(awayBetterSP) +
@@ -362,11 +365,12 @@ async function loadMoneyline() {
       Number(homeBetterOffense) +
       Number(homeBetterDefense);
 
-    if (awayChecks === homeChecks) homeChecks += 0.5;
+    // Home team wins exact 2-2 ties
+    let pick = awayChecks > homeChecks ? game.awayTeam : game.homeTeam;
 
     cards.push({
       game,
-      pick: homeChecks >= awayChecks ? game.homeTeam : game.awayTeam,
+      pick,
       awayChecks,
       homeChecks,
       awayBetterSP,
@@ -387,12 +391,15 @@ async function loadMoneyline() {
       <p>💰 POPS Pick: <span class="score">${item.pick}</span></p>
       <p class="small">Checklist: ${item.awayChecks} - ${item.homeChecks}</p>
       <hr>
+
       <p><strong>${item.game.awayTeam}</strong></p>
       <p>Starting Pitcher ${item.awayBetterSP ? "✅" : "❌"}</p>
       <p>Better Bullpen ${item.awayBetterBullpen ? "✅" : "❌"}</p>
       <p>Offense ${item.awayBetterOffense ? "✅" : "❌"}</p>
       <p>Defense ${item.awayBetterDefense ? "✅" : "❌"}</p>
+
       <hr>
+
       <p><strong>${item.game.homeTeam}</strong></p>
       <p>Starting Pitcher ${item.homeBetterSP ? "✅" : "❌"}</p>
       <p>Better Bullpen ${item.homeBetterBullpen ? "✅" : "❌"}</p>
