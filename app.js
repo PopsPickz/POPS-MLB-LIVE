@@ -240,7 +240,20 @@ async function loadHRPicks() {
       });
     }
   }
+  
+// Remove duplicate players (keep highest score)
+const uniquePlayers = {};
 
+hrPicks.forEach(pick => {
+  const key = `${pick.player}-${pick.team}`;
+
+  if (!uniquePlayers[key] || pick.score > uniquePlayers[key].score) {
+    uniquePlayers[key] = pick;
+  }
+});
+
+hrPicks = Object.values(uniquePlayers);
+  
   hrPicks.sort((a, b) => b.score - a.score);
 
   if (!hrPicks.length) {
