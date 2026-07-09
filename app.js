@@ -340,9 +340,6 @@ const homeDefense =
   num(homeStats.pitching?.runsAllowed) +
   num(homeStats.pitching?.era);
 
-    const homeDefense =
-      Number(homeStats.pitching?.runsAllowed || 999) +
-      Number(homeStats.pitching?.era || 99);
 
     // POPS Moneyline 2.0
     // Each category now forces one ✅ and one ❌
