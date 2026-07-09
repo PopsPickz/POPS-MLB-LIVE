@@ -175,3 +175,37 @@ font-size:22px;
 }
 
 }
+
+/* ===== Pitcher Cards ===== */
+
+.pitcher-target-card {
+  margin: 28px 0;
+  padding: 22px;
+  border: 2px solid #ff8c1a;
+  border-radius: 22px;
+  background: rgba(0,0,0,.55);
+  box-shadow: 0 0 18px rgba(255,140,26,.25);
+}
+
+.pitcher-target-card h2 {
+  margin-top: 0;
+  color: #ffb347;
+}
+
+.pitcher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.mini-card {
+  border: 1px solid rgba(255,140,26,.55);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(255,255,255,.03);
+}
+
+.pitcher-target-card + .pitcher-target-card {
+  margin-top: 40px;
+}
