@@ -16,14 +16,22 @@
       <p>Automatic MLB HR Pickz • Hit Pickz • Moneyline Edges</p>
     </header>
 
-    <nav class="tabs">
-      <button onclick="showTab('homeruns')">💣 HR Pickz</button>
-      <button onclick="showTab('hits')">🔥 Hit Pickz</button>
-      <button onclick="showTab('moneyline')">💰 Moneyline</button>
-    </nav>
-
+ <nav class="tabs">
+    <button onclick="showTab('pitchers')">🎯 Pitchers</button>
+    <button onclick="showTab('homeruns')">💣 HR Pickz</button>
+    <button onclick="showTab('hits')">🔥 Hit Pickz</button>
+    <button onclick="showTab('moneyline')">💰 Moneyline</button>
+ </nav>
     <div id="gamesBox" style="display:none;"></div>
+    
+   <section class="card tab-section active" id="pitchers">
+   <h2>🎯 Today's Pitchers To Target</h2>
 
+  <div id="pitchersBox">
+    <p>Loading pitcher targets...</p>
+  </div>
+</section>  
+    
     <section class="card tab-section active" id="homeruns">
       <h2>💣 POPS Home Run Pickz</h2>
       <div id="hrPicksBox">
