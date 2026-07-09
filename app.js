@@ -198,17 +198,22 @@ async function loadHRPicks() {
   }
 
   hrPicksBox.innerHTML = hrPicks.slice(0, 20).map((pick, index) => `
-    <div class="pick-card">
-      <span class="rank-badge">#${index + 1}</span>
-      <h3>${pick.player} - ${pick.team}</h3>
-      <p>💣 HR Score: <span class="score">${pick.score}/100</span></p>
-      <p>⚾ vs ${pick.pitcher}</p>
-      <p>📍 Batting spot: ${pick.lineupSpot}</p>
-      <p>🧢 Position: ${pick.position || "N/A"}</p>
-      <p>${pick.confirmed ? "✅ Confirmed lineup" : "🟡 Projected lineup"}</p>
-      <p class="small">${pick.reasons}</p>
-    </div>
-  `).join("");
+  <div class="hr-card">
+    <div class="hr-rank">#${index + 1}</div>
+
+    <h3>💣 ${pick.player}</h3>
+
+    <p><strong>Team:</strong> ${pick.team}</p>
+    <p><strong>Vs Pitcher:</strong> ${pick.pitcher}</p>
+    <p><strong>Batting Spot:</strong> ${pick.lineupSpot}</p>
+    <p><strong>Position:</strong> ${pick.position || "N/A"}</p>
+    <p><strong>Lineup:</strong> ${pick.confirmed ? "✅ Confirmed" : "🟡 Projected"}</p>
+
+    <p><strong>POPS HR Score:</strong> <span class="score">${pick.score}/100</span></p>
+
+    <p class="small">${pick.reasons}</p>
+  </div>
+`).join("");
 }
 
 async function loadHitPicks() {
