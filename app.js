@@ -211,43 +211,73 @@ async function loadHRPicks() {
   `).join("");
 }
 
-function loadHitPicks() {
-  hitPicksBox.innerHTML = "<p>Loading Hit Pickz...</p>";
+async function loadHitPicks() {
+  hitPicksBox.innerHTML = "<p>Loading real Hit Pickz...</p>";
   hitPicks = [];
 
-  hrPicks.forEach(pick => {
-    const hitStreak = 0;
-    const previousHR = 0;
-
-    const score = Formula.getHitScore(
-      pick.player,
-      pick.lineupSpot,
-      hitStreak,
-      previousHR
+  for (const target of pitcherTargets) {
+    let lineup = await getTeamLineup(
+      target.gameId,
+      target.targetTeamId,
+      target.targetTeam
     );
 
-    hitPicks.push({
-      ...pick,
-      hitStreak,
-      previousHR,
-      score
-    });
-  });
+    if (!lineup.length) {
+      lineup = await getProjectedLineup(
+        target.targetTeamId,
+        target.targetTeam
+      );
+    }
 
-  hitPicks.sort((a, b) => b.score - a.score);
+    for (const batter of lineup) {
+      const hitStreak = await API.getHitStreak(batter.id);
+
+      if (hitStreak >= 2) {
+        const batterStats = batter.stats || await API.getBatterStats(batter.id);
+
+        const score = Formula.getHitScore(
+          batter.name,
+          batter.lineupSpot,
+          hitStreak,
+          0,
+          batterStats
+        );
+
+        hitPicks.push({
+          player: batter.name,
+          team: batter.team,
+          position: batter.position,
+          pitcher: target.pitcher,
+          lineupSpot: batter.lineupSpot,
+          confirmed: batter.confirmed,
+          hitStreak,
+          score
+        });
+      }
+    }
+  }
+
+  hitPicks.sort((a, b) => b.hitStreak - a.hitStreak || b.score - a.score);
 
   if (!hitPicks.length) {
-    hitPicksBox.innerHTML = "<p>No Hit Pickz found.</p>";
+    hitPicksBox.innerHTML = `
+      <div class="pick-card">
+        <h3>No 2+ Game Hit Streaks Found</h3>
+        <p>Hit Pickz will appear when lineup batters have active hit streaks.</p>
+      </div>
+    `;
     return;
   }
 
-  hitPicksBox.innerHTML = hitPicks.slice(0, 20).map((pick, index) => `
+  hitPicksBox.innerHTML = hitPicks.map((pick, index) => `
     <div class="pick-card">
       <span class="rank-badge">#${index + 1}</span>
       <h3>${pick.player} - ${pick.team}</h3>
-      <p>🔥 Hit Score: <span class="score">${pick.score}/100</span></p>
+      <p>🔥 Hit Streak: <span class="score">${pick.hitStreak} games</span></p>
+      <p>📊 Hit Score: <span class="score">${pick.score}/100</span></p>
       <p>⚾ vs ${pick.pitcher}</p>
       <p>📍 Batting spot: ${pick.lineupSpot}</p>
+      <p>🧢 Position: ${pick.position || "N/A"}</p>
       <p>${pick.confirmed ? "✅ Confirmed lineup" : "🟡 Projected lineup"}</p>
     </div>
   `).join("");
