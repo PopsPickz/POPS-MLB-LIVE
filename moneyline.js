@@ -40,19 +40,27 @@ const Moneyline = {
     const homeRuns = this.num(stats.homeRuns);
     const avg = this.num(stats.avg);
     const ops = this.num(stats.ops);
-    const games = this.num(stats.gamesPlayed) || 1;
 
-    const runsPerGame = runs / games;
-    const hitsPerGame = hits / games;
-    const hrPerGame = homeRuns / games;
+    const games =
+      this.num(stats.gamesPlayed) ||
+      this.num(stats.games) ||
+      this.num(stats.gamesStarted) ||
+      0;
 
     let score = 50;
 
     score += (ops - 0.700) * 120;
     score += (avg - 0.240) * 90;
-    score += (runsPerGame - 4.2) * 7;
-    score += (hitsPerGame - 8.0) * 2;
-    score += (hrPerGame - 1.0) * 8;
+
+    if (games > 0) {
+      const runsPerGame = runs / games;
+      const hitsPerGame = hits / games;
+      const hrPerGame = homeRuns / games;
+
+      score += (runsPerGame - 4.2) * 7;
+      score += (hitsPerGame - 8.0) * 2;
+      score += (hrPerGame - 1.0) * 8;
+    }
 
     return this.clamp(score);
   },
