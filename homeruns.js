@@ -11,7 +11,7 @@ const HomeRuns = {
         const gamePk = game.gamePk;
         if (!gamePk) continue;
 
-        const liveData = await API.getGame(gamePk);
+        const liveData = await API.getLiveGame(gamePk);
         const plays = liveData?.liveData?.plays?.allPlays || [];
 
         plays.forEach(play => {
