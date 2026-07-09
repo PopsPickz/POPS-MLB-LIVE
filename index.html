@@ -3,50 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>POPS Pickz MLB 8.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
   <div class="app">
+
     <header class="hero">
       <h1>⚾ POPS Pickz 8.0</h1>
-      <p>Automatic MLB Games • HR Pickz • Hit Pickz • Moneyline • Scouting Reports</p>
+      <p>Automatic MLB HR Pickz • Hit Pickz • Moneyline Edges</p>
     </header>
 
     <nav class="tabs">
-      <button onclick="showTab('pitchers')">🎯 Pitchers</button>
       <button onclick="showTab('homeruns')">💣 HR Pickz</button>
       <button onclick="showTab('hits')">🔥 Hit Pickz</button>
       <button onclick="showTab('moneyline')">💰 Moneyline</button>
-      <button onclick="showTab('scouting')">🔎 Scouting</button>
     </nav>
-    
+
     <div id="gamesBox" style="display:none;"></div>
-    <section class="card tab-section" id="pitchers">
-      <h2>🎯 POPS Pitchers To Target</h2>
-      <div id="pitcherTargetsBox"><p>Loading pitcher targets...</p></div>
-    </section>
 
     <section class="card tab-section active" id="homeruns">
       <h2>💣 POPS Home Run Pickz</h2>
-      <div id="hrPicksBox"><p>Loading HR Pickz...</p></div>
+      <div id="hrPicksBox">
+        <p>Loading HR Pickz...</p>
+      </div>
     </section>
 
     <section class="card tab-section" id="hits">
       <h2>🔥 POPS Hit Pickz</h2>
-      <div id="hitPicksBox"><p>Loading Hit Pickz...</p></div>
+      <div id="hitPicksBox">
+        <p>Loading Hit Pickz...</p>
+      </div>
     </section>
 
     <section class="card tab-section" id="moneyline">
       <h2>💰 POPS Moneyline Pickz</h2>
-      <div id="moneylineBox"><p>Loading moneyline picks...</p></div>
+      <div id="moneylineBox">
+        <p>Loading moneyline picks...</p>
+      </div>
     </section>
 
-    <section class="card tab-section" id="scouting">
-      <h2>🔎 Game Scouting Report</h2>
-      <div id="scoutingBox"><p>Tap a game to view scouting report.</p></div>
-    </section>
   </div>
 
   <script>
