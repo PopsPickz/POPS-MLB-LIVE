@@ -126,7 +126,16 @@ async function loadHRPicks() {
     const game = games.find(g => String(g.id) === String(target.gameId));
 
     for (const batter of lineup) {
-      const batterStats = batter.stats || await API.getBatterStats(batter.id);
+      const baseStats = batter.stats || await API.getBatterStats(batter.id);
+
+const statcastStats = typeof StatcastData !== "undefined"
+  ? StatcastData[batter.name] || {}
+  : {};
+
+const batterStats = {
+  ...baseStats,
+  ...statcastStats
+};
       
      const batterInfo = await API.getPlayerInfo(batter.id);
      const pitcherInfo = await API.getPlayerInfo(target.pitcherId);
@@ -170,7 +179,6 @@ const result = Formula.getHrScore(
         hasPlatoonAdvantage,
 
         score: result.score,
-        reasons: result.reasons
         reasons: result.reasons
       });
     }
