@@ -6,7 +6,8 @@ const Formula = {
     "Betts", "Goodman", "Contreras", "Seager", "Stanton",
     "Harper", "Trout", "Ward", "Langford", "Garcia", "Riley",
     "Acuña", "Lindor", "Turner", "O'Hoppe", "Bellinger",
-    "Greene", "Buxton", "Ramírez", "Ramirez", "Crow-Armstrong"
+    "Greene", "Buxton", "Ramírez", "Ramirez", "Crow-Armstrong",
+    "Lowe"
   ],
 
   isKnownPowerBat(name = "") {
@@ -15,32 +16,43 @@ const Formula = {
     );
   },
 
+  num(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  },
+
   getLineupBoost(spot = 9) {
     spot = Number(spot);
-    if (spot >= 1 && spot <= 4) return 8;
+    if (spot >= 1 && spot <= 4) return 7;
     if (spot === 5) return 6;
     if (spot === 6) return 5;
     return 3;
   },
 
   pitcherRisk(stats = {}) {
-    const era = Number(stats.era || 0);
-    const whip = Number(stats.whip || 0);
-    const hrAllowed = Number(stats.homeRuns || 0);
-    const innings = Number(stats.inningsPitched || 0);
+    const era = this.num(stats.era);
+    const whip = this.num(stats.whip);
+    const hrAllowed = this.num(stats.homeRuns);
+    const innings = this.num(stats.inningsPitched);
     const hr9 = innings > 0 ? (hrAllowed * 9) / innings : 0;
 
     let score = 0;
 
-    if (hr9 >= 1.8) score += 35;
-    else if (hr9 >= 1.5) score += 30;
-    else if (hr9 >= 1.2) score += 25;
-    else if (hr9 >= 1.0) score += 18;
-    else if (hr9 >= 0.8) score += 10;
+    if (hr9 >= 1.8) score += 25;
+    else if (hr9 >= 1.5) score += 22;
+    else if (hr9 >= 1.2) score += 18;
+    else if (hr9 >= 1.0) score += 14;
+    else if (hr9 >= 0.8) score += 9;
     else score += 5;
 
+    if (era >= 5.00) score += 3;
+    else if (era >= 4.50) score += 2;
+    else if (era >= 4.00) score += 1;
+
+    if (whip >= 1.40) score += 2;
+
     return {
-      score: Math.min(35, Math.round(score)),
+      score: Math.min(25, Math.round(score)),
       hr9,
       era,
       whip,
@@ -48,41 +60,78 @@ const Formula = {
     };
   },
 
+  getBatterPowerScore(playerName, stats = {}) {
+    const knownPower = this.isKnownPowerBat(playerName);
+
+    const hr = this.num(stats.homeRuns);
+    const slg = this.num(stats.slg);
+    const ops = this.num(stats.ops);
+    const iso = this.num(stats.iso);
+    const barrelRate = this.num(stats.barrelRate);
+
+    let score = 0;
+
+    if (hr >= 30) score += 12;
+    else if (hr >= 20) score += 10;
+    else if (hr >= 15) score += 8;
+    else if (hr >= 10) score += 6;
+    else if (hr >= 5) score += 3;
+
+    if (slg >= .550) score += 8;
+    else if (slg >= .500) score += 7;
+    else if (slg >= .460) score += 5;
+    else if (slg >= .420) score += 3;
+
+    if (ops >= .900) score += 6;
+    else if (ops >= .850) score += 5;
+    else if (ops >= .800) score += 4;
+    else if (ops >= .750) score += 2;
+
+    if (iso >= .250) score += 5;
+    else if (iso >= .220) score += 4;
+    else if (iso >= .180) score += 3;
+
+    if (barrelRate >= 15) score += 4;
+    else if (barrelRate >= 12) score += 3;
+    else if (barrelRate >= 9) score += 2;
+
+    if (knownPower && score < 18) score = 18;
+
+    return Math.min(35, Math.round(score));
+  },
+
   getHrScore(playerName, lineupSpot, pitcherRisk = {}, extras = {}) {
     let score = 0;
     const reasons = [];
     const stats = extras.batterStats || {};
 
-    const barrelRate = Number(stats.barrelRate || 0);
-    const hardHitRate = Number(stats.hardHitRate || 0);
-    const recentHardHitRate = Number(stats.recentHardHitRate || hardHitRate || 0);
+    const hardHitRate = this.num(stats.hardHitRate);
+    const barrelRate = this.num(stats.barrelRate);
+    const recentHardHitRate = this.num(stats.recentHardHitRate || hardHitRate);
 
-    const bvpHR = Number(extras.bvpHR || 0);
-    const hitStreak = Number(extras.hitStreak || 0);
+    const bvpHR = this.num(extras.bvpHR);
+    const hitStreak = this.num(extras.hitStreak);
     const hasPlatoonAdvantage = Boolean(extras.hasPlatoonAdvantage);
-    const knownPower = this.isKnownPowerBat(playerName);
 
-    const pitcherScore = Math.min(Number(pitcherRisk.score || 0), 35);
-    score += pitcherScore;
-    reasons.push(`Pitcher HR Risk ${pitcherScore}/35`);
-
-    let powerScore =
-      barrelRate >= 15 ? 25 :
-      barrelRate >= 12 ? 20 :
-      barrelRate >= 9 ? 15 :
-      barrelRate >= 6 ? 10 :
-      knownPower ? 20 : 5;
-
+    const powerScore = this.getBatterPowerScore(playerName, stats);
     score += powerScore;
-    reasons.push(`Batter Power ${powerScore}/25`);
+    reasons.push(`Batter Power ${powerScore}/35`);
 
-    const hardContactScore =
-      hardHitRate >= 50 ? 15 :
-      hardHitRate >= 45 ? 12 :
-      hardHitRate >= 40 ? 9 :
-      hardHitRate >= 35 ? 6 :
-      knownPower ? 8 : 3;
+    const pitcherScore = Math.min(this.num(pitcherRisk.score), 25);
+    score += pitcherScore;
+    reasons.push(`Pitcher HR Risk ${pitcherScore}/25`);
 
+    let hardContactScore = 0;
+    if (hardHitRate >= 50) hardContactScore += 10;
+    else if (hardHitRate >= 45) hardContactScore += 8;
+    else if (hardHitRate >= 40) hardContactScore += 6;
+    else if (hardHitRate >= 35) hardContactScore += 4;
+
+    if (barrelRate >= 15) hardContactScore += 5;
+    else if (barrelRate >= 12) hardContactScore += 4;
+    else if (barrelRate >= 9) hardContactScore += 3;
+
+    hardContactScore = Math.min(15, hardContactScore);
     score += hardContactScore;
     reasons.push(`Hard Contact ${hardContactScore}/15`);
 
@@ -92,29 +141,19 @@ const Formula = {
 
     const lineupScore = this.getLineupBoost(lineupSpot);
     score += lineupScore;
-    reasons.push(`Lineup Spot ${lineupScore}/8`);
+    reasons.push(`Lineup Spot ${lineupScore}/7`);
 
-    const recentContactScore =
-      recentHardHitRate >= 50 ? 7 :
-      recentHardHitRate >= 45 ? 5 :
-      recentHardHitRate >= 40 ? 3 :
-      knownPower ? 3 : 0;
-
-    score += recentContactScore;
-    reasons.push(`Recent Quality Contact ${recentContactScore}/7`);
-
-    const bvpScore = Math.min(bvpHR * 3, 6);
+    const bvpScore = Math.min(bvpHR * 3, 5);
     score += bvpScore;
-    reasons.push(`Previous HR vs Pitcher ${bvpScore}/6`);
+    reasons.push(`Previous HR vs Pitcher ${bvpScore}/5`);
 
-    const hitStreakScore =
-      hitStreak >= 8 ? 5 :
-      hitStreak >= 5 ? 4 :
-      hitStreak >= 3 ? 3 :
-      hitStreak >= 2 ? 2 : 0;
+    const formScore =
+      hitStreak >= 8 ? 3 :
+      hitStreak >= 5 ? 2 :
+      hitStreak >= 3 ? 1 : 0;
 
-    score += hitStreakScore;
-    reasons.push(`Hit Streak Bonus ${hitStreakScore}/5`);
+    score += formScore;
+    reasons.push(`Recent Form ${formScore}/3`);
 
     return {
       score: Math.min(100, Math.round(score)),
@@ -125,8 +164,8 @@ const Formula = {
   getHitScore(playerName, lineupSpot, hitStreak = 0, previousHR = 0, stats = {}) {
     let score = 65;
 
-    const avg = Number(stats.avg || 0);
-    const ops = Number(stats.ops || 0);
+    const avg = this.num(stats.avg);
+    const ops = this.num(stats.ops);
 
     if (avg >= .300) score += 12;
     else if (avg >= .275) score += 9;
