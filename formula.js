@@ -66,7 +66,12 @@ const Formula = {
     const ops = Number(batterStats.ops || 0);
     const slg = Number(batterStats.slg || 0);
     const avg = Number(batterStats.avg || 0);
-
+    
+    const barrelRate = Number(batterStats.barrelRate || 0);
+    const hardHitRate = Number(batterStats.hardHitRate || 0);
+    const exitVelocity = Number(batterStats.exitVelocity || 0);
+    const flyBallRate = Number(batterStats.flyBallRate || 0);  
+    
     const hr9 = Number(pitcherRisk.hr9 || 0);
     const era = Number(pitcherRisk.era || 0);
     const whip = Number(pitcherRisk.whip || 0);
