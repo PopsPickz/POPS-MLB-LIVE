@@ -127,19 +127,32 @@ async function loadHRPicks() {
 
     for (const batter of lineup) {
       const batterStats = batter.stats || await API.getBatterStats(batter.id);
-      const bvpHR = API.getBvPHR
-        ? await API.getBvPHR(batter.id, target.pitcherId)
-        : 0;
+      
+     const batterInfo = await API.getPlayerInfo(batter.id);
+     const pitcherInfo = await API.getPlayerInfo(target.pitcherId);
 
-      const result = Formula.getHrScore(
-        batter.name,
-        batter.lineupSpot,
-        target.risk,
-        {
-          batterStats,
-          bvpHR
-        }
-      );
+    const batterHand = batterInfo.batSide || "";
+    const pitcherHand = pitcherInfo.pitchHand || "";
+
+    const hasPlatoonAdvantage =
+  (batterHand === "L" && pitcherHand === "R") ||
+  (batterHand === "R" && pitcherHand === "L") ||
+  batterHand === "S";
+
+const bvpHR = API.getBvPHR
+  ? await API.getBvPHR(batter.id, target.pitcherId)
+  : 0;
+
+const result = Formula.getHrScore(
+  batter.name,
+  batter.lineupSpot,
+  target.risk,
+  {
+    batterStats,
+    bvpHR,
+    hasPlatoonAdvantage
+  }
+);
 
       hrPicks.push({
         player: batter.name,
