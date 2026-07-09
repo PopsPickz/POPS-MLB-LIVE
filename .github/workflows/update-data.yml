@@ -16,18 +16,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Create data folder
-        run: mkdir -p data
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-      - name: Download Today's MLB Schedule
-        run: |
-          TODAY=$(date -u +%F)
-          curl "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=$TODAY&hydrate=team,probablePitcher,venue" -o data/schedule.json
+      - name: Build POPS daily data
+        run: node scripts/build-data.js
 
       - name: Commit Updated Data
         run: |
           git config user.name "POPS Pickz Bot"
           git config user.email "actions@github.com"
-          git add data/schedule.json
-          git diff --cached --quiet || git commit -m "Daily MLB Update"
+          git add data/today.json
+          git diff --cached --quiet || git commit -m "Update POPS today data"
           git push
