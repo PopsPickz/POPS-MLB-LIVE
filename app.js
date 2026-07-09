@@ -173,17 +173,22 @@ async function loadHRPicks() {
 
       const bvpHR = await getBvPHR(batter.id, target.pitcherId);
 
-      const result = Formula.getHrScore(
-        batter.name,
-        batter.lineupSpot,
-        target.risk,
-        {
-          batterStats,
-          bvpHR,
-          hasPlatoonAdvantage
-        }
-      );
+      const hitStreak = await safe(
+      () => API.getHitStreak ? API.getHitStreak(batter.id) : 0,
+      0
+   );
 
+ const result = Formula.getHrScore(
+  batter.name,
+  batter.lineupSpot,
+  target.risk,
+  {
+    batterStats,
+    bvpHR,
+    hitStreak,
+    hasPlatoonAdvantage
+  }
+);
       hrPicks.push({
         player: batter.name,
         team: batter.team,
@@ -197,6 +202,7 @@ async function loadHRPicks() {
         pitcherHand,
         hasPlatoonAdvantage,
         bvpHR,
+        hitStreak,
         score: result.score,
         reasons: result.reasons
       });
@@ -224,6 +230,7 @@ async function loadHRPicks() {
       <p><strong>Pitcher Hand:</strong> ${pick.pitcherHand || "N/A"}</p>
       <p><strong>Platoon Edge:</strong> ${pick.hasPlatoonAdvantage ? "✅ Yes" : "❌ No"}</p>
       <p><strong>Previous HR vs Pitcher:</strong> ${pick.bvpHR}</p>
+      <p><strong>Hit Streak:</strong> ${pick.hitStreak}+ games</p>
       <p><strong>POPS HR Score:</strong> <span class="score">${pick.score}/100</span></p>
       <p class="small">${pick.reasons}</p>
     </div>
