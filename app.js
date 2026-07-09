@@ -117,7 +117,6 @@ async function getProjectedLineup(teamId, teamName) {
     lineupSpot: index + 1
   }));
 }
-}
 
 async function getLineupForTarget(target) {
   let lineup = await getTeamLineup(
