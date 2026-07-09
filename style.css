@@ -183,3 +183,104 @@ button:hover {
     padding: 15px;
   }
 }
+/* ===========================
+   POPS PREMIUM HR CARDS
+=========================== */
+
+.hr-card {
+  position: relative;
+  margin: 22px 0;
+  padding: 24px;
+  border-radius: 24px;
+  background: linear-gradient(
+      180deg,
+      rgba(28,18,12,.98),
+      rgba(5,5,5,.98)
+  );
+  border: 2px solid #ff7a00;
+  box-shadow:
+      0 0 30px rgba(255,120,0,.45),
+      inset 0 0 25px rgba(255,120,0,.08);
+  overflow: hidden;
+}
+
+.hr-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+      radial-gradient(circle at top right,
+      rgba(255,140,0,.18),
+      transparent 55%);
+  pointer-events:none;
+}
+
+.hr-card h3{
+  margin:0 0 18px;
+  font-size:38px;
+  color:#ff9300;
+  text-shadow:0 0 18px rgba(255,130,0,.8);
+}
+
+.hr-card p{
+  margin:10px 0;
+  font-size:21px;
+  line-height:1.6;
+}
+
+.hr-card strong{
+  color:#fff;
+}
+
+.hr-rank{
+  position:absolute;
+  top:22px;
+  right:22px;
+  width:74px;
+  height:74px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+  font-weight:900;
+  color:#fff;
+  background:linear-gradient(#ff9900,#ff4f00);
+  box-shadow:0 0 20px rgba(255,120,0,.8);
+}
+
+.hr-card .score{
+  color:#00ff7f;
+  font-size:28px;
+  font-weight:900;
+}
+
+.hr-card .small{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid rgba(255,120,0,.25);
+  color:rgba(255,255,255,.82);
+  line-height:1.5;
+}
+
+@media(max-width:700px){
+
+.hr-card{
+padding:18px;
+}
+
+.hr-card h3{
+font-size:28px;
+}
+
+.hr-card p{
+font-size:18px;
+}
+
+.hr-rank{
+width:58px;
+height:58px;
+font-size:22px;
+}
+
+}
