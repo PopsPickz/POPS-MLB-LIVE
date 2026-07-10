@@ -1,190 +1,221 @@
-*{
-  box-sizing:border-box;
+* {
+  box-sizing: border-box;
 }
 
-html,body{
-  margin:0;
-  padding:0;
-  overflow-x:hidden;
-  scroll-behavior:smooth;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
-body{
-  min-height:100vh;
-  font-family:Arial,Helvetica,sans-serif;
-  color:#fff;
+body {
+  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #fff;
   background:
-  linear-gradient(rgba(0,0,0,.78),rgba(0,0,0,.96)),
-  url("https://images.unsplash.com/photo-1508344928928-7165b67de128?auto=format&fit=crop&w=1800&q=80");
-  background-size:cover;
-  background-position:center;
-  background-attachment:fixed;
+    linear-gradient(
+      rgba(0, 0, 0, 0.78),
+      rgba(0, 0, 0, 0.96)
+    ),
+    url("https://images.unsplash.com/photo-1508344928928-7165b67de128?auto=format&fit=crop&w=1800&q=80");
+
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
-.app{
-  width:100%;
-  max-width:1100px;
-  margin:auto;
-  padding:16px 12px 100px;
+.app {
+  width: 100%;
+  max-width: 1100px;
+  margin: auto;
+  padding: 16px 12px 100px;
 }
 
-.hero{
-  text-align:center;
-  padding:28px;
-  border-radius:24px;
-  background:rgba(0,0,0,.75);
-  border:2px solid #ff7a00;
-  box-shadow:0 0 30px rgba(255,120,0,.45);
-  margin-bottom:20px;
+/*
+=========================================================
+HERO
+=========================================================
+*/
+
+.hero {
+  margin-bottom: 20px;
+  padding: 28px;
+  border: 2px solid #ff7a00;
+  border-radius: 24px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.75);
+  box-shadow:
+    0 0 30px rgba(255, 120, 0, 0.45);
 }
 
-.hero h1{
-  margin:0;
-  font-size:clamp(40px,8vw,70px);
-  color:#ff8a00;
-  text-shadow:0 0 18px #ff6600;
+.hero h1 {
+  margin: 0;
+  color: #ff8a00;
+  font-size: clamp(40px, 8vw, 70px);
+  text-shadow:
+    0 0 18px #ff6600;
 }
 
-.hero p{
-  margin-top:12px;
-  font-size:20px;
+.hero p {
+  margin-top: 12px;
+  font-size: 20px;
 }
 
-.tabs{
-  display:flex;
-  justify-content:center;
-  gap:12px;
-  flex-wrap:wrap;
-  margin-bottom:22px;
+/*
+=========================================================
+TABS
+=========================================================
+*/
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
-.tabs button{
-  padding:12px 20px;
-  border-radius:999px;
-  border:2px solid #ff7a00;
-  background:linear-gradient(#2b1200,#050505);
-  color:white;
-  font-weight:800;
-  cursor:pointer;
-  transition:.2s;
+.tabs button {
+  padding: 12px 20px;
+  border: 2px solid #ff7a00;
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+  background:
+    linear-gradient(
+      #2b1200,
+      #050505
+    );
+  transition: 0.2s;
 }
 
-.tabs button:hover{
-  transform:scale(1.05);
-  background:linear-gradient(#ff8a00,#ff5200);
-  color:black;
+.tabs button:hover {
+  color: #000000;
+  background:
+    linear-gradient(
+      #ff8a00,
+      #ff5200
+    );
+  transform: scale(1.05);
 }
 
-.tab-section{
-  display:none;
+.tabs button.active-tab {
+  color: #000000;
+  background:
+    linear-gradient(
+      #ff9a18,
+      #ff5200
+    );
+  box-shadow:
+    0 0 18px rgba(255, 115, 0, 0.45);
 }
 
-.tab-section.active{
-  display:block;
+.tab-section {
+  display: none;
 }
 
-.card{
-  padding:20px;
-  border-radius:22px;
-  background:rgba(8,8,8,.9);
-  border:2px solid rgba(255,120,0,.7);
+.tab-section.active {
+  display: block;
 }
 
-.card h2{
-  margin-top:0;
-  color:#ffae42;
-  font-size:36px;
+/*
+=========================================================
+GENERAL CARDS
+=========================================================
+*/
+
+.card {
+  padding: 20px;
+  border: 2px solid rgba(255, 120, 0, 0.7);
+  border-radius: 22px;
+  background: rgba(8, 8, 8, 0.9);
+}
+
+.card h2 {
+  margin-top: 0;
+  color: #ffae42;
+  font-size: 36px;
 }
 
 .hr-card,
-.pick-card{
-  position:relative;
-  margin:18px 0;
-  padding:22px;
-  border-radius:22px;
-  border:2px solid rgba(255,120,0,.8);
-  background:linear-gradient(rgba(28,18,12,.95),rgba(0,0,0,.96));
-  box-shadow:0 0 20px rgba(255,120,0,.25);
+.pick-card {
+  position: relative;
+  margin: 18px 0;
+  padding: 22px;
+  border: 2px solid rgba(255, 120, 0, 0.8);
+  border-radius: 22px;
+  background:
+    linear-gradient(
+      rgba(28, 18, 12, 0.95),
+      rgba(0, 0, 0, 0.96)
+    );
+  box-shadow:
+    0 0 20px rgba(255, 120, 0, 0.25);
 }
 
-.hr-rank{
-  position:absolute;
-  top:18px;
-  right:18px;
-  width:64px;
-  height:64px;
-  border-radius:16px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:linear-gradient(#ff9800,#ff4d00);
-  color:#fff;
-  font-size:28px;
-  font-weight:900;
-}
-
-.hr-card h3,
-.pick-card h3{
-  margin:0 0 15px;
-  font-size:32px;
-  color:#ff9100;
-}
-
-.hr-card p,
-.pick-card p{
-  font-size:19px;
-  margin:8px 0;
-}
-
-.score{
-  color:#00ff7f;
-  font-weight:900;
-}
-
-.small{
-  margin-top:16px;
-  padding-top:12px;
-  border-top:1px solid rgba(255,120,0,.25);
-  color:rgba(255,255,255,.75);
-}
-
-@media(max-width:700px){
-
-.hero h1{
-font-size:42px;
-}
-
-.card h2{
-font-size:28px;
+.hr-rank {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 900;
+  background:
+    linear-gradient(
+      #ff9800,
+      #ff4d00
+    );
 }
 
 .hr-card h3,
-.pick-card h3{
-font-size:25px;
+.pick-card h3 {
+  margin: 0 0 15px;
+  color: #ff9100;
+  font-size: 32px;
 }
 
 .hr-card p,
-.pick-card p{
-font-size:17px;
+.pick-card p {
+  margin: 8px 0;
+  font-size: 19px;
 }
 
-.hr-rank{
-width:52px;
-height:52px;
-font-size:22px;
+.score {
+  color: #00ff7f;
+  font-weight: 900;
 }
 
+.small {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top:
+    1px solid rgba(255, 120, 0, 0.25);
+  color: rgba(255, 255, 255, 0.75);
 }
 
-/* ===== Pitcher Cards ===== */
+/*
+=========================================================
+PITCHER CARDS
+=========================================================
+*/
 
 .pitcher-target-card {
   margin: 28px 0;
   padding: 22px;
   border: 2px solid #ff8c1a;
   border-radius: 22px;
-  background: rgba(0,0,0,.55);
-  box-shadow: 0 0 18px rgba(255,140,26,.25);
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 0 18px rgba(255, 140, 26, 0.25);
 }
 
 .pitcher-target-card h2 {
@@ -194,26 +225,39 @@ font-size:22px;
 
 .pitcher-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(250px, 1fr)
+    );
   gap: 16px;
   margin-top: 18px;
 }
 
 .mini-card {
-  border: 1px solid rgba(255,140,26,.55);
-  border-radius: 16px;
   padding: 16px;
-  background: rgba(255,255,255,.03);
+  border:
+    1px solid rgba(255, 140, 26, 0.55);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.pitcher-target-card + .pitcher-target-card {
+.pitcher-target-card +
+.pitcher-target-card {
   margin-top: 40px;
 }
+
+/*
+=========================================================
+HR MODEL BREAKDOWN
+=========================================================
+*/
 
 .hr-breakdown {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 115, 20, 0.45);
+  border-top:
+    1px solid rgba(255, 115, 20, 0.45);
 }
 
 .hr-breakdown-row {
@@ -239,23 +283,15 @@ font-size:22px;
 .hr-model-summary {
   margin-top: 16px;
   padding: 12px 14px;
-  border: 1px solid rgba(255, 115, 20, 0.45);
+  border:
+    1px solid rgba(255, 115, 20, 0.45);
   border-radius: 14px;
-  background: rgba(255, 115, 20, 0.06);
+  background:
+    rgba(255, 115, 20, 0.06);
 }
 
 .hr-model-summary p {
   margin: 6px 0;
-}
-
-@media (max-width: 520px) {
-  .hr-breakdown-row {
-    font-size: 0.9rem;
-  }
-
-  .hr-breakdown-label {
-    padding-right: 8px;
-  }
 }
 
 /*
@@ -267,6 +303,11 @@ DESIGN OPTION 2
 
 #parlays {
   overflow: hidden;
+  padding: 16px;
+}
+
+#parlays > h2 {
+  margin-bottom: 18px;
 }
 
 #parlayBox {
@@ -282,7 +323,8 @@ DESIGN OPTION 2
   margin-bottom: 18px;
   padding: 22px;
   overflow: hidden;
-  border: 1px solid rgba(255, 119, 20, 0.55);
+  border:
+    1px solid rgba(255, 119, 20, 0.55);
   border-radius: 20px;
   background:
     radial-gradient(
@@ -295,6 +337,7 @@ DESIGN OPTION 2
       rgba(24, 24, 24, 0.98),
       rgba(7, 7, 7, 0.98)
     );
+
   box-shadow:
     0 14px 40px rgba(0, 0, 0, 0.35),
     inset 0 0 24px rgba(255, 110, 0, 0.05);
@@ -320,7 +363,12 @@ DESIGN OPTION 2
 .parlay-hero-v2 h2 {
   margin: 0 0 10px;
   color: #ffffff;
-  font-size: clamp(1.45rem, 5vw, 2.15rem);
+  font-size:
+    clamp(
+      1.45rem,
+      5vw,
+      2.15rem
+    );
   line-height: 1.1;
 }
 
@@ -338,17 +386,21 @@ DESIGN OPTION 2
   border: 1px solid #ff7417;
   border-radius: 12px;
   color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
   background:
     linear-gradient(
       135deg,
       #ff7417,
       #e84c00
     );
-  font-size: 0.9rem;
-  font-weight: 800;
-  cursor: pointer;
   box-shadow:
     0 8px 22px rgba(255, 91, 0, 0.25);
+}
+
+.parlay-refresh-v2:hover {
+  filter: brightness(1.08);
 }
 
 .parlay-refresh-v2:active {
@@ -377,7 +429,8 @@ DESIGN OPTION 2
 
 .parlay-card-v2 {
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border:
+    1px solid rgba(255, 255, 255, 0.16);
   border-radius: 16px;
   background:
     linear-gradient(
@@ -390,19 +443,23 @@ DESIGN OPTION 2
 }
 
 .parlay-safe-v2 {
-  border-color: rgba(72, 222, 73, 0.75);
+  border-color:
+    rgba(72, 222, 73, 0.75);
 }
 
 .parlay-balanced-v2 {
-  border-color: rgba(255, 200, 0, 0.72);
+  border-color:
+    rgba(255, 200, 0, 0.72);
 }
 
 .parlay-value-v2 {
-  border-color: rgba(255, 113, 20, 0.78);
+  border-color:
+    rgba(255, 113, 20, 0.78);
 }
 
 .parlay-longshot-v2 {
-  border-color: rgba(255, 68, 54, 0.72);
+  border-color:
+    rgba(255, 68, 54, 0.72);
 }
 
 .parlay-card-toggle {
@@ -417,6 +474,11 @@ DESIGN OPTION 2
   text-align: left;
   background: transparent;
   cursor: pointer;
+}
+
+.parlay-card-toggle:hover {
+  background:
+    rgba(255, 255, 255, 0.025);
 }
 
 .parlay-card-title {
@@ -459,40 +521,51 @@ DESIGN OPTION 2
   padding: 6px 9px;
   border-radius: 8px;
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
   font-size: 0.78rem;
   font-weight: 900;
   white-space: nowrap;
+  background:
+    rgba(255, 255, 255, 0.08);
 }
 
-.parlay-safe-v2 .parlay-card-average {
+.parlay-safe-v2
+.parlay-card-average {
   color: #9dff91;
-  background: rgba(49, 181, 49, 0.15);
+  background:
+    rgba(49, 181, 49, 0.15);
 }
 
-.parlay-balanced-v2 .parlay-card-average {
+.parlay-balanced-v2
+.parlay-card-average {
   color: #ffe26b;
-  background: rgba(255, 203, 0, 0.14);
+  background:
+    rgba(255, 203, 0, 0.14);
 }
 
-.parlay-value-v2 .parlay-card-average {
+.parlay-value-v2
+.parlay-card-average {
   color: #ffad66;
-  background: rgba(255, 112, 20, 0.15);
+  background:
+    rgba(255, 112, 20, 0.15);
 }
 
-.parlay-longshot-v2 .parlay-card-average {
+.parlay-longshot-v2
+.parlay-card-average {
   color: #ff8b82;
-  background: rgba(255, 62, 48, 0.14);
+  background:
+    rgba(255, 62, 48, 0.14);
 }
 
 .parlay-chevron {
   display: inline-block;
   color: rgba(255, 255, 255, 0.72);
   font-size: 1.35rem;
-  transition: transform 0.22s ease;
+  transition:
+    transform 0.22s ease;
 }
 
-.parlay-card-v2.open .parlay-chevron {
+.parlay-card-v2.open
+.parlay-chevron {
   transform: rotate(180deg);
 }
 
@@ -504,7 +577,8 @@ DESIGN OPTION 2
     16px;
 }
 
-.parlay-card-v2.open .parlay-card-content {
+.parlay-card-v2.open
+.parlay-card-content {
   display: block;
 }
 
@@ -525,7 +599,8 @@ DESIGN OPTION 2
   display: flex;
   gap: 13px;
   padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border:
+    1px solid rgba(255, 255, 255, 0.12);
   border-radius: 13px;
   background:
     linear-gradient(
@@ -535,20 +610,28 @@ DESIGN OPTION 2
     );
 }
 
-.parlay-safe-v2 .parlay-player-row {
-  border-color: rgba(72, 222, 73, 0.27);
+.parlay-safe-v2
+.parlay-player-row {
+  border-color:
+    rgba(72, 222, 73, 0.27);
 }
 
-.parlay-balanced-v2 .parlay-player-row {
-  border-color: rgba(255, 200, 0, 0.24);
+.parlay-balanced-v2
+.parlay-player-row {
+  border-color:
+    rgba(255, 200, 0, 0.24);
 }
 
-.parlay-value-v2 .parlay-player-row {
-  border-color: rgba(255, 113, 20, 0.25);
+.parlay-value-v2
+.parlay-player-row {
+  border-color:
+    rgba(255, 113, 20, 0.25);
 }
 
-.parlay-longshot-v2 .parlay-player-row {
-  border-color: rgba(255, 68, 54, 0.24);
+.parlay-longshot-v2
+.parlay-player-row {
+  border-color:
+    rgba(255, 68, 54, 0.24);
 }
 
 .parlay-player-rank {
@@ -559,17 +642,18 @@ DESIGN OPTION 2
   place-items: center;
   border-radius: 10px;
   color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 900;
   background:
     linear-gradient(
       135deg,
       #3fa83d,
       #1f681e
     );
-  font-size: 0.95rem;
-  font-weight: 900;
 }
 
-.parlay-balanced-v2 .parlay-player-rank {
+.parlay-balanced-v2
+.parlay-player-rank {
   color: #181300;
   background:
     linear-gradient(
@@ -579,7 +663,8 @@ DESIGN OPTION 2
     );
 }
 
-.parlay-value-v2 .parlay-player-rank {
+.parlay-value-v2
+.parlay-player-rank {
   background:
     linear-gradient(
       135deg,
@@ -588,7 +673,8 @@ DESIGN OPTION 2
     );
 }
 
-.parlay-longshot-v2 .parlay-player-rank {
+.parlay-longshot-v2
+.parlay-player-rank {
   background:
     linear-gradient(
       135deg,
@@ -623,15 +709,18 @@ DESIGN OPTION 2
   font-weight: 900;
 }
 
-.parlay-balanced-v2 .parlay-player-score {
+.parlay-balanced-v2
+.parlay-player-score {
   color: #ffe15b;
 }
 
-.parlay-value-v2 .parlay-player-score {
+.parlay-value-v2
+.parlay-player-score {
   color: #ff9c50;
 }
 
-.parlay-longshot-v2 .parlay-player-score {
+.parlay-longshot-v2
+.parlay-player-score {
   color: #ff786d;
 }
 
@@ -659,24 +748,30 @@ DESIGN OPTION 2
 
 .parlay-badge {
   padding: 5px 8px;
-  border: 1px solid rgba(111, 236, 94, 0.3);
+  border:
+    1px solid rgba(111, 236, 94, 0.3);
   border-radius: 7px;
   color: #b5ffa9;
-  background: rgba(71, 183, 57, 0.11);
   font-size: 0.69rem;
   font-weight: 800;
+  background:
+    rgba(71, 183, 57, 0.11);
 }
 
 .parlay-badge.confirmed {
   color: #9dff90;
-  border-color: rgba(83, 224, 67, 0.4);
-  background: rgba(49, 156, 39, 0.18);
+  border-color:
+    rgba(83, 224, 67, 0.4);
+  background:
+    rgba(49, 156, 39, 0.18);
 }
 
 .parlay-badge.projected {
   color: #ffd56c;
-  border-color: rgba(255, 196, 0, 0.35);
-  background: rgba(178, 132, 0, 0.14);
+  border-color:
+    rgba(255, 196, 0, 0.35);
+  background:
+    rgba(178, 132, 0, 0.14);
 }
 
 .parlay-reason-list {
@@ -697,11 +792,13 @@ DESIGN OPTION 2
 .parlay-empty-v2,
 .parlay-waiting-v2 {
   padding: 22px;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border:
+    1px dashed rgba(255, 255, 255, 0.2);
   border-radius: 14px;
   color: rgba(255, 255, 255, 0.7);
   text-align: center;
-  background: rgba(255, 255, 255, 0.03);
+  background:
+    rgba(255, 255, 255, 0.03);
 }
 
 .parlay-waiting-icon {
@@ -724,9 +821,11 @@ DESIGN OPTION 2
   gap: 10px;
   margin-top: 16px;
   padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border:
+    1px solid rgba(255, 255, 255, 0.14);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.035);
+  background:
+    rgba(255, 255, 255, 0.035);
 }
 
 .parlay-note-v2 p {
@@ -742,11 +841,61 @@ DESIGN OPTION 2
 
 /*
 =========================================================
-MOBILE
+GENERAL MOBILE
 =========================================================
 */
 
 @media (max-width: 700px) {
+  .hero {
+    padding: 24px 16px;
+  }
+
+  .hero h1 {
+    font-size: 42px;
+  }
+
+  .hero p {
+    font-size: 17px;
+  }
+
+  .tabs {
+    gap: 9px;
+  }
+
+  .tabs button {
+    padding: 10px 15px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .card h2 {
+    font-size: 28px;
+  }
+
+  .hr-card,
+  .pick-card {
+    padding: 18px;
+  }
+
+  .hr-card h3,
+  .pick-card h3 {
+    padding-right: 58px;
+    font-size: 25px;
+  }
+
+  .hr-card p,
+  .pick-card p {
+    font-size: 17px;
+  }
+
+  .hr-rank {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+
   .parlay-hero-v2 {
     padding: 18px;
   }
@@ -781,20 +930,95 @@ MOBILE
   }
 }
 
+@media (max-width: 520px) {
+  .hr-breakdown-row {
+    font-size: 0.9rem;
+  }
+
+  .hr-breakdown-label {
+    padding-right: 8px;
+  }
+}
+
 @media (max-width: 480px) {
+  .app {
+    padding:
+      12px
+      9px
+      90px;
+  }
+
+  .hero {
+    padding:
+      22px
+      12px;
+    border-radius: 20px;
+  }
+
+  .hero h1 {
+    font-size: 38px;
+  }
+
+  .hero p {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  .tabs button {
+    flex:
+      1
+      1
+      calc(50% - 10px);
+    min-width: 135px;
+    padding:
+      10px
+      12px;
+    font-size: 0.86rem;
+  }
+
+  #parlays {
+    padding: 12px;
+  }
+
+  #parlays > h2 {
+    margin-bottom: 14px;
+    font-size: 27px;
+  }
+
   .parlay-hero-v2 {
     align-items: flex-start;
+    padding: 16px;
+    border-radius: 16px;
   }
 
   .parlay-hero-ball {
     position: absolute;
     right: 10px;
     bottom: 8px;
+    width: 68px;
+    height: 68px;
+    font-size: 3rem;
     opacity: 0.2;
   }
 
   .parlay-hero-copy {
     width: 100%;
+  }
+
+  .parlay-hero-v2 h2 {
+    padding-right: 30px;
+  }
+
+  .parlay-refresh-v2 {
+    width: 100%;
+  }
+
+  .parlay-card-toggle {
+    gap: 7px;
+  }
+
+  .parlay-card-right {
+    gap: 5px;
   }
 
   .parlay-card-label {
@@ -806,10 +1030,31 @@ MOBILE
   }
 
   .parlay-card-average {
+    padding: 5px 7px;
     font-size: 0.69rem;
+  }
+
+  .parlay-player-row {
+    padding: 11px;
   }
 
   .parlay-player-top h4 {
     font-size: 0.94rem;
+  }
+
+  .parlay-player-game {
+    font-size: 0.82rem;
+  }
+
+  .parlay-player-detail {
+    font-size: 0.74rem;
+  }
+
+  .parlay-badge {
+    font-size: 0.64rem;
+  }
+
+  .parlay-reason {
+    font-size: 0.68rem;
   }
 }
