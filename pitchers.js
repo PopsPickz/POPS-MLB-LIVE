@@ -824,7 +824,7 @@ const Pitchers = {
 
           <div class="mini-card">
             <h4>
-              💣 HR in Last 5 Games
+              💣 HR in Last 10 Games
             </h4>
 
             ${this.renderList(
