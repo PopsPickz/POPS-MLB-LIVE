@@ -555,17 +555,20 @@ const Formula = {
 
     return {
 
-      score,
+  score,
 
-      tier,
+  tier,
 
-      confidence:
-        this.confidence(parts),
+  confidence:
+    this.confidence(parts),
 
-      breakdown:
-        parts
+  breakdown:
+    this.formatBreakdown(parts),
 
-    };
+  rawBreakdown:
+    parts
+
+};
 
   },
 
