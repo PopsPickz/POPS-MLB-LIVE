@@ -16,7 +16,9 @@ const cache = {
   playerInfo: new Map(),
   pitcherStats: new Map(),
   batterStats: new Map(),
+  gameLogs: new Map(),
   hitStreak: new Map(),
+  recentForm: new Map(),
   bvp: new Map(),
   roster: new Map()
 };
@@ -139,7 +141,9 @@ async function mapWithConcurrency(items, limit, mapper) {
   }
 
   const workers = Array.from(
-    { length: Math.min(limit, items.length) },
+    {
+      length: Math.min(limit, items.length)
+    },
     () => worker()
   );
 
@@ -195,6 +199,7 @@ function getLivePitcher(liveData, side) {
 
   return {
     id: number(pitcher.id) || null,
+
     fullName:
       pitcher.fullName ||
       pitcher.name ||
@@ -241,6 +246,7 @@ async function getPlayerInfo(playerId) {
     name: person.fullName || "",
     batSide: person?.batSide?.code || "",
     pitchHand: person?.pitchHand?.code || "",
+
     primaryPosition:
       person?.primaryPosition?.abbreviation || ""
   };
@@ -274,45 +280,72 @@ async function getPitcherStats(playerId) {
     `&season=${season}`;
 
   const data = await safeFetch(url, null);
+
   const stat =
     data?.stats?.[0]?.splits?.[0]?.stat || {};
 
   const inningsPitched =
     inningsToNumber(stat.inningsPitched);
 
-  const homeRuns = number(stat.homeRuns);
+  const homeRuns =
+    number(stat.homeRuns);
 
   const calculatedHR9 =
     inningsPitched > 0
       ? Number(
-          ((homeRuns * 9) / inningsPitched).toFixed(2)
+          (
+            (homeRuns * 9) /
+            inningsPitched
+          ).toFixed(2)
         )
       : 0;
 
   const result = {
-    gamesPlayed: number(stat.gamesPlayed),
-    gamesStarted: number(stat.gamesStarted),
+    id: playerId,
 
-    wins: number(stat.wins),
-    losses: number(stat.losses),
+    gamesPlayed:
+      number(stat.gamesPlayed),
 
-    era: number(stat.era),
-    whip: number(stat.whip),
+    gamesStarted:
+      number(stat.gamesStarted),
+
+    wins:
+      number(stat.wins),
+
+    losses:
+      number(stat.losses),
+
+    era:
+      number(stat.era),
+
+    whip:
+      number(stat.whip),
 
     inningsPitched,
+
     inningsPitchedDisplay:
       stat.inningsPitched || "0.0",
 
-    hits: number(stat.hits),
-    runs: number(stat.runs),
-    earnedRuns: number(stat.earnedRuns),
+    hits:
+      number(stat.hits),
+
+    runs:
+      number(stat.runs),
+
+    earnedRuns:
+      number(stat.earnedRuns),
 
     homeRuns,
-    homeRunsPer9:
-      number(stat.homeRunsPer9) || calculatedHR9,
 
-    baseOnBalls: number(stat.baseOnBalls),
-    strikeOuts: number(stat.strikeOuts),
+    homeRunsPer9:
+      number(stat.homeRunsPer9) ||
+      calculatedHR9,
+
+    baseOnBalls:
+      number(stat.baseOnBalls),
+
+    strikeOuts:
+      number(stat.strikeOuts),
 
     strikeoutsPer9Inn:
       number(stat.strikeoutsPer9Inn),
@@ -353,61 +386,98 @@ async function getBatterStats(playerId) {
     `&season=${season}`;
 
   const data = await safeFetch(url, null);
+
   const stat =
     data?.stats?.[0]?.splits?.[0]?.stat || {};
 
-  const avg = number(stat.avg);
-  const slg = number(stat.slg);
-  const ops = number(stat.ops);
+  const avg =
+    number(stat.avg);
 
-  const doubles = number(stat.doubles);
-  const triples = number(stat.triples);
-  const homeRuns = number(stat.homeRuns);
-  const atBats = number(stat.atBats);
-  const plateAppearances = number(stat.plateAppearances);
+  const slg =
+    number(stat.slg);
+
+  const ops =
+    number(stat.ops);
+
+  const doubles =
+    number(stat.doubles);
+
+  const triples =
+    number(stat.triples);
+
+  const homeRuns =
+    number(stat.homeRuns);
+
+  const atBats =
+    number(stat.atBats);
+
+  const plateAppearances =
+    number(stat.plateAppearances);
 
   const extraBaseHits =
-    doubles + triples + homeRuns;
+    doubles +
+    triples +
+    homeRuns;
 
   const iso =
     slg > 0
-      ? Number((slg - avg).toFixed(3))
+      ? Number(
+          (slg - avg).toFixed(3)
+        )
       : 0;
 
   const hrRate =
     plateAppearances > 0
       ? Number(
-          (homeRuns / plateAppearances).toFixed(4)
+          (
+            homeRuns /
+            plateAppearances
+          ).toFixed(4)
         )
       : 0;
 
   const extraBaseHitRate =
     atBats > 0
       ? Number(
-          (extraBaseHits / atBats).toFixed(4)
+          (
+            extraBaseHits /
+            atBats
+          ).toFixed(4)
         )
       : 0;
 
   const result = {
-    gamesPlayed: number(stat.gamesPlayed),
+    gamesPlayed:
+      number(stat.gamesPlayed),
 
     plateAppearances,
     atBats,
 
-    runs: number(stat.runs),
-    hits: number(stat.hits),
+    runs:
+      number(stat.runs),
+
+    hits:
+      number(stat.hits),
 
     doubles,
     triples,
     homeRuns,
     extraBaseHits,
 
-    rbi: number(stat.rbi),
-    baseOnBalls: number(stat.baseOnBalls),
-    strikeOuts: number(stat.strikeOuts),
+    rbi:
+      number(stat.rbi),
+
+    baseOnBalls:
+      number(stat.baseOnBalls),
+
+    strikeOuts:
+      number(stat.strikeOuts),
 
     avg,
-    obp: number(stat.obp),
+
+    obp:
+      number(stat.obp),
+
     slg,
     ops,
     iso,
@@ -415,16 +485,61 @@ async function getBatterStats(playerId) {
     hrRate,
     extraBaseHitRate,
 
-    totalBases: number(stat.totalBases),
+    totalBases:
+      number(stat.totalBases),
 
     hasSeasonPowerData:
       plateAppearances > 0 &&
-      (homeRuns > 0 || slg > 0 || ops > 0)
+      (
+        homeRuns > 0 ||
+        slg > 0 ||
+        ops > 0
+      )
   };
 
   cache.batterStats.set(playerId, result);
 
   return result;
+}
+
+/*
+=========================================================
+SHARED BATTER GAME LOG
+Used by hit streak and recent form.
+=========================================================
+*/
+
+async function getBatterGameLogs(playerId) {
+  playerId = number(playerId);
+
+  if (!playerId) return [];
+
+  if (cache.gameLogs.has(playerId)) {
+    return cache.gameLogs.get(playerId);
+  }
+
+  const season = getCurrentSeason();
+
+  const url =
+    `${MLB_BASE}/people/${playerId}/stats` +
+    `?stats=gameLog` +
+    `&group=hitting` +
+    `&season=${season}`;
+
+  const data = await safeFetch(url, null);
+
+  const logs =
+    (data?.stats?.[0]?.splits || [])
+      .filter(item => item.date)
+      .sort(
+        (a, b) =>
+          new Date(b.date) -
+          new Date(a.date)
+      );
+
+  cache.gameLogs.set(playerId, logs);
+
+  return logs;
 }
 
 /*
@@ -442,30 +557,14 @@ async function getHitStreak(playerId) {
     return cache.hitStreak.get(playerId);
   }
 
-  const season = getCurrentSeason();
-
-  const url =
-    `${MLB_BASE}/people/${playerId}/stats` +
-    `?stats=gameLog` +
-    `&group=hitting` +
-    `&season=${season}`;
-
-  const data = await safeFetch(url, null);
-
-  let games =
-    data?.stats?.[0]?.splits || [];
-
-  games = games
-    .filter(item => item.date)
-    .sort(
-      (a, b) =>
-        new Date(b.date) - new Date(a.date)
-    );
+  const games =
+    await getBatterGameLogs(playerId);
 
   let streak = 0;
 
   for (const game of games) {
-    const hits = number(game?.stat?.hits);
+    const hits =
+      number(game?.stat?.hits);
 
     if (hits >= 1) {
       streak++;
@@ -481,11 +580,230 @@ async function getHitStreak(playerId) {
 
 /*
 =========================================================
+RECENT POWER — LAST 10 GAMES
+=========================================================
+*/
+
+async function getRecentForm(playerId) {
+  playerId = number(playerId);
+
+  const empty = {
+    games: 0,
+    plateAppearances: 0,
+    atBats: 0,
+    runs: 0,
+    hits: 0,
+    doubles: 0,
+    triples: 0,
+    homeRuns: 0,
+    extraBaseHits: 0,
+    totalBases: 0,
+    rbi: 0,
+    baseOnBalls: 0,
+    strikeOuts: 0,
+    avg: 0,
+    obp: 0,
+    slg: 0,
+    ops: 0,
+    iso: 0
+  };
+
+  if (!playerId) {
+    return empty;
+  }
+
+  if (cache.recentForm.has(playerId)) {
+    return cache.recentForm.get(playerId);
+  }
+
+  const allLogs =
+    await getBatterGameLogs(playerId);
+
+  const logs =
+    allLogs.slice(0, 10);
+
+  if (!logs.length) {
+    cache.recentForm.set(playerId, empty);
+    return empty;
+  }
+
+  const totals = logs.reduce(
+    (result, game) => {
+      const stat =
+        game?.stat || {};
+
+      result.games += 1;
+
+      result.plateAppearances +=
+        number(stat.plateAppearances);
+
+      result.atBats +=
+        number(stat.atBats);
+
+      result.runs +=
+        number(stat.runs);
+
+      result.hits +=
+        number(stat.hits);
+
+      result.doubles +=
+        number(stat.doubles);
+
+      result.triples +=
+        number(stat.triples);
+
+      result.homeRuns +=
+        number(stat.homeRuns);
+
+      result.totalBases +=
+        number(stat.totalBases);
+
+      result.rbi +=
+        number(stat.rbi);
+
+      result.baseOnBalls +=
+        number(stat.baseOnBalls);
+
+      result.strikeOuts +=
+        number(stat.strikeOuts);
+
+      result.hitByPitch +=
+        number(stat.hitByPitch);
+
+      result.sacFlies +=
+        number(stat.sacFlies);
+
+      return result;
+    },
+    {
+      games: 0,
+      plateAppearances: 0,
+      atBats: 0,
+      runs: 0,
+      hits: 0,
+      doubles: 0,
+      triples: 0,
+      homeRuns: 0,
+      totalBases: 0,
+      rbi: 0,
+      baseOnBalls: 0,
+      strikeOuts: 0,
+      hitByPitch: 0,
+      sacFlies: 0
+    }
+  );
+
+  const extraBaseHits =
+    totals.doubles +
+    totals.triples +
+    totals.homeRuns;
+
+  const avg =
+    totals.atBats > 0
+      ? totals.hits /
+        totals.atBats
+      : 0;
+
+  const slg =
+    totals.atBats > 0
+      ? totals.totalBases /
+        totals.atBats
+      : 0;
+
+  const obpDenominator =
+    totals.atBats +
+    totals.baseOnBalls +
+    totals.hitByPitch +
+    totals.sacFlies;
+
+  const obp =
+    obpDenominator > 0
+      ? (
+          totals.hits +
+          totals.baseOnBalls +
+          totals.hitByPitch
+        ) /
+        obpDenominator
+      : 0;
+
+  const ops =
+    obp + slg;
+
+  const iso =
+    slg - avg;
+
+  const result = {
+    games:
+      totals.games,
+
+    plateAppearances:
+      totals.plateAppearances,
+
+    atBats:
+      totals.atBats,
+
+    runs:
+      totals.runs,
+
+    hits:
+      totals.hits,
+
+    doubles:
+      totals.doubles,
+
+    triples:
+      totals.triples,
+
+    homeRuns:
+      totals.homeRuns,
+
+    extraBaseHits,
+
+    totalBases:
+      totals.totalBases,
+
+    rbi:
+      totals.rbi,
+
+    baseOnBalls:
+      totals.baseOnBalls,
+
+    strikeOuts:
+      totals.strikeOuts,
+
+    avg:
+      Number(avg.toFixed(3)),
+
+    obp:
+      Number(obp.toFixed(3)),
+
+    slg:
+      Number(slg.toFixed(3)),
+
+    ops:
+      Number(ops.toFixed(3)),
+
+    iso:
+      Number(
+        Math.max(0, iso).toFixed(3)
+      )
+  };
+
+  cache.recentForm.set(playerId, result);
+
+  return result;
+}
+
+/*
+=========================================================
 BATTER VS PITCHER
 =========================================================
 */
 
-async function getBvPStats(batterId, pitcherId) {
+async function getBvPStats(
+  batterId,
+  pitcherId
+) {
   batterId = number(batterId);
   pitcherId = number(pitcherId);
 
@@ -500,7 +818,8 @@ async function getBvPStats(batterId, pitcherId) {
     return empty;
   }
 
-  const key = `${batterId}-${pitcherId}`;
+  const key =
+    `${batterId}-${pitcherId}`;
 
   if (cache.bvp.has(key)) {
     return cache.bvp.get(key);
@@ -515,15 +834,24 @@ async function getBvPStats(batterId, pitcherId) {
     `&opposingPlayerId=${pitcherId}` +
     `&season=${season}`;
 
-  const data = await safeFetch(url, null);
+  const data =
+    await safeFetch(url, null);
+
   const stat =
     data?.stats?.[0]?.splits?.[0]?.stat || {};
 
   const result = {
-    atBats: number(stat.atBats),
-    hits: number(stat.hits),
-    avg: stat.avg || ".000",
-    homeRuns: number(stat.homeRuns)
+    atBats:
+      number(stat.atBats),
+
+    hits:
+      number(stat.hits),
+
+    avg:
+      stat.avg || ".000",
+
+    homeRuns:
+      number(stat.homeRuns)
   };
 
   cache.bvp.set(key, result);
@@ -557,7 +885,8 @@ function getConfirmedLineup(liveData, side) {
       if (!player) return null;
 
       return {
-        id: number(playerId),
+        id:
+          number(playerId),
 
         name:
           player?.person?.fullName ||
@@ -567,8 +896,11 @@ function getConfirmedLineup(liveData, side) {
           player?.position?.abbreviation ||
           "",
 
-        lineupSpot: index + 1,
-        confirmed: true
+        lineupSpot:
+          index + 1,
+
+        confirmed:
+          true
       };
     })
     .filter(Boolean);
@@ -587,9 +919,13 @@ function isPitcher(position = "") {
 }
 
 function isLikelyPositionPlayer(position = "") {
-  const code = String(position).toUpperCase();
+  const code =
+    String(position).toUpperCase();
 
-  return !isPitcher(code) && code !== "";
+  return (
+    !isPitcher(code) &&
+    code !== ""
+  );
 }
 
 async function getActiveRoster(teamId) {
@@ -605,46 +941,63 @@ async function getActiveRoster(teamId) {
     `${MLB_BASE}/teams/${teamId}/roster` +
     `?rosterType=active`;
 
-  const data = await safeFetch(url, null);
+  const data =
+    await safeFetch(url, null);
 
-  const roster = (data?.roster || [])
-    .map(item => ({
-      id: number(item?.person?.id),
+  const roster =
+    (data?.roster || [])
+      .map(item => ({
+        id:
+          number(item?.person?.id),
 
-      name:
-        item?.person?.fullName ||
-        "Unknown",
+        name:
+          item?.person?.fullName ||
+          "Unknown",
 
-      position:
-        item?.position?.abbreviation ||
-        ""
-    }))
-    .filter(
-      player =>
-        player.id &&
-        isLikelyPositionPlayer(player.position)
-    );
+        position:
+          item?.position?.abbreviation ||
+          ""
+      }))
+      .filter(
+        player =>
+          player.id &&
+          isLikelyPositionPlayer(
+            player.position
+          )
+      );
 
   cache.roster.set(teamId, roster);
 
   return roster;
 }
 
-function getProjectedLineupScore(hitting = {}) {
+function getProjectedLineupScore(
+  hitting = {}
+) {
   const plateAppearances =
     number(hitting.plateAppearances);
 
-  const ops = number(hitting.ops);
-  const slg = number(hitting.slg);
-  const iso = number(hitting.iso);
-  const homeRuns = number(hitting.homeRuns);
+  const ops =
+    number(hitting.ops);
+
+  const slg =
+    number(hitting.slg);
+
+  const iso =
+    number(hitting.iso);
+
+  const homeRuns =
+    number(hitting.homeRuns);
 
   /*
   This score only selects likely everyday hitters.
   It is not the POPS HR prediction score.
   */
   return (
-    Math.min(plateAppearances / 10, 50) +
+    Math.min(
+      plateAppearances / 10,
+      50
+    ) +
     ops * 35 +
     slg * 20 +
     iso * 25 +
@@ -653,42 +1006,68 @@ function getProjectedLineupScore(hitting = {}) {
 }
 
 async function getProjectedLineup(teamId) {
-  const roster = await getActiveRoster(teamId);
+  const roster =
+    await getActiveRoster(teamId);
 
-  const enrichedRoster = await mapWithConcurrency(
-    roster,
-    6,
-    async player => {
-      const hitting =
-        await getBatterStats(player.id);
+  const enrichedRoster =
+    await mapWithConcurrency(
+      roster,
+      6,
+      async player => {
+        const hitting =
+          await getBatterStats(
+            player.id
+          );
 
-      return {
-        ...player,
-        hitting,
-        projectedScore:
-          getProjectedLineupScore(hitting)
-      };
-    }
+        return {
+          ...player,
+          hitting,
+
+          projectedScore:
+            getProjectedLineupScore(
+              hitting
+            )
+        };
+      }
+    );
+
+  const selected =
+    enrichedRoster
+      .filter(
+        player =>
+          number(
+            player?.hitting
+              ?.plateAppearances
+          ) > 0
+      )
+      .sort(
+        (a, b) =>
+          b.projectedScore -
+          a.projectedScore
+      )
+      .slice(0, 9);
+
+  return selected.map(
+    (player, index) => ({
+      id:
+        player.id,
+
+      name:
+        player.name,
+
+      position:
+        player.position,
+
+      lineupSpot:
+        index + 1,
+
+      confirmed:
+        false,
+
+      hitting:
+        player.hitting
+    })
   );
-
-  const selected = enrichedRoster
-    .filter(player =>
-      number(player?.hitting?.plateAppearances) > 0
-    )
-    .sort(
-      (a, b) =>
-        b.projectedScore - a.projectedScore
-    )
-    .slice(0, 9);
-
-  return selected.map((player, index) => ({
-    id: player.id,
-    name: player.name,
-    position: player.position,
-    lineupSpot: index + 1,
-    confirmed: false,
-    hitting: player.hitting
-  }));
 }
 
 /*
@@ -701,21 +1080,27 @@ async function enrichBatter(
   batter,
   opposingPitcherId
 ) {
-  const playerId = number(batter.id);
+  const playerId =
+    number(batter.id);
 
   const [
     playerInfo,
     hitting,
     hitStreak,
+    recentForm,
     bvp
   ] = await Promise.all([
     getPlayerInfo(playerId),
 
     batter.hitting
-      ? Promise.resolve(batter.hitting)
+      ? Promise.resolve(
+          batter.hitting
+        )
       : getBatterStats(playerId),
 
     getHitStreak(playerId),
+
+    getRecentForm(playerId),
 
     getBvPStats(
       playerId,
@@ -724,7 +1109,8 @@ async function enrichBatter(
   ]);
 
   return {
-    id: playerId,
+    id:
+      playerId,
 
     name:
       batter.name ||
@@ -737,7 +1123,9 @@ async function enrichBatter(
       "",
 
     lineupSpot:
-      number(batter.lineupSpot) || 9,
+      number(
+        batter.lineupSpot
+      ) || 9,
 
     confirmed:
       batter.confirmed === true,
@@ -748,37 +1136,59 @@ async function enrichBatter(
     hitting,
 
     /*
-    Statcast data will be added in the next phase.
+    Statcast data will be added later.
     Null means unavailable—not zero performance.
     */
     statcast: {
-      available: false,
+      available:
+        false,
 
-      barrelPct: null,
-      hardHitPct: null,
-      avgExitVelocity: null,
+      barrelPct:
+        null,
 
-      launchAngle: null,
-      sweetSpotPct: null,
-      flyBallPct: null,
-      pullPct: null
+      hardHitPct:
+        null,
+
+      avgExitVelocity:
+        null,
+
+      launchAngle:
+        null,
+
+      sweetSpotPct:
+        null,
+
+      flyBallPct:
+        null,
+
+      pullPct:
+        null
     },
 
     hitStreak,
+
+    recentForm,
 
     bvp,
 
     dataQuality: {
       seasonStats:
-        number(hitting.plateAppearances) > 0,
+        number(
+          hitting.plateAppearances
+        ) > 0,
 
-      statcast: false,
+      statcast:
+        false,
 
       recentForm:
-        hitStreak >= 0,
+        number(
+          recentForm.games
+        ) > 0,
 
       bvp:
-        number(bvp.atBats) > 0,
+        number(
+          bvp.atBats
+        ) > 0,
 
       confirmedLineup:
         batter.confirmed === true
@@ -799,7 +1209,10 @@ async function buildTeamLineup({
   opposingPitcherId
 }) {
   let lineup =
-    getConfirmedLineup(liveData, side);
+    getConfirmedLineup(
+      liveData,
+      side
+    );
 
   if (!lineup.length) {
     console.log(
@@ -807,7 +1220,9 @@ async function buildTeamLineup({
     );
 
     lineup =
-      await getProjectedLineup(teamId);
+      await getProjectedLineup(
+        teamId
+      );
   }
 
   return await mapWithConcurrency(
@@ -828,22 +1243,35 @@ BUILD ONE GAME
 */
 
 async function buildGame(game) {
-  const gamePk = number(game.gamePk);
+  const gamePk =
+    number(game.gamePk);
 
   const awayTeamId =
-    number(game?.teams?.away?.team?.id);
+    number(
+      game?.teams?.away?.team?.id
+    );
 
   const homeTeamId =
-    number(game?.teams?.home?.team?.id);
+    number(
+      game?.teams?.home?.team?.id
+    );
 
   const liveData =
     await getLiveGame(gamePk);
 
   const awayPitcher =
-    resolvePitcher(game, liveData, "away");
+    resolvePitcher(
+      game,
+      liveData,
+      "away"
+    );
 
   const homePitcher =
-    resolvePitcher(game, liveData, "home");
+    resolvePitcher(
+      game,
+      liveData,
+      "home"
+    );
 
   const [
     awayPitcherStats,
@@ -851,37 +1279,55 @@ async function buildGame(game) {
     awayPitcherInfo,
     homePitcherInfo
   ] = await Promise.all([
-    getPitcherStats(awayPitcher.id),
-    getPitcherStats(homePitcher.id),
-    getPlayerInfo(awayPitcher.id),
-    getPlayerInfo(homePitcher.id)
+    getPitcherStats(
+      awayPitcher.id
+    ),
+
+    getPitcherStats(
+      homePitcher.id
+    ),
+
+    getPlayerInfo(
+      awayPitcher.id
+    ),
+
+    getPlayerInfo(
+      homePitcher.id
+    )
   ]);
 
-  const [awayLineup, homeLineup] =
-    await Promise.all([
-      buildTeamLineup({
-        liveData,
-        side: "away",
-        teamId: awayTeamId,
-        opposingPitcherId:
-          homePitcher.id
-      }),
+  const [
+    awayLineup,
+    homeLineup
+  ] = await Promise.all([
+    buildTeamLineup({
+      liveData,
+      side: "away",
+      teamId: awayTeamId,
 
-      buildTeamLineup({
-        liveData,
-        side: "home",
-        teamId: homeTeamId,
-        opposingPitcherId:
-          awayPitcher.id
-      })
-    ]);
+      opposingPitcherId:
+        homePitcher.id
+    }),
+
+    buildTeamLineup({
+      liveData,
+      side: "home",
+      teamId: homeTeamId,
+
+      opposingPitcherId:
+        awayPitcher.id
+    })
+  ]);
 
   return {
     gamePk,
-    date: game.gameDate,
+
+    date:
+      game.gameDate,
 
     status:
-      liveData?.gameData?.status?.detailedState ||
+      liveData?.gameData?.status
+        ?.detailedState ||
       game?.status?.detailedState ||
       "Scheduled",
 
@@ -891,16 +1337,19 @@ async function buildGame(game) {
       {},
 
     venue:
-      liveData?.gameData?.venue?.name ||
+      liveData?.gameData?.venue
+        ?.name ||
       game?.venue?.name ||
       "TBD",
 
     awayTeam:
-      game?.teams?.away?.team?.name ||
+      game?.teams?.away?.team
+        ?.name ||
       "Away Team",
 
     homeTeam:
-      game?.teams?.home?.team?.name ||
+      game?.teams?.home?.team
+        ?.name ||
       "Home Team",
 
     awayTeamId,
@@ -921,10 +1370,12 @@ async function buildGame(game) {
       homePitcher.id || null,
 
     awayPitcherHand:
-      awayPitcherInfo.pitchHand || "",
+      awayPitcherInfo.pitchHand ||
+      "",
 
     homePitcherHand:
-      homePitcherInfo.pitchHand || "",
+      homePitcherInfo.pitchHand ||
+      "",
 
     awayPitcherStats,
     homePitcherStats,
@@ -941,7 +1392,8 @@ BUILD TODAY DATA
 */
 
 async function buildTodayData() {
-  const date = getEasternDate();
+  const date =
+    getEasternDate();
 
   console.log(
     `Building POPS data for ${date}...`
@@ -953,8 +1405,8 @@ async function buildTodayData() {
   const games = [];
 
   /*
-  Games are processed one at a time to prevent the MLB
-  service from receiving too many simultaneous requests.
+  Games are processed one at a time to prevent
+  too many simultaneous requests.
   */
   for (const game of schedule) {
     const awayName =
@@ -989,7 +1441,7 @@ async function buildTodayData() {
     date,
 
     version:
-      "POPS Pickz Batter Data 3.0",
+      "POPS Pickz Batter Data 3.1",
 
     games
   };
@@ -1003,7 +1455,10 @@ SAVE TODAY.JSON
 
 async function saveTodayData(todayData) {
   const dataDirectory =
-    path.join(process.cwd(), "data");
+    path.join(
+      process.cwd(),
+      "data"
+    );
 
   const outputPath =
     path.join(
@@ -1011,13 +1466,20 @@ async function saveTodayData(todayData) {
       "today.json"
     );
 
-  fs.mkdirSync(dataDirectory, {
-    recursive: true
-  });
+  fs.mkdirSync(
+    dataDirectory,
+    {
+      recursive: true
+    }
+  );
 
   fs.writeFileSync(
     outputPath,
-    JSON.stringify(todayData, null, 2),
+    JSON.stringify(
+      todayData,
+      null,
+      2
+    ),
     "utf8"
   );
 
@@ -1037,7 +1499,9 @@ async function main() {
     const todayData =
       await buildTodayData();
 
-    await saveTodayData(todayData);
+    await saveTodayData(
+      todayData
+    );
 
     const totalBatters =
       todayData.games.reduce(
@@ -1048,8 +1512,34 @@ async function main() {
         0
       );
 
+    const battersWithRecentForm =
+      todayData.games.reduce(
+        (total, game) => {
+          const allBatters = [
+            ...game.awayLineup,
+            ...game.homeLineup
+          ];
+
+          return (
+            total +
+            allBatters.filter(
+              batter =>
+                number(
+                  batter?.recentForm
+                    ?.games
+                ) > 0
+            ).length
+          );
+        },
+        0
+      );
+
     console.log(
       `✅ Finished: ${todayData.games.length} games and ${totalBatters} batters loaded.`
+    );
+
+    console.log(
+      `🔥 Recent form loaded for ${battersWithRecentForm}/${totalBatters} batters.`
     );
   } catch (error) {
     console.error(
