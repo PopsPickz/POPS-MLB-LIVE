@@ -1249,9 +1249,44 @@ function addHRPick(
   pitcherStats,
   pitcherHand = ""
 ) {
+  
   const batterStats =
     mergeBatterStats(batter);
 
+  const recentForm = batter.recentForm || {};
+
+const statcast = batter.statcast || {};
+
+const hrLast10 =
+  Number(recentForm.homeRuns || 0);
+
+const opsLast10 =
+  Number(recentForm.ops || 0);
+
+const isoLast10 =
+  Number(recentForm.iso || 0);
+
+const barrelRate =
+  Number(
+    statcast.barrelRate ||
+    statcast.barrelPct ||
+    0
+  );
+
+const hardHitRate =
+  Number(
+    statcast.hardHitRate ||
+    statcast.hardHitPct ||
+    0
+  );
+
+const exitVelocity =
+  Number(
+    statcast.avgExitVelo ||
+    statcast.exitVelocity ||
+    0
+  );
+  
   const bvpStats =
     batter.bvp || {
       atBats: 0,
