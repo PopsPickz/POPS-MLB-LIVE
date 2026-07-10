@@ -2,38 +2,45 @@ const API = {
   base: "https://statsapi.mlb.com/api/v1",
   liveBase: "https://statsapi.mlb.com/api/v1.1",
 
- cache: {
-  playerInfo: {},
-  pitcherStats: {},
-  batterStats: {},
-  teamStats: {},
+  cache: {
+    playerInfo: {},
+    pitcherStats: {},
+    batterStats: {},
+    teamStats: {},
 
-  recentForm: {},
-  last10: {},
-  statcast: {},
+    recentForm: {},
+    last10: {},
+    statcast: {},
 
-  bvp: {},
-  hitStreak: {},
-  roster: {},
-  lineup: {},
+    bvp: {},
+    hitStreak: {},
+    roster: {},
+    lineup: {},
 
-  schedule: {},
-  liveFeed: {},
+    schedule: {},
+    liveFeed: {},
+    splits: {},
+    weather: {}
+  },
 
-  splits: {},
+  /*
+  =========================================================
+  DATE HELPERS
+  =========================================================
+  */
 
-  weather: {}
-},
   today() {
-    /*
-    Uses the browser's local date rather than UTC.
-    This prevents late-night games from switching to tomorrow too early.
-    */
     const now = new Date();
 
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
+
+    const month = String(
+      now.getMonth() + 1
+    ).padStart(2, "0");
+
+    const day = String(
+      now.getDate()
+    ).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
   },
@@ -42,23 +49,45 @@ const API = {
     return new Date().getFullYear();
   },
 
-  async fetchJSON(url, forceRefresh = false) {
+  /*
+  =========================================================
+  NETWORK HELPER
+  =========================================================
+  */
+
+  async fetchJSON(
+    url,
+    forceRefresh = false
+  ) {
     try {
       const finalUrl = forceRefresh
-        ? `${url}${url.includes("?") ? "&" : "?"}_=${Date.now()}`
+        ? `${url}${
+            url.includes("?") ? "&" : "?"
+          }_=${Date.now()}`
         : url;
 
-      const res = await fetch(finalUrl, {
-        cache: forceRefresh ? "no-store" : "default"
-      });
+      const response = await fetch(
+        finalUrl,
+        {
+          cache: forceRefresh
+            ? "no-store"
+            : "default"
+        }
+      );
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${finalUrl}`);
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}: ${finalUrl}`
+        );
       }
 
-      return await res.json();
-    } catch (err) {
-      console.error("MLB API Error:", err);
+      return await response.json();
+    } catch (error) {
+      console.error(
+        "MLB API Error:",
+        error
+      );
+
       return null;
     }
   },
@@ -69,56 +98,125 @@ const API = {
   =========================================================
   */
 
-  async getSchedule(forceRefresh = false) {
+  async getSchedule(
+    forceRefresh = false
+  ) {
+    const date = this.today();
+
+    const cacheKey = date;
+
+    if (
+      !forceRefresh &&
+      this.cache.schedule[cacheKey]
+    ) {
+      return this.cache.schedule[cacheKey];
+    }
+
+    if (forceRefresh) {
+      delete this.cache.schedule[cacheKey];
+    }
+
     const url =
       `${this.base}/schedule` +
       `?sportId=1` +
-      `&date=${this.today()}` +
+      `&date=${date}` +
       `&hydrate=team,probablePitcher,venue,status`;
 
-    const data = await this.fetchJSON(url, forceRefresh);
-    const games = data?.dates?.[0]?.games || [];
+    const data = await this.fetchJSON(
+      url,
+      forceRefresh
+    );
 
-    return games.map(game => ({
-      id: game.gamePk,
-      gamePk: game.gamePk,
-      date: game.gameDate,
+    const rawGames =
+      data?.dates?.[0]?.games || [];
+
+    const games = rawGames.map(game => ({
+      id: Number(game.gamePk || 0),
+
+      gamePk:
+        Number(game.gamePk || 0),
+
+      date:
+        game.gameDate || "",
 
       status:
         game.status?.detailedState ||
         game.status?.abstractGameState ||
         "Scheduled",
 
-      statusObject: game.status || {},
+      statusObject:
+        game.status || {},
 
-      venue: game.venue?.name || "TBD",
+      venue:
+        game.venue?.name || "TBD",
 
-      awayTeam: game.teams?.away?.team?.name || "Away Team",
-      homeTeam: game.teams?.home?.team?.name || "Home Team",
+      awayTeam:
+        game.teams?.away?.team?.name ||
+        "Away Team",
 
-      awayTeamId: Number(game.teams?.away?.team?.id || 0),
-      homeTeamId: Number(game.teams?.home?.team?.id || 0),
+      homeTeam:
+        game.teams?.home?.team?.name ||
+        "Home Team",
+
+      awayTeamId:
+        Number(
+          game.teams?.away?.team?.id || 0
+        ),
+
+      homeTeamId:
+        Number(
+          game.teams?.home?.team?.id || 0
+        ),
 
       awayPitcher:
-        game.teams?.away?.probablePitcher?.fullName || "TBD",
+        game.teams?.away
+          ?.probablePitcher
+          ?.fullName || "TBD",
 
       homePitcher:
-        game.teams?.home?.probablePitcher?.fullName || "TBD",
+        game.teams?.home
+          ?.probablePitcher
+          ?.fullName || "TBD",
 
       awayPitcherId:
-        Number(game.teams?.away?.probablePitcher?.id || 0) || null,
+        Number(
+          game.teams?.away
+            ?.probablePitcher?.id || 0
+        ) || null,
 
       homePitcherId:
-        Number(game.teams?.home?.probablePitcher?.id || 0) || null,
+        Number(
+          game.teams?.home
+            ?.probablePitcher?.id || 0
+        ) || null,
 
-      awayRecord: game.teams?.away?.leagueRecord
-        ? `${game.teams.away.leagueRecord.wins}-${game.teams.away.leagueRecord.losses}`
-        : "0-0",
+      awayRecord:
+        game.teams?.away?.leagueRecord
+          ? `${
+              game.teams.away
+                .leagueRecord.wins
+            }-${
+              game.teams.away
+                .leagueRecord.losses
+            }`
+          : "0-0",
 
-      homeRecord: game.teams?.home?.leagueRecord
-        ? `${game.teams.home.leagueRecord.wins}-${game.teams.home.leagueRecord.losses}`
-        : "0-0"
+      homeRecord:
+        game.teams?.home?.leagueRecord
+          ? `${
+              game.teams.home
+                .leagueRecord.wins
+            }-${
+              game.teams.home
+                .leagueRecord.losses
+            }`
+          : "0-0"
     }));
+
+    this.cache.schedule[cacheKey] =
+      games;
+
+    return games;
   },
 
   /*
@@ -127,39 +225,84 @@ const API = {
   =========================================================
   */
 
-  async getLiveGame(gameId, forceRefresh = true) {
+  async getLiveGame(
+    gameId,
+    forceRefresh = true
+  ) {
+    gameId = Number(gameId || 0);
+
     if (!gameId) return null;
 
-    /*
-    Important:
-    MLB's live feed uses API version 1.1, not version 1.
-    */
-    const url = `${this.liveBase}/game/${gameId}/feed/live`;
+    const cacheKey = String(gameId);
 
-    return await this.fetchJSON(url, forceRefresh);
+    if (
+      !forceRefresh &&
+      this.cache.liveFeed[cacheKey]
+    ) {
+      return this.cache.liveFeed[
+        cacheKey
+      ];
+    }
+
+    if (forceRefresh) {
+      delete this.cache.liveFeed[
+        cacheKey
+      ];
+    }
+
+    const url =
+      `${this.liveBase}/game/` +
+      `${gameId}/feed/live`;
+
+    const data = await this.fetchJSON(
+      url,
+      forceRefresh
+    );
+
+    if (data) {
+      this.cache.liveFeed[cacheKey] =
+        data;
+    }
+
+    return data;
   },
 
-  async getProbablePitchers(gameId, forceRefresh = true) {
-    const live = await this.getLiveGame(gameId, forceRefresh);
+  async getProbablePitchers(
+    gameId,
+    forceRefresh = true
+  ) {
+    const live = await this.getLiveGame(
+      gameId,
+      forceRefresh
+    );
 
     const away =
-      live?.gameData?.probablePitchers?.away || null;
+      live?.gameData
+        ?.probablePitchers?.away ||
+      null;
 
     const home =
-      live?.gameData?.probablePitchers?.home || null;
+      live?.gameData
+        ?.probablePitchers?.home ||
+      null;
 
     return {
       away: {
         id: Number(away?.id || 0),
-        name: away?.fullName || "TBD"
+
+        name:
+          away?.fullName || "TBD"
       },
 
       home: {
         id: Number(home?.id || 0),
-        name: home?.fullName || "TBD"
+
+        name:
+          home?.fullName || "TBD"
       },
 
-      status: live?.gameData?.status || {}
+      status:
+        live?.gameData?.status || {}
     };
   },
 
@@ -169,84 +312,160 @@ const API = {
   =========================================================
   */
 
-  async getPitcherStats(playerId, forceRefresh = false) {
+  async getPitcherStats(
+    playerId,
+    forceRefresh = false
+  ) {
     playerId = Number(playerId || 0);
 
     if (!playerId) return {};
 
     const cacheKey = String(playerId);
 
-    if (!forceRefresh && this.cache.pitcherStats[cacheKey]) {
-      return this.cache.pitcherStats[cacheKey];
+    if (
+      !forceRefresh &&
+      this.cache.pitcherStats[
+        cacheKey
+      ]
+    ) {
+      return this.cache.pitcherStats[
+        cacheKey
+      ];
     }
 
     if (forceRefresh) {
-      delete this.cache.pitcherStats[cacheKey];
+      delete this.cache.pitcherStats[
+        cacheKey
+      ];
     }
 
-    const season = this.currentSeason();
+    const season =
+      this.currentSeason();
 
     const url =
-      `${this.base}/people/${playerId}/stats` +
+      `${this.base}/people/` +
+      `${playerId}/stats` +
       `?stats=season` +
       `&group=pitching` +
       `&season=${season}`;
 
-    const data = await this.fetchJSON(url, forceRefresh);
-    const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
+    const data = await this.fetchJSON(
+      url,
+      forceRefresh
+    );
 
-    const stats = {
-      ...stat,
+    const stat =
+      data?.stats?.[0]?.splits?.[0]
+        ?.stat || {};
 
-      era: Number(stat.era || 0),
-      whip: Number(stat.whip || 0),
+    const inningsPitched =
+      Number(
+        stat.inningsPitched || 0
+      );
 
-      wins: Number(stat.wins || 0),
-      losses: Number(stat.losses || 0),
+    const homeRuns =
+      Number(stat.homeRuns || 0);
 
-      gamesPlayed: Number(stat.gamesPlayed || 0),
-      gamesStarted: Number(stat.gamesStarted || 0),
+    let homeRunsPer9 =
+      Number(
+        stat.homeRunsPer9 || 0
+      );
 
-      inningsPitched: Number(stat.inningsPitched || 0),
-
-      hits: Number(stat.hits || 0),
-      runs: Number(stat.runs || 0),
-      earnedRuns: Number(stat.earnedRuns || 0),
-
-      homeRuns: Number(stat.homeRuns || 0),
-      baseOnBalls: Number(stat.baseOnBalls || 0),
-      strikeOuts: Number(stat.strikeOuts || 0),
-
-      strikeoutsPer9Inn: Number(stat.strikeoutsPer9Inn || 0),
-      walksPer9Inn: Number(stat.walksPer9Inn || 0),
-      homeRunsPer9: Number(stat.homeRunsPer9 || 0)
-    };
-
-    /*
-    MLB does not always include homeRunsPer9.
-    Calculate it when necessary.
-    */
     if (
-      !stats.homeRunsPer9 &&
-      stats.inningsPitched > 0
+      !homeRunsPer9 &&
+      inningsPitched > 0
     ) {
-      stats.homeRunsPer9 = Number(
+      homeRunsPer9 = Number(
         (
-          (stats.homeRuns * 9) /
-          stats.inningsPitched
+          (homeRuns * 9) /
+          inningsPitched
         ).toFixed(2)
       );
     }
 
-    this.cache.pitcherStats[cacheKey] = stats;
+    const stats = {
+      ...stat,
+
+      id: playerId,
+
+      era:
+        Number(stat.era || 0),
+
+      whip:
+        Number(stat.whip || 0),
+
+      wins:
+        Number(stat.wins || 0),
+
+      losses:
+        Number(stat.losses || 0),
+
+      gamesPlayed:
+        Number(
+          stat.gamesPlayed || 0
+        ),
+
+      gamesStarted:
+        Number(
+          stat.gamesStarted || 0
+        ),
+
+      inningsPitched,
+
+      ip: inningsPitched,
+
+      hits:
+        Number(stat.hits || 0),
+
+      runs:
+        Number(stat.runs || 0),
+
+      earnedRuns:
+        Number(
+          stat.earnedRuns || 0
+        ),
+
+      homeRuns,
+
+      hrAllowed: homeRuns,
+
+      baseOnBalls:
+        Number(
+          stat.baseOnBalls || 0
+        ),
+
+      strikeOuts:
+        Number(
+          stat.strikeOuts || 0
+        ),
+
+      strikeoutsPer9Inn:
+        Number(
+          stat.strikeoutsPer9Inn ||
+          0
+        ),
+
+      walksPer9Inn:
+        Number(
+          stat.walksPer9Inn || 0
+        ),
+
+      homeRunsPer9,
+
+      hr9: homeRunsPer9
+    };
+
+    this.cache.pitcherStats[
+      cacheKey
+    ] = stats;
 
     return stats;
   },
 
-  /*
-  Kept for compatibility with older POPS files.
-  */
-  async getPlayerStats(playerId, forceRefresh = false) {
+  async getPlayerStats(
+    playerId,
+    forceRefresh = false
+  ) {
     return await this.getPitcherStats(
       playerId,
       forceRefresh
@@ -259,64 +478,148 @@ const API = {
   =========================================================
   */
 
-  async getBatterStats(playerId, forceRefresh = false) {
+  async getBatterStats(
+    playerId,
+    forceRefresh = false
+  ) {
     playerId = Number(playerId || 0);
 
     if (!playerId) return {};
 
     const cacheKey = String(playerId);
 
-    if (!forceRefresh && this.cache.batterStats[cacheKey]) {
-      return this.cache.batterStats[cacheKey];
+    if (
+      !forceRefresh &&
+      this.cache.batterStats[
+        cacheKey
+      ]
+    ) {
+      return this.cache.batterStats[
+        cacheKey
+      ];
     }
 
     if (forceRefresh) {
-      delete this.cache.batterStats[cacheKey];
+      delete this.cache.batterStats[
+        cacheKey
+      ];
     }
 
-    const season = this.currentSeason();
+    const season =
+      this.currentSeason();
 
     const url =
-      `${this.base}/people/${playerId}/stats` +
+      `${this.base}/people/` +
+      `${playerId}/stats` +
       `?stats=season` +
       `&group=hitting` +
       `&season=${season}`;
 
-    const data = await this.fetchJSON(url, forceRefresh);
-    const stat = data?.stats?.[0]?.splits?.[0]?.stat || {};
+    const data = await this.fetchJSON(
+      url,
+      forceRefresh
+    );
 
-    const avg = Number(stat.avg || 0);
-    const slg = Number(stat.slg || 0);
-    const ops = Number(stat.ops || 0);
+    const stat =
+      data?.stats?.[0]?.splits?.[0]
+        ?.stat || {};
+
+    const avg =
+      Number(stat.avg || 0);
+
+    const slg =
+      Number(stat.slg || 0);
+
+    const ops =
+      Number(stat.ops || 0);
+
+    const homeRuns =
+      Number(stat.homeRuns || 0);
+
+    const hits =
+      Number(stat.hits || 0);
+
+    const atBats =
+      Number(stat.atBats || 0);
+
+    const plateAppearances =
+      Number(
+        stat.plateAppearances || 0
+      );
+
+    const doubles =
+      Number(stat.doubles || 0);
+
+    const triples =
+      Number(stat.triples || 0);
+
+    const extraBaseHits =
+      doubles +
+      triples +
+      homeRuns;
+
+    const denominator =
+      plateAppearances || atBats;
 
     const stats = {
       ...stat,
+
+      id: playerId,
 
       avg,
       slg,
       ops,
 
-      homeRuns: Number(stat.homeRuns || 0),
-      hits: Number(stat.hits || 0),
-      atBats: Number(stat.atBats || 0),
+      homeRuns,
+      hits,
+      atBats,
+      plateAppearances,
 
-      rbi: Number(stat.rbi || 0),
-      doubles: Number(stat.doubles || 0),
-      triples: Number(stat.triples || 0),
+      rbi:
+        Number(stat.rbi || 0),
+
+      doubles,
+      triples,
+      extraBaseHits,
 
       iso:
-        slg && avg
-          ? Number((slg - avg).toFixed(3))
+        slg > 0
+          ? Number(
+              (slg - avg).toFixed(3)
+            )
           : 0,
 
-      hasSeasonPowerData: Boolean(
-        Number(stat.homeRuns || 0) ||
-        Number(stat.slg || 0) ||
-        Number(stat.ops || 0)
-      )
+      hrRate:
+        denominator > 0
+          ? Number(
+              (
+                homeRuns /
+                denominator
+              ).toFixed(4)
+            )
+          : 0,
+
+      extraBaseHitRate:
+        denominator > 0
+          ? Number(
+              (
+                extraBaseHits /
+                denominator
+              ).toFixed(4)
+            )
+          : 0,
+
+      hasSeasonPowerData:
+        Boolean(
+          homeRuns ||
+          slg ||
+          ops
+        )
     };
 
-    this.cache.batterStats[cacheKey] = stats;
+    this.cache.batterStats[
+      cacheKey
+    ] = stats;
 
     return stats;
   },
@@ -327,7 +630,10 @@ const API = {
   =========================================================
   */
 
-  async getTeamStats(teamId, forceRefresh = false) {
+  async getTeamStats(
+    teamId,
+    forceRefresh = false
+  ) {
     teamId = Number(teamId || 0);
 
     if (!teamId) {
@@ -340,54 +646,73 @@ const API = {
 
     const cacheKey = String(teamId);
 
-    if (!forceRefresh && this.cache.teamStats[cacheKey]) {
-      return this.cache.teamStats[cacheKey];
+    if (
+      !forceRefresh &&
+      this.cache.teamStats[cacheKey]
+    ) {
+      return this.cache.teamStats[
+        cacheKey
+      ];
     }
 
     if (forceRefresh) {
-      delete this.cache.teamStats[cacheKey];
+      delete this.cache.teamStats[
+        cacheKey
+      ];
     }
 
-    const season = this.currentSeason();
+    const season =
+      this.currentSeason();
 
     const url =
-      `${this.base}/teams/${teamId}/stats` +
+      `${this.base}/teams/` +
+      `${teamId}/stats` +
       `?stats=season` +
       `&group=hitting,pitching,fielding` +
       `&season=${season}`;
 
-    const data = await this.fetchJSON(url, forceRefresh);
-
-    const hittingGroup = data?.stats?.find(item =>
-      item.group?.displayName
-        ?.toLowerCase()
-        .includes("hitting")
+    const data = await this.fetchJSON(
+      url,
+      forceRefresh
     );
 
-    const pitchingGroup = data?.stats?.find(item =>
-      item.group?.displayName
-        ?.toLowerCase()
-        .includes("pitching")
-    );
+    const hittingGroup =
+      data?.stats?.find(item =>
+        item.group?.displayName
+          ?.toLowerCase()
+          .includes("hitting")
+      );
 
-    const fieldingGroup = data?.stats?.find(item =>
-      item.group?.displayName
-        ?.toLowerCase()
-        .includes("fielding")
-    );
+    const pitchingGroup =
+      data?.stats?.find(item =>
+        item.group?.displayName
+          ?.toLowerCase()
+          .includes("pitching")
+      );
+
+    const fieldingGroup =
+      data?.stats?.find(item =>
+        item.group?.displayName
+          ?.toLowerCase()
+          .includes("fielding")
+      );
 
     const result = {
       hitting:
-        hittingGroup?.splits?.[0]?.stat || {},
+        hittingGroup?.splits?.[0]
+          ?.stat || {},
 
       pitching:
-        pitchingGroup?.splits?.[0]?.stat || {},
+        pitchingGroup?.splits?.[0]
+          ?.stat || {},
 
       fielding:
-        fieldingGroup?.splits?.[0]?.stat || {}
+        fieldingGroup?.splits?.[0]
+          ?.stat || {}
     };
 
-    this.cache.teamStats[cacheKey] = result;
+    this.cache.teamStats[cacheKey] =
+      result;
 
     return result;
   },
@@ -406,38 +731,71 @@ const API = {
     gameId = Number(gameId || 0);
     teamId = Number(teamId || 0);
 
-    if (!gameId || !teamId) return [];
+    if (!gameId || !teamId) {
+      return [];
+    }
+
+    const cacheKey =
+      `${gameId}-${teamId}`;
+
+    if (
+      !forceRefresh &&
+      this.cache.lineup[cacheKey]
+    ) {
+      return this.cache.lineup[
+        cacheKey
+      ];
+    }
+
+    if (forceRefresh) {
+      delete this.cache.lineup[
+        cacheKey
+      ];
+    }
 
     const live = await this.getLiveGame(
       gameId,
       forceRefresh
     );
 
-    const boxscore = live?.liveData?.boxscore;
+    const boxscore =
+      live?.liveData?.boxscore;
 
     if (!boxscore) return [];
 
-    const awaySide = boxscore?.teams?.away;
-    const homeSide = boxscore?.teams?.home;
+    const awaySide =
+      boxscore?.teams?.away;
+
+    const homeSide =
+      boxscore?.teams?.home;
 
     let side = null;
 
-    if (Number(awaySide?.team?.id || 0) === teamId) {
+    if (
+      Number(
+        awaySide?.team?.id || 0
+      ) === teamId
+    ) {
       side = awaySide;
     } else if (
-      Number(homeSide?.team?.id || 0) === teamId
+      Number(
+        homeSide?.team?.id || 0
+      ) === teamId
     ) {
       side = homeSide;
     }
 
     if (!side) return [];
 
-    const battingOrder = side.battingOrder || [];
+    const battingOrder =
+      side.battingOrder || [];
 
-    return battingOrder
+    const lineup = battingOrder
       .map((playerId, index) => {
         const player =
-          side.players?.[`ID${playerId}`];
+          side.players?.[
+            `ID${playerId}`
+          ];
 
         if (!player) return null;
 
@@ -449,19 +807,27 @@ const API = {
             "Unknown",
 
           position:
-            player?.position?.abbreviation ||
-            "",
+            player?.position
+              ?.abbreviation || "",
 
-          lineupSpot: index + 1,
+          lineupSpot:
+            index + 1,
+
           confirmed: true,
 
           batSide:
             player?.batSide?.code ||
-            player?.person?.batSide?.code ||
+            player?.person?.batSide
+              ?.code ||
             ""
         };
       })
       .filter(Boolean);
+
+    this.cache.lineup[cacheKey] =
+      lineup;
+
+    return lineup;
   },
 
   /*
@@ -470,23 +836,34 @@ const API = {
   =========================================================
   */
 
-  async getRoster(teamId, forceRefresh = false) {
+  async getRoster(
+    teamId,
+    forceRefresh = false
+  ) {
     teamId = Number(teamId || 0);
 
     if (!teamId) return [];
 
     const cacheKey = String(teamId);
 
-    if (!forceRefresh && this.cache.roster[cacheKey]) {
-      return this.cache.roster[cacheKey];
+    if (
+      !forceRefresh &&
+      this.cache.roster[cacheKey]
+    ) {
+      return this.cache.roster[
+        cacheKey
+      ];
     }
 
     if (forceRefresh) {
-      delete this.cache.roster[cacheKey];
+      delete this.cache.roster[
+        cacheKey
+      ];
     }
 
     const url =
-      `${this.base}/teams/${teamId}/roster` +
+      `${this.base}/teams/` +
+      `${teamId}/roster` +
       `?rosterType=active`;
 
     const data = await this.fetchJSON(
@@ -494,19 +871,26 @@ const API = {
       forceRefresh
     );
 
-    const roster = (data?.roster || []).map(item => ({
-      id: Number(item?.person?.id || 0),
+    const roster =
+      (data?.roster || []).map(
+        item => ({
+          id:
+            Number(
+              item?.person?.id || 0
+            ),
 
-      name:
-        item?.person?.fullName ||
-        "Unknown",
+          name:
+            item?.person?.fullName ||
+            "Unknown",
 
-      position:
-        item?.position?.abbreviation ||
-        ""
-    }));
+          position:
+            item?.position
+              ?.abbreviation || ""
+        })
+      );
 
-    this.cache.roster[cacheKey] = roster;
+    this.cache.roster[cacheKey] =
+      roster;
 
     return roster;
   },
@@ -517,25 +901,39 @@ const API = {
   =========================================================
   */
 
-  async getHitStreak(playerId, forceRefresh = false) {
+  async getHitStreak(
+    playerId,
+    forceRefresh = false
+  ) {
     playerId = Number(playerId || 0);
 
     if (!playerId) return 0;
 
     const cacheKey = String(playerId);
 
-    if (!forceRefresh && this.cache.hitStreak[cacheKey] !== undefined) {
-      return this.cache.hitStreak[cacheKey];
+    if (
+      !forceRefresh &&
+      this.cache.hitStreak[
+        cacheKey
+      ] !== undefined
+    ) {
+      return this.cache.hitStreak[
+        cacheKey
+      ];
     }
 
     if (forceRefresh) {
-      delete this.cache.hitStreak[cacheKey];
+      delete this.cache.hitStreak[
+        cacheKey
+      ];
     }
 
-    const season = this.currentSeason();
+    const season =
+      this.currentSeason();
 
     const url =
-      `${this.base}/people/${playerId}/stats` +
+      `${this.base}/people/` +
+      `${playerId}/stats` +
       `?stats=gameLog` +
       `&group=hitting` +
       `&season=${season}`;
@@ -552,15 +950,17 @@ const API = {
       .filter(game => game.date)
       .sort(
         (a, b) =>
-          new Date(b.date) - new Date(a.date)
+          new Date(b.date) -
+          new Date(a.date)
       );
 
     let streak = 0;
 
     for (const game of logs) {
-      const hits = Number(
-        game.stat?.hits || 0
-      );
+      const hits =
+        Number(
+          game.stat?.hits || 0
+        );
 
       if (hits >= 1) {
         streak++;
@@ -569,163 +969,232 @@ const API = {
       }
     }
 
-    this.cache.hitStreak[cacheKey] = streak;
+    this.cache.hitStreak[cacheKey] =
+      streak;
 
     return streak;
   },
 
   /*
+  =========================================================
+  RECENT FORM — LAST 10 GAMES
+  =========================================================
+  */
 
-/*
-=========================================================
-LAST 10 GAMES
-=========================================================
-*/
+  async getRecentForm(
+    playerId,
+    forceRefresh = false
+  ) {
+    playerId = Number(playerId || 0);
 
-async getRecentForm(playerId, forceRefresh = false) {
-
-  playerId = Number(playerId || 0);
-
-  if (!playerId) {
-    return {
+    const empty = {
       games: 0,
       avg: 0,
+      obp: 0,
+      slg: 0,
       ops: 0,
       iso: 0,
-      homeRuns: 0,
+
+      atBats: 0,
       hits: 0,
       doubles: 0,
       triples: 0,
+      homeRuns: 0,
+
+      walks: 0,
+      hitByPitch: 0,
+      sacFlies: 0,
+
       extraBaseHits: 0
     };
-  }
 
-  const cacheKey = String(playerId);
+    if (!playerId) {
+      return empty;
+    }
 
-  if (!forceRefresh && this.cache.recentForm[cacheKey]) {
-    return this.cache.recentForm[cacheKey];
-  }
+    const cacheKey = String(playerId);
 
-  if (forceRefresh) {
-    delete this.cache.recentForm[cacheKey];
-  }
+    if (
+      !forceRefresh &&
+      this.cache.recentForm[
+        cacheKey
+      ]
+    ) {
+      return this.cache.recentForm[
+        cacheKey
+      ];
+    }
 
-  const season = this.currentSeason();
+    if (forceRefresh) {
+      delete this.cache.recentForm[
+        cacheKey
+      ];
+    }
 
-  const url =
-    `${this.base}/people/${playerId}/stats` +
-    `?stats=gameLog` +
-    `&group=hitting` +
-    `&season=${season}`;
+    const season =
+      this.currentSeason();
 
-  const data = await this.fetchJSON(url, forceRefresh);
+    const url =
+      `${this.base}/people/` +
+      `${playerId}/stats` +
+      `?stats=gameLog` +
+      `&group=hitting` +
+      `&season=${season}`;
 
-  let logs = data?.stats?.[0]?.splits || [];
+    const data = await this.fetchJSON(
+      url,
+      forceRefresh
+    );
 
-  logs = logs
-    .filter(g => g.date)
-    .sort((a,b)=>new Date(b.date)-new Date(a.date))
-    .slice(0,10);
+    let logs =
+      data?.stats?.[0]?.splits || [];
 
-  let atBats = 0;
-  let hits = 0;
-  let doubles = 0;
-  let triples = 0;
-  let homeRuns = 0;
-  let walks = 0;
-  let hbp = 0;
-  let sacFlies = 0;
+    logs = logs
+      .filter(game => game.date)
+      .sort(
+        (a, b) =>
+          new Date(b.date) -
+          new Date(a.date)
+      )
+      .slice(0, 10);
 
-  for (const game of logs){
+    let atBats = 0;
+    let hits = 0;
+    let doubles = 0;
+    let triples = 0;
+    let homeRuns = 0;
+    let walks = 0;
+    let hitByPitch = 0;
+    let sacFlies = 0;
 
-    const stat = game.stat || {};
+    for (const game of logs) {
+      const stat =
+        game.stat || {};
 
-    atBats += Number(stat.atBats || 0);
-    hits += Number(stat.hits || 0);
+      atBats += Number(
+        stat.atBats || 0
+      );
 
-    doubles += Number(stat.doubles || 0);
-    triples += Number(stat.triples || 0);
+      hits += Number(
+        stat.hits || 0
+      );
 
-    homeRuns += Number(stat.homeRuns || 0);
+      doubles += Number(
+        stat.doubles || 0
+      );
 
-    walks += Number(stat.baseOnBalls || 0);
+      triples += Number(
+        stat.triples || 0
+      );
 
-    hbp += Number(stat.hitByPitch || 0);
+      homeRuns += Number(
+        stat.homeRuns || 0
+      );
 
-    sacFlies += Number(stat.sacFlies || 0);
+      walks += Number(
+        stat.baseOnBalls || 0
+      );
 
-  }
+      hitByPitch += Number(
+        stat.hitByPitch || 0
+      );
 
-  const singles =
-    hits -
-    doubles -
-    triples -
-    homeRuns;
+      sacFlies += Number(
+        stat.sacFlies || 0
+      );
+    }
 
-  const totalBases =
-    singles +
-    doubles*2 +
-    triples*3 +
-    homeRuns*4;
-
-  const avg =
-    atBats
-      ? hits/atBats
-      : 0;
-
-  const obpDen =
-    atBats +
-    walks +
-    hbp +
-    sacFlies;
-
-  const obp =
-    obpDen
-      ? (hits+walks+hbp)/obpDen
-      : 0;
-
-  const slg =
-    atBats
-      ? totalBases/atBats
-      : 0;
-
-  const ops =
-    obp + slg;
-
-  const iso =
-    slg - avg;
-
-  const result = {
-
-    games: logs.length,
-
-    avg:Number(avg.toFixed(3)),
-
-    ops:Number(ops.toFixed(3)),
-
-    iso:Number(iso.toFixed(3)),
-
-    hits,
-
-    doubles,
-
-    triples,
-
-    homeRuns,
-
-    extraBaseHits:
-      doubles+
-      triples+
+    const singles = Math.max(
+      0,
+      hits -
+      doubles -
+      triples -
       homeRuns
+    );
 
-  };
+    const totalBases =
+      singles +
+      doubles * 2 +
+      triples * 3 +
+      homeRuns * 4;
 
-  this.cache.recentForm[cacheKey]=result;
+    const avg =
+      atBats > 0
+        ? hits / atBats
+        : 0;
 
-  return result;
+    const obpDenominator =
+      atBats +
+      walks +
+      hitByPitch +
+      sacFlies;
 
-},  
-  */
+    const obp =
+      obpDenominator > 0
+        ? (
+            hits +
+            walks +
+            hitByPitch
+          ) /
+          obpDenominator
+        : 0;
+
+    const slg =
+      atBats > 0
+        ? totalBases / atBats
+        : 0;
+
+    const ops =
+      obp + slg;
+
+    const iso =
+      Math.max(0, slg - avg);
+
+    const result = {
+      games: logs.length,
+
+      avg:
+        Number(avg.toFixed(3)),
+
+      obp:
+        Number(obp.toFixed(3)),
+
+      slg:
+        Number(slg.toFixed(3)),
+
+      ops:
+        Number(ops.toFixed(3)),
+
+      iso:
+        Number(iso.toFixed(3)),
+
+      atBats,
+      hits,
+      doubles,
+      triples,
+      homeRuns,
+      walks,
+      hitByPitch,
+      sacFlies,
+
+      extraBaseHits:
+        doubles +
+        triples +
+        homeRuns
+    };
+
+    this.cache.recentForm[
+      cacheKey
+    ] = result;
+
+    this.cache.last10[
+      cacheKey
+    ] = result;
+
+    return result;
+  },
+
+  /*
   =========================================================
   BATTER VS PITCHER STATS
   =========================================================
@@ -736,8 +1205,11 @@ async getRecentForm(playerId, forceRefresh = false) {
     pitcherId,
     forceRefresh = false
   ) {
-    batterId = Number(batterId || 0);
-    pitcherId = Number(pitcherId || 0);
+    batterId =
+      Number(batterId || 0);
+
+    pitcherId =
+      Number(pitcherId || 0);
 
     const empty = {
       atBats: 0,
@@ -750,20 +1222,30 @@ async getRecentForm(playerId, forceRefresh = false) {
       return empty;
     }
 
-    const cacheKey = `${batterId}-${pitcherId}`;
+    const cacheKey =
+      `${batterId}-${pitcherId}`;
 
-    if (!forceRefresh && this.cache.bvp[cacheKey]) {
-      return this.cache.bvp[cacheKey];
+    if (
+      !forceRefresh &&
+      this.cache.bvp[cacheKey]
+    ) {
+      return this.cache.bvp[
+        cacheKey
+      ];
     }
 
     if (forceRefresh) {
-      delete this.cache.bvp[cacheKey];
+      delete this.cache.bvp[
+        cacheKey
+      ];
     }
 
-    const season = this.currentSeason();
+    const season =
+      this.currentSeason();
 
     const url =
-      `${this.base}/people/${batterId}/stats` +
+      `${this.base}/people/` +
+      `${batterId}/stats` +
       `?stats=vsPlayer` +
       `&group=hitting` +
       `&opposingPlayerId=${pitcherId}` +
@@ -775,25 +1257,29 @@ async getRecentForm(playerId, forceRefresh = false) {
     );
 
     const stat =
-      data?.stats?.[0]?.splits?.[0]?.stat ||
-      {};
+      data?.stats?.[0]?.splits?.[0]
+        ?.stat || {};
 
     const result = {
-      atBats: Number(stat.atBats || 0),
-      hits: Number(stat.hits || 0),
-      avg: stat.avg || ".000",
-      homeRuns: Number(stat.homeRuns || 0)
+      atBats:
+        Number(stat.atBats || 0),
+
+      hits:
+        Number(stat.hits || 0),
+
+      avg:
+        stat.avg || ".000",
+
+      homeRuns:
+        Number(stat.homeRuns || 0)
     };
 
-    this.cache.bvp[cacheKey] = result;
+    this.cache.bvp[cacheKey] =
+      result;
 
     return result;
   },
 
-  /*
-  The updated app.js looks for API.getBvP().
-  This alias makes both versions compatible.
-  */
   async getBvP(
     batterId,
     pitcherId,
@@ -806,9 +1292,6 @@ async getRecentForm(playerId, forceRefresh = false) {
     );
   },
 
-  /*
-  Additional aliases for compatibility.
-  */
   async getBVP(
     batterId,
     pitcherId,
@@ -838,13 +1321,16 @@ async getRecentForm(playerId, forceRefresh = false) {
     pitcherId,
     forceRefresh = false
   ) {
-    const stats = await this.getBvPStats(
-      batterId,
-      pitcherId,
-      forceRefresh
-    );
+    const stats =
+      await this.getBvPStats(
+        batterId,
+        pitcherId,
+        forceRefresh
+      );
 
-    return Number(stats.homeRuns || 0);
+    return Number(
+      stats.homeRuns || 0
+    );
   },
 
   /*
@@ -863,12 +1349,21 @@ async getRecentForm(playerId, forceRefresh = false) {
 
     const cacheKey = String(playerId);
 
-    if (!forceRefresh && this.cache.playerInfo[cacheKey]) {
-      return this.cache.playerInfo[cacheKey];
+    if (
+      !forceRefresh &&
+      this.cache.playerInfo[
+        cacheKey
+      ]
+    ) {
+      return this.cache.playerInfo[
+        cacheKey
+      ];
     }
 
     if (forceRefresh) {
-      delete this.cache.playerInfo[cacheKey];
+      delete this.cache.playerInfo[
+        cacheKey
+      ];
     }
 
     const url =
@@ -879,14 +1374,17 @@ async getRecentForm(playerId, forceRefresh = false) {
       forceRefresh
     );
 
-    const person = data?.people?.[0];
+    const person =
+      data?.people?.[0];
 
     const result = {
-      id: Number(person?.id || playerId),
+      id:
+        Number(
+          person?.id || playerId
+        ),
 
       name:
-        person?.fullName ||
-        "",
+        person?.fullName || "",
 
       batSide:
         person?.batSide?.code ||
@@ -897,32 +1395,38 @@ async getRecentForm(playerId, forceRefresh = false) {
         ""
     };
 
-    this.cache.playerInfo[cacheKey] = result;
+    this.cache.playerInfo[
+      cacheKey
+    ] = result;
 
     return result;
   },
 
   /*
   =========================================================
-  CACHE-CLEARING FUNCTIONS
+  CACHE MANAGEMENT
   =========================================================
   */
 
-  clearPitcherCache(oldPitcherId, newPitcherId) {
+  clearPitcherCache(
+    oldPitcherId,
+    newPitcherId
+  ) {
     const ids = [
       Number(oldPitcherId || 0),
       Number(newPitcherId || 0)
     ].filter(Boolean);
 
     ids.forEach(id => {
-      delete this.cache.pitcherStats[String(id)];
-      delete this.cache.playerInfo[String(id)];
+      delete this.cache.pitcherStats[
+        String(id)
+      ];
+
+      delete this.cache.playerInfo[
+        String(id)
+      ];
     });
 
-    /*
-    BvP results are tied to a specific opposing pitcher.
-    Clear all BvP data after a pitching change.
-    */
     this.cache.bvp = {};
 
     console.log(
@@ -944,12 +1448,28 @@ async getRecentForm(playerId, forceRefresh = false) {
     this.cache.pitcherStats = {};
     this.cache.batterStats = {};
     this.cache.teamStats = {};
+
+    this.cache.recentForm = {};
+    this.cache.last10 = {};
+    this.cache.statcast = {};
+
     this.cache.bvp = {};
     this.cache.hitStreak = {};
     this.cache.roster = {};
+    this.cache.lineup = {};
+
+    this.cache.schedule = {};
+    this.cache.liveFeed = {};
+    this.cache.splits = {};
+    this.cache.weather = {};
 
     console.log(
       "🧹 All POPS API caches cleared."
     );
   }
 };
+
+/*
+Makes the API available to all other scripts.
+*/
+window.API = API;
