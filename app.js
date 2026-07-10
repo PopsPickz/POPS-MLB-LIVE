@@ -1415,20 +1415,34 @@ const exitVelocity =
   };
 
   const result = Formula.getHRScore({
-    batter: modelBatter,
+
+    batter: {
+        ...modelBatter,
+
+        recentForm: batter.recentForm || {},
+
+        statcast: batter.statcast || {},
+
+        bvp: bvpStats,
+
+        lineupSpot: batter.lineupSpot,
+
+        batSide: batterHand
+    },
 
     pitcher: {
-      ...pitcherStats
+        ...pitcherStats
     },
 
     pitcherHand,
 
     handednessSplit:
-      batter.handednessSplit || {},
+        batter.handednessSplit || {},
 
     recentForm:
-      batter.recentForm || {}
-  });
+        batter.recentForm || {}
+
+});
 
   const breakdown =
     Array.isArray(result?.breakdown)
