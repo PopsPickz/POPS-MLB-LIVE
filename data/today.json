@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-10T13:41:41.815Z",
+  "generatedAt": "2026-07-10T14:58:49.684Z",
   "date": "2026-07-10",
   "version": "POPS Pickz Batter Data 3.1",
   "games": [
@@ -356,9 +356,9 @@
             "iso": 0.244
           },
           "bvp": {
-            "atBats": 3,
+            "atBats": 11,
             "hits": 1,
-            "avg": ".333",
+            "avg": ".091",
             "homeRuns": 1
           },
           "dataQuality": {
@@ -581,9 +581,9 @@
             "iso": 0.206
           },
           "bvp": {
-            "atBats": 7,
+            "atBats": 2,
             "hits": 1,
-            "avg": ".143",
+            "avg": ".500",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -1408,9 +1408,9 @@
             "iso": 0.175
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 8,
+            "hits": 2,
+            "avg": ".250",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -3723,9 +3723,9 @@
             "iso": 0.256
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 2,
-            "avg": ".333",
+            "atBats": 1,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -4023,8 +4023,8 @@
             "iso": 0.107
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 1,
+            "atBats": 4,
+            "hits": 2,
             "avg": ".500",
             "homeRuns": 0
           },
@@ -5961,10 +5961,10 @@
             "iso": 0.286
           },
           "bvp": {
-            "atBats": 5,
-            "hits": 1,
-            "avg": ".200",
-            "homeRuns": 0
+            "atBats": 18,
+            "hits": 8,
+            "avg": ".444",
+            "homeRuns": 2
           },
           "dataQuality": {
             "seasonStats": true,
@@ -6111,7 +6111,7 @@
             "iso": 0.158
           },
           "bvp": {
-            "atBats": 0,
+            "atBats": 4,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -6120,7 +6120,7 @@
             "seasonStats": true,
             "statcast": false,
             "recentForm": true,
-            "bvp": false,
+            "bvp": true,
             "confirmedLineup": false
           }
         },
@@ -6261,9 +6261,9 @@
             "iso": 0.054
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 2,
-            "avg": ".333",
+            "atBats": 21,
+            "hits": 4,
+            "avg": ".190",
             "homeRuns": 1
           },
           "dataQuality": {
@@ -6336,9 +6336,9 @@
             "iso": 0.429
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 2,
-            "avg": ".667",
+            "atBats": 1,
+            "hits": 1,
+            "avg": "1.000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -6638,10 +6638,10 @@
             "iso": 0.129
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 1,
+            "atBats": 8,
+            "hits": 4,
             "avg": ".500",
-            "homeRuns": 0
+            "homeRuns": 1
           },
           "dataQuality": {
             "seasonStats": true,
@@ -6713,7 +6713,7 @@
             "iso": 0.086
           },
           "bvp": {
-            "atBats": 2,
+            "atBats": 4,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -7306,8 +7306,8 @@
             "iso": 0.222
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 2,
+            "atBats": 1,
+            "hits": 1,
             "avg": "1.000",
             "homeRuns": 0
           },
@@ -7531,9 +7531,9 @@
             "iso": 0.026
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 6,
+            "hits": 1,
+            "avg": ".167",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -7983,10 +7983,10 @@
             "iso": 0.105
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 1,
-            "avg": ".333",
-            "homeRuns": 0
+            "atBats": 14,
+            "hits": 3,
+            "avg": ".214",
+            "homeRuns": 1
           },
           "dataQuality": {
             "seasonStats": true,
@@ -8133,9 +8133,9 @@
             "iso": 0.257
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 1,
-            "avg": ".167",
+            "atBats": 2,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -8433,9 +8433,9 @@
             "iso": 0.154
           },
           "bvp": {
-            "atBats": 4,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 7,
+            "hits": 1,
+            "avg": ".143",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -10898,9 +10898,9 @@
             "iso": 0.024
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 5,
+            "hits": 1,
+            "avg": ".200",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -11198,7 +11198,7 @@
             "iso": 0.111
           },
           "bvp": {
-            "atBats": 3,
+            "atBats": 1,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -11348,9 +11348,9 @@
             "iso": 0.526
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 1,
-            "avg": ".500",
+            "atBats": 11,
+            "hits": 3,
+            "avg": ".273",
             "homeRuns": 1
           },
           "dataQuality": {
@@ -12986,10 +12986,10 @@
             "iso": 0.235
           },
           "bvp": {
-            "atBats": 18,
-            "hits": 8,
-            "avg": ".444",
-            "homeRuns": 2
+            "atBats": 3,
+            "hits": 1,
+            "avg": ".333",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -13136,9 +13136,9 @@
             "iso": 0.194
           },
           "bvp": {
-            "atBats": 4,
-            "hits": 2,
-            "avg": ".500",
+            "atBats": 3,
+            "hits": 1,
+            "avg": ".333",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -13361,10 +13361,10 @@
             "iso": 0.205
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 3,
-            "avg": ".500",
-            "homeRuns": 1
+            "atBats": 3,
+            "hits": 2,
+            "avg": ".667",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -13813,9 +13813,9 @@
             "iso": 0.114
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 6,
+            "hits": 1,
+            "avg": ".167",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -13888,9 +13888,9 @@
             "iso": 0.15
           },
           "bvp": {
-            "atBats": 8,
-            "hits": 2,
-            "avg": ".250",
+            "atBats": 2,
+            "hits": 1,
+            "avg": ".500",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -14113,9 +14113,9 @@
             "iso": 0.13
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 3,
-            "avg": ".500",
+            "atBats": 1,
+            "hits": 1,
+            "avg": "1.000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -14188,9 +14188,9 @@
             "iso": 0.107
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 2,
-            "avg": ".333",
+            "atBats": 2,
+            "hits": 1,
+            "avg": ".500",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -16126,9 +16126,9 @@
             "iso": 0.105
           },
           "bvp": {
-            "atBats": 4,
+            "atBats": 3,
             "hits": 2,
-            "avg": ".500",
+            "avg": ".667",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -17246,9 +17246,9 @@
             "iso": 0.054
           },
           "bvp": {
-            "atBats": 8,
-            "hits": 3,
-            "avg": ".375",
+            "atBats": 1,
+            "hits": 1,
+            "avg": "1.000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -17396,9 +17396,9 @@
             "iso": 0.119
           },
           "bvp": {
-            "atBats": 10,
-            "hits": 1,
-            "avg": ".100",
+            "atBats": 1,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -17546,9 +17546,9 @@
             "iso": 0.037
           },
           "bvp": {
-            "atBats": 1,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 7,
+            "hits": 4,
+            "avg": ".571",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -17923,10 +17923,10 @@
             "iso": 0.152
           },
           "bvp": {
-            "atBats": 1,
-            "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "atBats": 18,
+            "hits": 5,
+            "avg": ".278",
+            "homeRuns": 2
           },
           "dataQuality": {
             "seasonStats": true,
@@ -18741,9 +18741,9 @@
             "iso": 0.263
           },
           "bvp": {
-            "atBats": 2,
+            "atBats": 4,
             "hits": 1,
-            "avg": ".500",
+            "avg": ".250",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -19493,9 +19493,9 @@
             "iso": 0.171
           },
           "bvp": {
-            "atBats": 7,
-            "hits": 1,
-            "avg": ".143",
+            "atBats": 3,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -19643,9 +19643,9 @@
             "iso": 0.143
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 1,
-            "avg": ".333",
+            "atBats": 16,
+            "hits": 4,
+            "avg": ".250",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -21063,9 +21063,9 @@
             "iso": 0.405
           },
           "bvp": {
-            "atBats": 3,
+            "atBats": 5,
             "hits": 1,
-            "avg": ".333",
+            "avg": ".200",
             "homeRuns": 0
           },
           "dataQuality": {
