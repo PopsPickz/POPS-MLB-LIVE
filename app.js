@@ -1479,28 +1479,29 @@ async function loadHRPicks() {
 
     for (const batter of game.awayLineup || []) {
 
-    if (batter.id) {
+  if (batter.id) {
 
-        batter.recentForm =
-            await API.getRecentForm(batter.id);
-
-        batter.statcast =
-            await StatcastAPI.getPlayerPowerStats(
-                batter.id
-            );
-
-    }
-
-    addHRPick(
-        game,
-        batter,
-        game.homePitcher,
-        game.homePitcherStats || {},
-        homePitcherInfo.pitchHand || ""
+    batter.recentForm = await safe(
+      () => API.getRecentForm(batter.id),
+      {}
     );
 
-}
+    batter.statcast = await safe(
+      () => StatcastAPI.getPlayerPowerStats(batter.id),
+      {}
+    );
 
+  }
+
+  addHRPick(
+    game,
+    batter,
+    game.homePitcher,
+    game.homePitcherStats || {},
+    homePitcherInfo.pitchHand || ""
+  );
+
+}
     for (const batter of game.homeLineup || []) {
 
   if (batter.id) {
