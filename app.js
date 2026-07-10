@@ -1468,6 +1468,25 @@ const exitVelocity =
     lineupSpot:
       batter.lineupSpot,
 
+    hitStreak,
+
+    hrLast10,
+
+    recentForm:
+       batter.recentForm || {},
+
+    statcast:
+       batter.statcast || {},
+
+    barrelRate,
+
+    hardHitRate,
+
+    exitVelocity,
+
+    flyBallRate,
+
+    launchAngle,    
     confirmed:
       batter.confirmed,
 
