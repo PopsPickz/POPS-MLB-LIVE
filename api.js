@@ -102,18 +102,21 @@ const API = {
     forceRefresh = false
   ) {
     const date = this.today();
-
     const cacheKey = date;
 
     if (
       !forceRefresh &&
       this.cache.schedule[cacheKey]
     ) {
-      return this.cache.schedule[cacheKey];
+      return this.cache.schedule[
+        cacheKey
+      ];
     }
 
     if (forceRefresh) {
-      delete this.cache.schedule[cacheKey];
+      delete this.cache.schedule[
+        cacheKey
+      ];
     }
 
     const url =
@@ -130,88 +133,100 @@ const API = {
     const rawGames =
       data?.dates?.[0]?.games || [];
 
-    const games = rawGames.map(game => ({
-      id: Number(game.gamePk || 0),
-
-      gamePk:
-        Number(game.gamePk || 0),
-
-      date:
-        game.gameDate || "",
-
-      status:
-        game.status?.detailedState ||
-        game.status?.abstractGameState ||
-        "Scheduled",
-
-      statusObject:
-        game.status || {},
-
-      venue:
-        game.venue?.name || "TBD",
-
-      awayTeam:
-        game.teams?.away?.team?.name ||
-        "Away Team",
-
-      homeTeam:
-        game.teams?.home?.team?.name ||
-        "Home Team",
-
-      awayTeamId:
-        Number(
-          game.teams?.away?.team?.id || 0
+    const games = rawGames.map(
+      game => ({
+        id: Number(
+          game.gamePk || 0
         ),
 
-      homeTeamId:
-        Number(
-          game.teams?.home?.team?.id || 0
+        gamePk: Number(
+          game.gamePk || 0
         ),
 
-      awayPitcher:
-        game.teams?.away
-          ?.probablePitcher
-          ?.fullName || "TBD",
+        date:
+          game.gameDate || "",
 
-      homePitcher:
-        game.teams?.home
-          ?.probablePitcher
-          ?.fullName || "TBD",
+        status:
+          game.status?.detailedState ||
+          game.status
+            ?.abstractGameState ||
+          "Scheduled",
 
-      awayPitcherId:
-        Number(
+        statusObject:
+          game.status || {},
+
+        venue:
+          game.venue?.name || "TBD",
+
+        awayTeam:
+          game.teams?.away?.team
+            ?.name || "Away Team",
+
+        homeTeam:
+          game.teams?.home?.team
+            ?.name || "Home Team",
+
+        awayTeamId:
+          Number(
+            game.teams?.away?.team
+              ?.id || 0
+          ),
+
+        homeTeamId:
+          Number(
+            game.teams?.home?.team
+              ?.id || 0
+          ),
+
+        awayPitcher:
           game.teams?.away
-            ?.probablePitcher?.id || 0
-        ) || null,
+            ?.probablePitcher
+            ?.fullName || "TBD",
 
-      homePitcherId:
-        Number(
+        homePitcher:
           game.teams?.home
-            ?.probablePitcher?.id || 0
-        ) || null,
+            ?.probablePitcher
+            ?.fullName || "TBD",
 
-      awayRecord:
-        game.teams?.away?.leagueRecord
-          ? `${
-              game.teams.away
-                .leagueRecord.wins
-            }-${
-              game.teams.away
-                .leagueRecord.losses
-            }`
-          : "0-0",
+        awayPitcherId:
+          Number(
+            game.teams?.away
+              ?.probablePitcher
+              ?.id || 0
+          ) || null,
 
-      homeRecord:
-        game.teams?.home?.leagueRecord
-          ? `${
-              game.teams.home
-                .leagueRecord.wins
-            }-${
-              game.teams.home
-                .leagueRecord.losses
-            }`
-          : "0-0"
-    }));
+        homePitcherId:
+          Number(
+            game.teams?.home
+              ?.probablePitcher
+              ?.id || 0
+          ) || null,
+
+        awayRecord:
+          game.teams?.away
+            ?.leagueRecord
+            ? `${
+                game.teams.away
+                  .leagueRecord.wins
+              }-${
+                game.teams.away
+                  .leagueRecord.losses
+              }`
+            : "0-0",
+
+        homeRecord:
+          game.teams?.home
+            ?.leagueRecord
+            ? `${
+                game.teams.home
+                  .leagueRecord.wins
+              }-${
+                game.teams.home
+                  .leagueRecord.losses
+              }`
+            : "0-0"
+      })
+    );
 
     this.cache.schedule[cacheKey] =
       games;
@@ -233,7 +248,8 @@ const API = {
 
     if (!gameId) return null;
 
-    const cacheKey = String(gameId);
+    const cacheKey =
+      String(gameId);
 
     if (
       !forceRefresh &&
@@ -271,10 +287,11 @@ const API = {
     gameId,
     forceRefresh = true
   ) {
-    const live = await this.getLiveGame(
-      gameId,
-      forceRefresh
-    );
+    const live =
+      await this.getLiveGame(
+        gameId,
+        forceRefresh
+      );
 
     const away =
       live?.gameData
@@ -288,14 +305,18 @@ const API = {
 
     return {
       away: {
-        id: Number(away?.id || 0),
+        id: Number(
+          away?.id || 0
+        ),
 
         name:
           away?.fullName || "TBD"
       },
 
       home: {
-        id: Number(home?.id || 0),
+        id: Number(
+          home?.id || 0
+        ),
 
         name:
           home?.fullName || "TBD"
@@ -316,11 +337,14 @@ const API = {
     playerId,
     forceRefresh = false
   ) {
-    playerId = Number(playerId || 0);
+    playerId = Number(
+      playerId || 0
+    );
 
     if (!playerId) return {};
 
-    const cacheKey = String(playerId);
+    const cacheKey =
+      String(playerId);
 
     if (
       !forceRefresh &&
@@ -355,8 +379,8 @@ const API = {
     );
 
     const stat =
-      data?.stats?.[0]?.splits?.[0]
-        ?.stat || {};
+      data?.stats?.[0]
+        ?.splits?.[0]?.stat || {};
 
     const inningsPitched =
       Number(
@@ -364,7 +388,9 @@ const API = {
       );
 
     const homeRuns =
-      Number(stat.homeRuns || 0);
+      Number(
+        stat.homeRuns || 0
+      );
 
     let homeRunsPer9 =
       Number(
@@ -375,12 +401,13 @@ const API = {
       !homeRunsPer9 &&
       inningsPitched > 0
     ) {
-      homeRunsPer9 = Number(
-        (
-          (homeRuns * 9) /
-          inningsPitched
-        ).toFixed(2)
-      );
+      homeRunsPer9 =
+        Number(
+          (
+            (homeRuns * 9) /
+            inningsPitched
+          ).toFixed(2)
+        );
     }
 
     const stats = {
@@ -412,7 +439,8 @@ const API = {
 
       inningsPitched,
 
-      ip: inningsPitched,
+      ip:
+        inningsPitched,
 
       hits:
         Number(stat.hits || 0),
@@ -427,7 +455,8 @@ const API = {
 
       homeRuns,
 
-      hrAllowed: homeRuns,
+      hrAllowed:
+        homeRuns,
 
       baseOnBalls:
         Number(
@@ -452,7 +481,8 @@ const API = {
 
       homeRunsPer9,
 
-      hr9: homeRunsPer9
+      hr9:
+        homeRunsPer9
     };
 
     this.cache.pitcherStats[
@@ -482,11 +512,14 @@ const API = {
     playerId,
     forceRefresh = false
   ) {
-    playerId = Number(playerId || 0);
+    playerId = Number(
+      playerId || 0
+    );
 
     if (!playerId) return {};
 
-    const cacheKey = String(playerId);
+    const cacheKey =
+      String(playerId);
 
     if (
       !forceRefresh &&
@@ -521,8 +554,8 @@ const API = {
     );
 
     const stat =
-      data?.stats?.[0]?.splits?.[0]
-        ?.stat || {};
+      data?.stats?.[0]
+        ?.splits?.[0]?.stat || {};
 
     const avg =
       Number(stat.avg || 0);
@@ -534,7 +567,9 @@ const API = {
       Number(stat.ops || 0);
 
     const homeRuns =
-      Number(stat.homeRuns || 0);
+      Number(
+        stat.homeRuns || 0
+      );
 
     const hits =
       Number(stat.hits || 0);
@@ -585,7 +620,9 @@ const API = {
       iso:
         slg > 0
           ? Number(
-              (slg - avg).toFixed(3)
+              (
+                slg - avg
+              ).toFixed(3)
             )
           : 0,
 
@@ -634,7 +671,9 @@ const API = {
     teamId,
     forceRefresh = false
   ) {
-    teamId = Number(teamId || 0);
+    teamId = Number(
+      teamId || 0
+    );
 
     if (!teamId) {
       return {
@@ -644,11 +683,14 @@ const API = {
       };
     }
 
-    const cacheKey = String(teamId);
+    const cacheKey =
+      String(teamId);
 
     if (
       !forceRefresh &&
-      this.cache.teamStats[cacheKey]
+      this.cache.teamStats[
+        cacheKey
+      ]
     ) {
       return this.cache.teamStats[
         cacheKey
@@ -699,20 +741,24 @@ const API = {
 
     const result = {
       hitting:
-        hittingGroup?.splits?.[0]
-          ?.stat || {},
+        hittingGroup
+          ?.splits?.[0]?.stat ||
+        {},
 
       pitching:
-        pitchingGroup?.splits?.[0]
-          ?.stat || {},
+        pitchingGroup
+          ?.splits?.[0]?.stat ||
+        {},
 
       fielding:
-        fieldingGroup?.splits?.[0]
-          ?.stat || {}
+        fieldingGroup
+          ?.splits?.[0]?.stat ||
+        {}
     };
 
-    this.cache.teamStats[cacheKey] =
-      result;
+    this.cache.teamStats[
+      cacheKey
+    ] = result;
 
     return result;
   },
@@ -728,8 +774,13 @@ const API = {
     teamId,
     forceRefresh = true
   ) {
-    gameId = Number(gameId || 0);
-    teamId = Number(teamId || 0);
+    gameId = Number(
+      gameId || 0
+    );
+
+    teamId = Number(
+      teamId || 0
+    );
 
     if (!gameId || !teamId) {
       return [];
@@ -753,10 +804,11 @@ const API = {
       ];
     }
 
-    const live = await this.getLiveGame(
-      gameId,
-      forceRefresh
-    );
+    const live =
+      await this.getLiveGame(
+        gameId,
+        forceRefresh
+      );
 
     const boxscore =
       live?.liveData?.boxscore;
@@ -797,28 +849,34 @@ const API = {
             `ID${playerId}`
           ];
 
-        if (!player) return null;
+        if (!player) {
+          return null;
+        }
 
         return {
-          id: Number(playerId),
+          id:
+            Number(playerId),
 
           name:
-            player?.person?.fullName ||
+            player?.person
+              ?.fullName ||
             "Unknown",
 
           position:
             player?.position
-              ?.abbreviation || "",
+              ?.abbreviation ||
+            "",
 
           lineupSpot:
             index + 1,
 
-          confirmed: true,
+          confirmed:
+            true,
 
           batSide:
             player?.batSide?.code ||
-            player?.person?.batSide
-              ?.code ||
+            player?.person
+              ?.batSide?.code ||
             ""
         };
       })
@@ -840,11 +898,14 @@ const API = {
     teamId,
     forceRefresh = false
   ) {
-    teamId = Number(teamId || 0);
+    teamId = Number(
+      teamId || 0
+    );
 
     if (!teamId) return [];
 
-    const cacheKey = String(teamId);
+    const cacheKey =
+      String(teamId);
 
     if (
       !forceRefresh &&
@@ -880,12 +941,14 @@ const API = {
             ),
 
           name:
-            item?.person?.fullName ||
+            item?.person
+              ?.fullName ||
             "Unknown",
 
           position:
             item?.position
-              ?.abbreviation || ""
+              ?.abbreviation ||
+            ""
         })
       );
 
@@ -905,11 +968,14 @@ const API = {
     playerId,
     forceRefresh = false
   ) {
-    playerId = Number(playerId || 0);
+    playerId = Number(
+      playerId || 0
+    );
 
     if (!playerId) return 0;
 
-    const cacheKey = String(playerId);
+    const cacheKey =
+      String(playerId);
 
     if (
       !forceRefresh &&
@@ -944,7 +1010,8 @@ const API = {
     );
 
     let logs =
-      data?.stats?.[0]?.splits || [];
+      data?.stats?.[0]?.splits ||
+      [];
 
     logs = logs
       .filter(game => game.date)
@@ -969,8 +1036,9 @@ const API = {
       }
     }
 
-    this.cache.hitStreak[cacheKey] =
-      streak;
+    this.cache.hitStreak[
+      cacheKey
+    ] = streak;
 
     return streak;
   },
@@ -985,7 +1053,9 @@ const API = {
     playerId,
     forceRefresh = false
   ) {
-    playerId = Number(playerId || 0);
+    playerId = Number(
+      playerId || 0
+    );
 
     const empty = {
       games: 0,
@@ -1012,7 +1082,8 @@ const API = {
       return empty;
     }
 
-    const cacheKey = String(playerId);
+    const cacheKey =
+      String(playerId);
 
     if (
       !forceRefresh &&
@@ -1047,7 +1118,8 @@ const API = {
     );
 
     let logs =
-      data?.stats?.[0]?.splits || [];
+      data?.stats?.[0]?.splits ||
+      [];
 
     logs = logs
       .filter(game => game.date)
@@ -1104,13 +1176,14 @@ const API = {
       );
     }
 
-    const singles = Math.max(
-      0,
-      hits -
-      doubles -
-      triples -
-      homeRuns
-    );
+    const singles =
+      Math.max(
+        0,
+        hits -
+        doubles -
+        triples -
+        homeRuns
+      );
 
     const totalBases =
       singles +
@@ -1148,25 +1221,39 @@ const API = {
       obp + slg;
 
     const iso =
-      Math.max(0, slg - avg);
+      Math.max(
+        0,
+        slg - avg
+      );
 
     const result = {
-      games: logs.length,
+      games:
+        logs.length,
 
       avg:
-        Number(avg.toFixed(3)),
+        Number(
+          avg.toFixed(3)
+        ),
 
       obp:
-        Number(obp.toFixed(3)),
+        Number(
+          obp.toFixed(3)
+        ),
 
       slg:
-        Number(slg.toFixed(3)),
+        Number(
+          slg.toFixed(3)
+        ),
 
       ops:
-        Number(ops.toFixed(3)),
+        Number(
+          ops.toFixed(3)
+        ),
 
       iso:
-        Number(iso.toFixed(3)),
+        Number(
+          iso.toFixed(3)
+        ),
 
       atBats,
       hits,
@@ -1196,179 +1283,301 @@ const API = {
 
   /*
   =========================================================
-  BATTER VS PITCHER STATS
+  BATTER VS PITCHER — CAREER STATS
   =========================================================
   */
 
-async getBvPStats(
-  batterId,
-  pitcherId,
-  forceRefresh = false
-) {
-  batterId = Number(batterId || 0);
-  pitcherId = Number(pitcherId || 0);
-
-  const empty = {
-    atBats: 0,
-    hits: 0,
-    doubles: 0,
-    triples: 0,
-    homeRuns: 0,
-    rbi: 0,
-    baseOnBalls: 0,
-    strikeOuts: 0,
-    avg: ".000",
-    obp: ".000",
-    slg: ".000",
-    ops: ".000"
-  };
-
-  if (!batterId || !pitcherId) {
-    return empty;
-  }
-
-  const cacheKey =
-    `career-${batterId}-${pitcherId}`;
-
-  if (
-    !forceRefresh &&
-    this.cache.bvp[cacheKey]
+  async getBvPStats(
+    batterId,
+    pitcherId,
+    forceRefresh = false
   ) {
-    return this.cache.bvp[cacheKey];
-  }
-
-  if (forceRefresh) {
-    delete this.cache.bvp[cacheKey];
-  }
-
-  /*
-  IMPORTANT:
-  Do not include &season= here.
-
-  Without the season parameter, this requests the
-  batter's career history against the pitcher.
-  */
-  const url =
-    `${this.base}/people/${batterId}/stats` +
-    `?stats=vsPlayer` +
-    `&group=hitting` +
-    `&opposingPlayerId=${pitcherId}` +
-    `&sportId=1`;
-
-  const data = await this.fetchJSON(
-    url,
-    forceRefresh
-  );
-
-  const splits =
-    data?.stats?.[0]?.splits || [];
-
-  /*
-  Some responses may contain more than one split.
-  Add them together instead of reading only splits[0].
-  */
-  let atBats = 0;
-  let hits = 0;
-  let doubles = 0;
-  let triples = 0;
-  let homeRuns = 0;
-  let rbi = 0;
-  let baseOnBalls = 0;
-  let strikeOuts = 0;
-  let hitByPitch = 0;
-  let sacFlies = 0;
-
-  for (const split of splits) {
-    const stat = split?.stat || {};
-
-    atBats += Number(stat.atBats || 0);
-    hits += Number(stat.hits || 0);
-    doubles += Number(stat.doubles || 0);
-    triples += Number(stat.triples || 0);
-    homeRuns += Number(stat.homeRuns || 0);
-    rbi += Number(stat.rbi || 0);
-    baseOnBalls += Number(
-      stat.baseOnBalls || 0
+    batterId = Number(
+      batterId || 0
     );
-    strikeOuts += Number(
-      stat.strikeOuts || 0
+
+    pitcherId = Number(
+      pitcherId || 0
     );
-    hitByPitch += Number(
-      stat.hitByPitch || 0
+
+    const empty = {
+      atBats: 0,
+      plateAppearances: 0,
+      hits: 0,
+      doubles: 0,
+      triples: 0,
+      homeRuns: 0,
+      rbi: 0,
+      baseOnBalls: 0,
+      strikeOuts: 0,
+      hitByPitch: 0,
+      sacFlies: 0,
+      avg: ".000",
+      obp: ".000",
+      slg: ".000",
+      ops: ".000"
+    };
+
+    if (
+      !batterId ||
+      !pitcherId
+    ) {
+      return empty;
+    }
+
+    const cacheKey =
+      `career-${batterId}-${pitcherId}`;
+
+    if (
+      !forceRefresh &&
+      this.cache.bvp[cacheKey]
+    ) {
+      return this.cache.bvp[
+        cacheKey
+      ];
+    }
+
+    if (forceRefresh) {
+      delete this.cache.bvp[
+        cacheKey
+      ];
+    }
+
+    /*
+    No season parameter is included here.
+
+    This allows the request to retrieve career
+    batter-vs-pitcher history instead of only
+    the current season.
+    */
+    const url =
+      `${this.base}/people/` +
+      `${batterId}/stats` +
+      `?stats=vsPlayer` +
+      `&group=hitting` +
+      `&opposingPlayerId=${pitcherId}` +
+      `&sportId=1`;
+
+    const data = await this.fetchJSON(
+      url,
+      forceRefresh
     );
-    sacFlies += Number(
-      stat.sacFlies || 0
-    );
-  }
 
-  const singles = Math.max(
-    0,
-    hits - doubles - triples - homeRuns
-  );
+    const splits =
+      data?.stats?.[0]?.splits ||
+      [];
 
-  const totalBases =
-    singles +
-    doubles * 2 +
-    triples * 3 +
-    homeRuns * 4;
+    let atBats = 0;
+    let plateAppearances = 0;
+    let hits = 0;
+    let doubles = 0;
+    let triples = 0;
+    let homeRuns = 0;
+    let rbi = 0;
+    let baseOnBalls = 0;
+    let strikeOuts = 0;
+    let hitByPitch = 0;
+    let sacFlies = 0;
 
-  const avg =
-    atBats > 0
-      ? hits / atBats
-      : 0;
+    for (const split of splits) {
+      const stat =
+        split?.stat || {};
 
-  const obpDenominator =
-    atBats +
-    baseOnBalls +
-    hitByPitch +
-    sacFlies;
+      atBats += Number(
+        stat.atBats || 0
+      );
 
-  const obp =
-    obpDenominator > 0
-      ? (
-          hits +
+      plateAppearances += Number(
+        stat.plateAppearances || 0
+      );
+
+      hits += Number(
+        stat.hits || 0
+      );
+
+      doubles += Number(
+        stat.doubles || 0
+      );
+
+      triples += Number(
+        stat.triples || 0
+      );
+
+      homeRuns += Number(
+        stat.homeRuns || 0
+      );
+
+      rbi += Number(
+        stat.rbi || 0
+      );
+
+      baseOnBalls += Number(
+        stat.baseOnBalls || 0
+      );
+
+      strikeOuts += Number(
+        stat.strikeOuts || 0
+      );
+
+      hitByPitch += Number(
+        stat.hitByPitch || 0
+      );
+
+      sacFlies += Number(
+        stat.sacFlies || 0
+      );
+    }
+
+    const singles =
+      Math.max(
+        0,
+        hits -
+        doubles -
+        triples -
+        homeRuns
+      );
+
+    const totalBases =
+      singles +
+      doubles * 2 +
+      triples * 3 +
+      homeRuns * 4;
+
+    const avg =
+      atBats > 0
+        ? hits / atBats
+        : 0;
+
+    const obpDenominator =
+      atBats +
+      baseOnBalls +
+      hitByPitch +
+      sacFlies;
+
+    const obp =
+      obpDenominator > 0
+        ? (
+            hits +
+            baseOnBalls +
+            hitByPitch
+          ) /
+          obpDenominator
+        : 0;
+
+    const slg =
+      atBats > 0
+        ? totalBases / atBats
+        : 0;
+
+    const ops =
+      obp + slg;
+
+    const result = {
+      atBats,
+      plateAppearances:
+        plateAppearances ||
+        (
+          atBats +
           baseOnBalls +
-          hitByPitch
-        ) / obpDenominator
-      : 0;
+          hitByPitch +
+          sacFlies
+        ),
 
-  const slg =
-    atBats > 0
-      ? totalBases / atBats
-      : 0;
+      hits,
+      doubles,
+      triples,
+      homeRuns,
+      rbi,
+      baseOnBalls,
+      strikeOuts,
+      hitByPitch,
+      sacFlies,
 
-  const ops = obp + slg;
+      avg:
+        avg.toFixed(3),
 
-  const result = {
-    atBats,
-    hits,
-    doubles,
-    triples,
-    homeRuns,
-    rbi,
-    baseOnBalls,
-    strikeOuts,
+      obp:
+        obp.toFixed(3),
 
-    avg: avg.toFixed(3),
-    obp: obp.toFixed(3),
-    slg: slg.toFixed(3),
-    ops: ops.toFixed(3)
-  };
+      slg:
+        slg.toFixed(3),
 
-  this.cache.bvp[cacheKey] = result;
+      ops:
+        ops.toFixed(3)
+    };
 
-  console.log(
-    "⚾ Career BvP:",
-    {
+    this.cache.bvp[cacheKey] =
+      result;
+
+    console.log(
+      "⚾ POPS Career BvP:",
+      {
+        batterId,
+        pitcherId,
+        url,
+        splitsFound:
+          splits.length,
+        result
+      }
+    );
+
+    return result;
+  },
+
+  async getBvP(
+    batterId,
+    pitcherId,
+    forceRefresh = false
+  ) {
+    return await this.getBvPStats(
       batterId,
       pitcherId,
-      url,
-      result
-    }
-  );
+      forceRefresh
+    );
+  },
 
-  return result;
-},
+  async getBVP(
+    batterId,
+    pitcherId,
+    forceRefresh = false
+  ) {
+    return await this.getBvPStats(
+      batterId,
+      pitcherId,
+      forceRefresh
+    );
+  },
+
+  async getBatterVsPitcher(
+    batterId,
+    pitcherId,
+    forceRefresh = false
+  ) {
+    return await this.getBvPStats(
+      batterId,
+      pitcherId,
+      forceRefresh
+    );
+  },
+
+  async getBvPHR(
+    batterId,
+    pitcherId,
+    forceRefresh = false
+  ) {
+    const stats =
+      await this.getBvPStats(
+        batterId,
+        pitcherId,
+        forceRefresh
+      );
+
+    return Number(
+      stats.homeRuns || 0
+    );
+  },
+
+  /*
   =========================================================
   PLAYER INFORMATION
   =========================================================
@@ -1378,11 +1587,14 @@ async getBvPStats(
     playerId,
     forceRefresh = false
   ) {
-    playerId = Number(playerId || 0);
+    playerId = Number(
+      playerId || 0
+    );
 
     if (!playerId) return {};
 
-    const cacheKey = String(playerId);
+    const cacheKey =
+      String(playerId);
 
     if (
       !forceRefresh &&
@@ -1402,7 +1614,8 @@ async getBvPStats(
     }
 
     const url =
-      `${this.base}/people/${playerId}`;
+      `${this.base}/people/` +
+      `${playerId}`;
 
     const data = await this.fetchJSON(
       url,
@@ -1415,7 +1628,8 @@ async getBvPStats(
     const result = {
       id:
         Number(
-          person?.id || playerId
+          person?.id ||
+          playerId
         ),
 
       name:
@@ -1448,18 +1662,24 @@ async getBvPStats(
     newPitcherId
   ) {
     const ids = [
-      Number(oldPitcherId || 0),
-      Number(newPitcherId || 0)
+      Number(
+        oldPitcherId || 0
+      ),
+      Number(
+        newPitcherId || 0
+      )
     ].filter(Boolean);
 
     ids.forEach(id => {
-      delete this.cache.pitcherStats[
-        String(id)
-      ];
+      delete this.cache
+        .pitcherStats[
+          String(id)
+        ];
 
-      delete this.cache.playerInfo[
-        String(id)
-      ];
+      delete this.cache
+        .playerInfo[
+          String(id)
+        ];
     });
 
     this.cache.bvp = {};
