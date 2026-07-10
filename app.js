@@ -3,22 +3,32 @@ const hrPicksBox = document.getElementById("hrPicksBox");
 const hitPicksBox = document.getElementById("hitPicksBox");
 const moneylineBox = document.getElementById("moneylineBox");
 
-let todayData = null;
+let todayData = {
+  date: "",
+  games: []
+};
+
 let games = [];
 let hrPicks = [];
 let hitPicks = [];
 
 /*
 =========================================================
-POPS AUTOMATIC STARTER REFRESH SETTINGS
+POPS REFRESH SETTINGS
 =========================================================
 */
 
 const STARTER_REFRESH_INTERVAL = 5 * 60 * 1000;
+const DATE_CHECK_INTERVAL = 60 * 1000;
 
 let starterRefreshTimer = null;
+let dateCheckTimer = null;
+
 let starterRefreshRunning = false;
 let recalculationRunning = false;
+let dailyReloadRunning = false;
+
+let loadedScheduleDate = "";
 
 /*
 =========================================================
@@ -27,7 +37,15 @@ GENERAL HELPERS
 */
 
 function formatTime(dateString) {
-  return new Date(dateString).toLocaleString([], {
+  if (!dateString) return "Time TBD";
+
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Time TBD";
+  }
+
+  return date.toLocaleString([], {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -60,19 +78,46 @@ function normalizePitcherName(name) {
 }
 
 function hasNamedStarter(name, id) {
-  return normalizePitcherName(name) !== "TBD" && Number(id || 0) > 0;
+  return (
+    normalizePitcherName(name) !== "TBD" &&
+    Number(id || 0) > 0
+  );
+}
+
+function getGameStatusObject(game = {}) {
+  if (
+    game.status &&
+    typeof game.status === "object"
+  ) {
+    return game.status;
+  }
+
+  if (
+    game.statusObject &&
+    typeof game.statusObject === "object"
+  ) {
+    return game.statusObject;
+  }
+
+  return {};
 }
 
 function isGameStarted(status = {}) {
   const abstractState = String(
-    status.abstractGameState || status.abstractGameCode || ""
+    status.abstractGameState ||
+    status.abstractGameCode ||
+    ""
   ).toLowerCase();
 
   const detailedState = String(
-    status.detailedState || status.statusCode || ""
+    status.detailedState ||
+    status.statusCode ||
+    ""
   ).toLowerCase();
 
-  const codedState = String(status.codedGameState || "").toUpperCase();
+  const codedState = String(
+    status.codedGameState || ""
+  ).toUpperCase();
 
   if (
     abstractState === "live" ||
@@ -95,8 +140,8 @@ function isGameStarted(status = {}) {
   return ["I", "F", "O"].includes(codedState);
 }
 
-function gameHasNotStarted(game) {
-  if (game?.status && isGameStarted(game.status)) {
+function gameHasNotStarted(game = {}) {
+  if (isGameStarted(getGameStatusObject(game))) {
     return false;
   }
 
@@ -107,205 +152,11 @@ function gameHasNotStarted(game) {
   }
 
   /*
-  Keep checking for 30 minutes after scheduled first pitch.
-  This protects against delayed games and late starter announcements.
+  Continue checking for 30 minutes after scheduled time.
+  This helps with delays and late starter announcements.
   */
   return Date.now() < firstPitch + 30 * 60 * 1000;
 }
-
-function rebuildGamesArray() {
-  games = (todayData?.games || []).map(game => ({
-    id: game.gamePk,
-    gamePk: game.gamePk,
-    date: game.date,
-    venue: game.venue,
-
-    awayTeam: game.awayTeam,
-    homeTeam: game.homeTeam,
-    awayTeamId: game.awayTeamId,
-    homeTeamId: game.homeTeamId,
-
-    awayPitcher: normalizePitcherName(game.awayPitcher),
-    homePitcher: normalizePitcherName(game.homePitcher),
-
-    awayPitcherId: Number(game.awayPitcherId || 0),
-    homePitcherId: Number(game.homePitcherId || 0),
-
-    awayPitcherStats: game.awayPitcherStats || {},
-    homePitcherStats: game.homePitcherStats || {},
-
-    awayTeamStats: game.awayTeamStats || {},
-    homeTeamStats: game.homeTeamStats || {},
-
-    status: game.status || {}
-  }));
-
-  window.games = games;
-  window.todayData = todayData;
-}
-
-/*
-=========================================================
-LOAD TODAY.JSON
-=========================================================
-*/
-
-async function loadTodayData() {
-  const res = await fetch(`data/today.json?cache=${Date.now()}`, {
-    cache: "no-store"
-  });
-
-  if (!res.ok) {
-    throw new Error("Could not load data/today.json");
-  }
-
-  todayData = await res.json();
-
-  if (!Array.isArray(todayData.games)) {
-    todayData.games = [];
-  }
-
-  rebuildGamesArray();
-}
-
-/*
-=========================================================
-LIVE MLB GAME FEED
-=========================================================
-*/
-
-async function getLiveGameFeed(gamePk) {
-  if (!gamePk) return null;
-
-  const response = await fetch(
-    `https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live?cache=${Date.now()}`,
-    {
-      cache: "no-store"
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Could not load live MLB feed for game ${gamePk}`
-    );
-  }
-
-  return response.json();
-}
-
-function getStarterFromFeed(feed, side) {
-  const probablePitcher =
-    feed?.gameData?.probablePitchers?.[side] || null;
-
-  if (probablePitcher?.id) {
-    return {
-      id: Number(probablePitcher.id),
-      name: normalizePitcherName(
-        probablePitcher.fullName ||
-        probablePitcher.name ||
-        probablePitcher.lastFirstName
-      )
-    };
-  }
-
-  /*
-  Secondary source after lineups are posted.
-
-  MLB's boxscore may identify the starter even when the
-  probablePitchers object has not populated correctly.
-  */
-  const players =
-    feed?.liveData?.boxscore?.teams?.[side]?.players || {};
-
-  const starterEntry = Object.values(players).find(player => {
-    const gameStatus = player?.gameStatus || {};
-    const stats = player?.stats?.pitching || {};
-
-    return (
-      gameStatus.isCurrentPitcher === true ||
-      gameStatus.isStarter === true ||
-      Number(stats.gamesStarted || 0) > 0
-    );
-  });
-
-  if (starterEntry?.person?.id) {
-    return {
-      id: Number(starterEntry.person.id),
-      name: normalizePitcherName(starterEntry.person.fullName)
-    };
-  }
-
-  return {
-    id: 0,
-    name: "TBD"
-  };
-}
-
-/*
-=========================================================
-PITCHER STATS AND CACHE MANAGEMENT
-=========================================================
-*/
-
-async function getUpdatedPitcherStats(pitcherId) {
-  if (!pitcherId) return {};
-
-  if (
-    typeof API !== "undefined" &&
-    typeof API.getPitcherStats === "function"
-  ) {
-    return safe(
-      () => API.getPitcherStats(pitcherId, true),
-      {}
-    );
-  }
-
-  return {};
-}
-
-function clearObjectCacheEntry(object, id) {
-  if (!object || typeof object !== "object" || !id) return;
-
-  delete object[id];
-  delete object[String(id)];
-}
-
-function clearPitcherCaches(oldPitcherId, newPitcherId) {
-  if (typeof API === "undefined") return;
-
-  const possibleCaches = [
-    API.cache,
-    API.playerCache,
-    API.pitcherCache,
-    API.pitcherStatsCache,
-    API.bvpCache
-  ];
-
-  for (const cacheObject of possibleCaches) {
-    clearObjectCacheEntry(cacheObject, oldPitcherId);
-    clearObjectCacheEntry(cacheObject, newPitcherId);
-  }
-
-  if (typeof API.clearPitcherCache === "function") {
-    safe(
-      () => API.clearPitcherCache(oldPitcherId, newPitcherId),
-      null
-    );
-  }
-
-  if (typeof API.clearBvpCache === "function") {
-    safe(
-      () => API.clearBvpCache(),
-      null
-    );
-  }
-}
-
-/*
-=========================================================
-BVP REFRESH AFTER A STARTER CHANGE
-=========================================================
-*/
 
 function getBatterId(batter = {}) {
   return Number(
@@ -318,16 +169,779 @@ function getBatterId(batter = {}) {
   );
 }
 
-async function refreshLineupBvp(lineup, pitcherId) {
+function clearPageSections() {
+  if (gamesBox) {
+    gamesBox.innerHTML =
+      "<p>Loading today's MLB games...</p>";
+  }
+
+  if (hrPicksBox) {
+    hrPicksBox.innerHTML =
+      "<p>Loading HR Pickz...</p>";
+  }
+
+  if (hitPicksBox) {
+    hitPicksBox.innerHTML =
+      "<p>Loading Hit Pickz...</p>";
+  }
+
+  if (moneylineBox) {
+    moneylineBox.innerHTML =
+      "<p>Loading Moneyline Pickz...</p>";
+  }
+
+  const pitchersBox =
+    document.getElementById("pitchersBox");
+
+  if (pitchersBox) {
+    pitchersBox.innerHTML =
+      "<p>Loading Pitchers to Target...</p>";
+  }
+}
+
+/*
+=========================================================
+REBUILD PUBLIC GAMES ARRAY
+=========================================================
+*/
+
+function rebuildGamesArray() {
+  games = (todayData?.games || []).map(game => ({
+    id: Number(game.gamePk || game.id || 0),
+    gamePk: Number(game.gamePk || game.id || 0),
+
+    date: game.date,
+    venue: game.venue || "TBD",
+
+    awayTeam: game.awayTeam,
+    homeTeam: game.homeTeam,
+
+    awayTeamId: Number(game.awayTeamId || 0),
+    homeTeamId: Number(game.homeTeamId || 0),
+
+    awayPitcher:
+      normalizePitcherName(game.awayPitcher),
+
+    homePitcher:
+      normalizePitcherName(game.homePitcher),
+
+    awayPitcherId:
+      Number(game.awayPitcherId || 0),
+
+    homePitcherId:
+      Number(game.homePitcherId || 0),
+
+    awayPitcherStats:
+      game.awayPitcherStats || {},
+
+    homePitcherStats:
+      game.homePitcherStats || {},
+
+    awayTeamStats:
+      game.awayTeamStats || {},
+
+    homeTeamStats:
+      game.homeTeamStats || {},
+
+    awayLineup:
+      game.awayLineup || [],
+
+    homeLineup:
+      game.homeLineup || [],
+
+    awayRecord:
+      game.awayRecord || "0-0",
+
+    homeRecord:
+      game.homeRecord || "0-0",
+
+    status:
+      getGameStatusObject(game),
+
+    statusObject:
+      getGameStatusObject(game)
+  }));
+
+  window.games = games;
+  window.todayData = todayData;
+}
+
+/*
+=========================================================
+BATTER DATA
+=========================================================
+*/
+
+async function enrichBatter(
+  batter,
+  teamName,
+  opposingPitcherId,
+  confirmed = false
+) {
+  const batterId = getBatterId(batter);
+
+  if (!batterId) {
+    return null;
+  }
+
+  const [
+    playerInfo,
+    hitting,
+    hitStreak,
+    bvp
+  ] = await Promise.all([
+    safe(
+      () => API.getPlayerInfo(batterId),
+      {}
+    ),
+
+    safe(
+      () => API.getBatterStats(batterId),
+      {}
+    ),
+
+    safe(
+      () => API.getHitStreak(batterId),
+      0
+    ),
+
+    opposingPitcherId
+      ? safe(
+          () =>
+            API.getBvP(
+              batterId,
+              opposingPitcherId
+            ),
+          {
+            atBats: 0,
+            hits: 0,
+            avg: ".000",
+            homeRuns: 0
+          }
+        )
+      : Promise.resolve({
+          atBats: 0,
+          hits: 0,
+          avg: ".000",
+          homeRuns: 0
+        })
+  ]);
+
+  return {
+    id: batterId,
+
+    name:
+      batter.name ||
+      playerInfo.name ||
+      "Unknown",
+
+    team: teamName,
+
+    position:
+      batter.position || "",
+
+    lineupSpot:
+      Number(batter.lineupSpot || 9),
+
+    confirmed:
+      Boolean(confirmed || batter.confirmed),
+
+    batSide:
+      batter.batSide ||
+      playerInfo.batSide ||
+      "",
+
+    hitting: hitting || {},
+
+    statcast: {
+      available: false,
+      barrelPct: null,
+      hardHitPct: null,
+      avgExitVelocity: null,
+      launchAngle: null,
+      sweetSpotPct: null,
+      flyBallPct: null,
+      pullPct: null
+    },
+
+    recentForm: {},
+
+    handednessSplit: {},
+
+    hitStreak:
+      Number(hitStreak || 0),
+
+    bvp: {
+      atBats:
+        Number(bvp?.atBats || 0),
+
+      hits:
+        Number(bvp?.hits || 0),
+
+      avg:
+        bvp?.avg || ".000",
+
+      homeRuns:
+        Number(bvp?.homeRuns || 0)
+    }
+  };
+}
+
+/*
+=========================================================
+PROJECTED LINEUP FALLBACK
+=========================================================
+*/
+
+function isLikelyPositionPlayer(player = {}) {
+  const position = String(
+    player.position || ""
+  ).toUpperCase();
+
+  return ![
+    "P",
+    "SP",
+    "RP",
+    "CP"
+  ].includes(position);
+}
+
+async function buildProjectedLineup(
+  teamId,
+  teamName,
+  opposingPitcherId
+) {
+  const roster = await safe(
+    () => API.getRoster(teamId, true),
+    []
+  );
+
+  const positionPlayers = roster
+    .filter(isLikelyPositionPlayer)
+    .slice(0, 16);
+
+  const playersWithStats = await Promise.all(
+    positionPlayers.map(async player => {
+      const stats = await safe(
+        () => API.getBatterStats(player.id),
+        {}
+      );
+
+      return {
+        ...player,
+        stats,
+
+        projectionScore:
+          Number(stats.ops || 0) * 1000 +
+          Number(stats.homeRuns || 0) * 8 +
+          Number(stats.avg || 0) * 100
+      };
+    })
+  );
+
+  const projectedNine = playersWithStats
+    .sort(
+      (a, b) =>
+        b.projectionScore -
+        a.projectionScore
+    )
+    .slice(0, 9);
+
+  const enriched = [];
+
+  for (
+    let index = 0;
+    index < projectedNine.length;
+    index++
+  ) {
+    const player = projectedNine[index];
+
+    const batter = await enrichBatter(
+      {
+        ...player,
+        lineupSpot: index + 1,
+        confirmed: false
+      },
+      teamName,
+      opposingPitcherId,
+      false
+    );
+
+    if (batter) {
+      enriched.push(batter);
+    }
+  }
+
+  return enriched;
+}
+
+/*
+=========================================================
+CONFIRMED OR PROJECTED LINEUP
+=========================================================
+*/
+
+async function loadTeamLineup(
+  gamePk,
+  teamId,
+  teamName,
+  opposingPitcherId
+) {
+  const confirmedLineup = await safe(
+    () =>
+      API.getLineup(
+        gamePk,
+        teamId,
+        true
+      ),
+    []
+  );
+
+  if (
+    Array.isArray(confirmedLineup) &&
+    confirmedLineup.length >= 7
+  ) {
+    const enriched = [];
+
+    for (const batter of confirmedLineup) {
+      const result = await enrichBatter(
+        batter,
+        teamName,
+        opposingPitcherId,
+        true
+      );
+
+      if (result) {
+        enriched.push(result);
+      }
+    }
+
+    return enriched;
+  }
+
+  return await buildProjectedLineup(
+    teamId,
+    teamName,
+    opposingPitcherId
+  );
+}
+
+/*
+=========================================================
+LOAD CURRENT MLB SCHEDULE
+=========================================================
+*/
+
+async function buildGameData(
+  scheduleGame
+) {
+  const gamePk = Number(
+    scheduleGame.gamePk ||
+    scheduleGame.id ||
+    0
+  );
+
+  const awayPitcherId = Number(
+    scheduleGame.awayPitcherId || 0
+  );
+
+  const homePitcherId = Number(
+    scheduleGame.homePitcherId || 0
+  );
+
+  const [
+    awayPitcherStats,
+    homePitcherStats,
+    awayTeamStats,
+    homeTeamStats
+  ] = await Promise.all([
+    awayPitcherId
+      ? safe(
+          () =>
+            API.getPitcherStats(
+              awayPitcherId,
+              true
+            ),
+          {}
+        )
+      : Promise.resolve({}),
+
+    homePitcherId
+      ? safe(
+          () =>
+            API.getPitcherStats(
+              homePitcherId,
+              true
+            ),
+          {}
+        )
+      : Promise.resolve({}),
+
+    safe(
+      () =>
+        API.getTeamStats(
+          scheduleGame.awayTeamId,
+          true
+        ),
+      {}
+    ),
+
+    safe(
+      () =>
+        API.getTeamStats(
+          scheduleGame.homeTeamId,
+          true
+        ),
+      {}
+    )
+  ]);
+
+  const game = {
+    gamePk,
+
+    date:
+      scheduleGame.date,
+
+    venue:
+      scheduleGame.venue || "TBD",
+
+    awayTeam:
+      scheduleGame.awayTeam,
+
+    homeTeam:
+      scheduleGame.homeTeam,
+
+    awayTeamId:
+      Number(scheduleGame.awayTeamId || 0),
+
+    homeTeamId:
+      Number(scheduleGame.homeTeamId || 0),
+
+    awayRecord:
+      scheduleGame.awayRecord || "0-0",
+
+    homeRecord:
+      scheduleGame.homeRecord || "0-0",
+
+    awayPitcher:
+      normalizePitcherName(
+        scheduleGame.awayPitcher
+      ),
+
+    homePitcher:
+      normalizePitcherName(
+        scheduleGame.homePitcher
+      ),
+
+    awayPitcherId,
+    homePitcherId,
+
+    awayPitcherStats:
+      awayPitcherStats || {},
+
+    homePitcherStats:
+      homePitcherStats || {},
+
+    awayTeamStats:
+      awayTeamStats || {},
+
+    homeTeamStats:
+      homeTeamStats || {},
+
+    awayLineup: [],
+    homeLineup: [],
+
+    status:
+      scheduleGame.statusObject || {}
+  };
+
+  const [
+    awayLineup,
+    homeLineup
+  ] = await Promise.all([
+    loadTeamLineup(
+      gamePk,
+      game.awayTeamId,
+      game.awayTeam,
+      homePitcherId
+    ),
+
+    loadTeamLineup(
+      gamePk,
+      game.homeTeamId,
+      game.homeTeam,
+      awayPitcherId
+    )
+  ]);
+
+  game.awayLineup = awayLineup;
+  game.homeLineup = homeLineup;
+
+  return game;
+}
+
+async function loadTodayData(
+  forceRefresh = true
+) {
+  if (
+    typeof API === "undefined" ||
+    typeof API.getSchedule !== "function"
+  ) {
+    throw new Error(
+      "API is unavailable. Make sure api.js loads before app.js."
+    );
+  }
+
+  const requestedDate = API.today();
+
+  console.log(
+    "📅 POPS requesting MLB schedule:",
+    requestedDate
+  );
+
+  const schedule = await API.getSchedule(
+    forceRefresh
+  );
+
+  if (!Array.isArray(schedule)) {
+    throw new Error(
+      "MLB schedule response was invalid."
+    );
+  }
+
+  todayData = {
+    date: requestedDate,
+    games: []
+  };
+
+  loadedScheduleDate = requestedDate;
+
+  /*
+  Build each game one at a time to reduce MLB API congestion.
+  */
+  for (const scheduleGame of schedule) {
+    const game = await buildGameData(
+      scheduleGame
+    );
+
+    todayData.games.push(game);
+
+    rebuildGamesArray();
+  }
+
+  rebuildGamesArray();
+
+  console.log(
+    `✅ POPS loaded ${todayData.games.length} games for ${loadedScheduleDate}.`
+  );
+}
+
+/*
+=========================================================
+DISPLAY TODAY'S GAMES
+=========================================================
+*/
+
+function renderGames() {
+  if (!gamesBox) return;
+
+  if (!games.length) {
+    gamesBox.innerHTML = `
+      <div class="pick-card">
+        <h3>No MLB Games Scheduled</h3>
+        <p>
+          No MLB games were found for
+          ${loadedScheduleDate || API.today()}.
+        </p>
+      </div>
+    `;
+
+    return;
+  }
+
+  gamesBox.innerHTML = games
+    .map(game => `
+      <div class="pick-card game-card">
+        <h3>
+          ${game.awayTeam} vs
+          ${game.homeTeam}
+        </h3>
+
+        <p>
+          ⏰ ${formatTime(game.date)}
+        </p>
+
+        <p>
+          🏟️ ${game.venue}
+        </p>
+
+        <p>
+          <strong>${game.awayTeam}:</strong>
+          ${game.awayPitcher}
+        </p>
+
+        <p>
+          <strong>${game.homeTeam}:</strong>
+          ${game.homePitcher}
+        </p>
+      </div>
+    `)
+    .join("");
+}
+
+/*
+=========================================================
+LIVE MLB GAME FEED
+=========================================================
+*/
+
+async function getLiveGameFeed(gamePk) {
+  if (!gamePk) return null;
+
+  if (
+    typeof API !== "undefined" &&
+    typeof API.getLiveGame === "function"
+  ) {
+    return await API.getLiveGame(
+      gamePk,
+      true
+    );
+  }
+
+  const response = await fetch(
+    `https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live?_=${Date.now()}`,
+    {
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Could not load MLB feed for game ${gamePk}`
+    );
+  }
+
+  return response.json();
+}
+
+function getStarterFromFeed(
+  feed,
+  side
+) {
+  const probablePitcher =
+    feed?.gameData?.probablePitchers?.[side] ||
+    null;
+
+  if (probablePitcher?.id) {
+    return {
+      id:
+        Number(probablePitcher.id),
+
+      name:
+        normalizePitcherName(
+          probablePitcher.fullName ||
+          probablePitcher.name
+        )
+    };
+  }
+
+  const players =
+    feed?.liveData?.boxscore
+      ?.teams?.[side]?.players || {};
+
+  const starterEntry =
+    Object.values(players).find(player => {
+      const gameStatus =
+        player?.gameStatus || {};
+
+      const stats =
+        player?.stats?.pitching || {};
+
+      return (
+        gameStatus.isCurrentPitcher === true ||
+        gameStatus.isStarter === true ||
+        Number(stats.gamesStarted || 0) > 0
+      );
+    });
+
+  if (starterEntry?.person?.id) {
+    return {
+      id:
+        Number(starterEntry.person.id),
+
+      name:
+        normalizePitcherName(
+          starterEntry.person.fullName
+        )
+    };
+  }
+
+  return {
+    id: 0,
+    name: "TBD"
+  };
+}
+
+/*
+=========================================================
+PITCHER CACHE MANAGEMENT
+=========================================================
+*/
+
+async function getUpdatedPitcherStats(
+  pitcherId
+) {
+  if (!pitcherId) return {};
+
+  return safe(
+    () =>
+      API.getPitcherStats(
+        pitcherId,
+        true
+      ),
+    {}
+  );
+}
+
+function clearPitcherCaches(
+  oldPitcherId,
+  newPitcherId
+) {
+  if (typeof API === "undefined") return;
+
+  if (
+    typeof API.clearPitcherCache ===
+    "function"
+  ) {
+    API.clearPitcherCache(
+      oldPitcherId,
+      newPitcherId
+    );
+  }
+
+  if (
+    typeof API.clearBvpCache ===
+    "function"
+  ) {
+    API.clearBvpCache();
+  }
+}
+
+/*
+=========================================================
+BVP REFRESH AFTER STARTER CHANGE
+=========================================================
+*/
+
+async function refreshLineupBvp(
+  lineup,
+  pitcherId
+) {
   if (!Array.isArray(lineup)) return;
 
   for (const batter of lineup) {
     const batterId = getBatterId(batter);
 
-    /*
-    Remove BvP from the previous pitcher immediately so
-    stale numbers are never displayed against a new starter.
-    */
     batter.bvp = {
       atBats: 0,
       hits: 0,
@@ -335,64 +949,33 @@ async function refreshLineupBvp(lineup, pitcherId) {
       homeRuns: 0
     };
 
-    if (
-      !batterId ||
-      !pitcherId ||
-      typeof API === "undefined"
-    ) {
+    if (!batterId || !pitcherId) {
       continue;
     }
 
-    let newBvp = null;
-
-    if (typeof API.getBvP === "function") {
-      newBvp = await safe(
-        () => API.getBvP(batterId, pitcherId, true),
-        null
-      );
-    } else if (typeof API.getBVP === "function") {
-      newBvp = await safe(
-        () => API.getBVP(batterId, pitcherId, true),
-        null
-      );
-    } else if (typeof API.getBatterVsPitcher === "function") {
-      newBvp = await safe(
-        () => API.getBatterVsPitcher(
+    const newBvp = await safe(
+      () =>
+        API.getBvP(
           batterId,
           pitcherId,
           true
         ),
-        null
-      );
-    }
+      null
+    );
 
-    if (newBvp && typeof newBvp === "object") {
+    if (newBvp) {
       batter.bvp = {
-        atBats: Number(
-          newBvp.atBats ||
-          newBvp.ab ||
-          newBvp?.stats?.atBats ||
-          0
-        ),
+        atBats:
+          Number(newBvp.atBats || 0),
 
-        hits: Number(
-          newBvp.hits ||
-          newBvp?.stats?.hits ||
-          0
-        ),
+        hits:
+          Number(newBvp.hits || 0),
 
         avg:
-          newBvp.avg ||
-          newBvp.average ||
-          newBvp?.stats?.avg ||
-          ".000",
+          newBvp.avg || ".000",
 
-        homeRuns: Number(
-          newBvp.homeRuns ||
-          newBvp.hr ||
-          newBvp?.stats?.homeRuns ||
-          0
-        )
+        homeRuns:
+          Number(newBvp.homeRuns || 0)
       };
     }
   }
@@ -404,71 +987,80 @@ APPLY STARTER CHANGE
 =========================================================
 */
 
-async function applyStarterUpdate(game, side, starter) {
+async function applyStarterUpdate(
+  game,
+  side,
+  starter
+) {
   const pitcherKey =
-    side === "away" ? "awayPitcher" : "homePitcher";
+    side === "away"
+      ? "awayPitcher"
+      : "homePitcher";
 
   const pitcherIdKey =
-    side === "away" ? "awayPitcherId" : "homePitcherId";
+    side === "away"
+      ? "awayPitcherId"
+      : "homePitcherId";
 
   const pitcherStatsKey =
     side === "away"
       ? "awayPitcherStats"
       : "homePitcherStats";
 
-  /*
-  The opponent's lineup faces this pitcher.
-  */
   const opponentLineupKey =
-    side === "away" ? "homeLineup" : "awayLineup";
+    side === "away"
+      ? "homeLineup"
+      : "awayLineup";
 
-  const previousPitcherName = normalizePitcherName(
-    game[pitcherKey]
-  );
+  const previousName =
+    normalizePitcherName(
+      game[pitcherKey]
+    );
 
-  const previousPitcherId = Number(
-    game[pitcherIdKey] || 0
-  );
+  const previousId =
+    Number(game[pitcherIdKey] || 0);
 
-  const nextPitcherName = normalizePitcherName(
-    starter?.name
-  );
+  const nextName =
+    normalizePitcherName(
+      starter?.name
+    );
 
-  const nextPitcherId = Number(starter?.id || 0);
+  const nextId =
+    Number(starter?.id || 0);
 
-  if (!hasNamedStarter(nextPitcherName, nextPitcherId)) {
+  if (!hasNamedStarter(nextName, nextId)) {
     return false;
   }
 
   const nameChanged =
-    previousPitcherName.toLowerCase() !==
-    nextPitcherName.toLowerCase();
+    previousName.toLowerCase() !==
+    nextName.toLowerCase();
 
   const idChanged =
-    previousPitcherId !== nextPitcherId;
+    previousId !== nextId;
 
   if (!nameChanged && !idChanged) {
     return false;
   }
 
   console.log(
-    `⚾ POPS starter update: ${previousPitcherName} → ${nextPitcherName}`
+    `⚾ POPS starter update: ${previousName} → ${nextName}`
   );
 
   clearPitcherCaches(
-    previousPitcherId,
-    nextPitcherId
+    previousId,
+    nextId
   );
 
-  game[pitcherKey] = nextPitcherName;
-  game[pitcherIdKey] = nextPitcherId;
+  game[pitcherKey] = nextName;
+  game[pitcherIdKey] = nextId;
 
   game[pitcherStatsKey] =
-    await getUpdatedPitcherStats(nextPitcherId);
+    await getUpdatedPitcherStats(nextId);
 
   await refreshLineupBvp(
     game[opponentLineupKey],
-    nextPitcherId
+    nextId
   );
 
   return true;
@@ -476,7 +1068,7 @@ async function applyStarterUpdate(game, side, starter) {
 
 /*
 =========================================================
-CHECK EVERY GAME FOR STARTER CHANGES
+CHECK FOR STARTER CHANGES
 =========================================================
 */
 
@@ -499,35 +1091,45 @@ async function checkForStarterUpdates() {
       if (!gameHasNotStarted(game)) continue;
 
       const feed = await safe(
-        () => getLiveGameFeed(game.gamePk),
+        () =>
+          getLiveGameFeed(
+            game.gamePk
+          ),
         null
       );
 
       if (!feed) continue;
 
-      game.status = feed?.gameData?.status || game.status || {};
+      game.status =
+        feed?.gameData?.status ||
+        game.status ||
+        {};
 
-      const awayStarter = getStarterFromFeed(
-        feed,
-        "away"
-      );
+      const awayStarter =
+        getStarterFromFeed(
+          feed,
+          "away"
+        );
 
-      const homeStarter = getStarterFromFeed(
-        feed,
-        "home"
-      );
+      const homeStarter =
+        getStarterFromFeed(
+          feed,
+          "home"
+        );
 
-      const awayChanged = await applyStarterUpdate(
-        game,
-        "away",
-        awayStarter
-      );
+      const awayChanged =
+        await applyStarterUpdate(
+          game,
+          "away",
+          awayStarter
+        );
 
-      const homeChanged = await applyStarterUpdate(
-        game,
-        "home",
-        homeStarter
-      );
+      const homeChanged =
+        await applyStarterUpdate(
+          game,
+          "home",
+          homeStarter
+        );
 
       if (awayChanged || homeChanged) {
         starterChanged = true;
@@ -536,6 +1138,7 @@ async function checkForStarterUpdates() {
 
     if (starterChanged) {
       rebuildGamesArray();
+      renderGames();
       await recalculateAllPicks();
     }
 
@@ -549,13 +1152,13 @@ async function checkForStarterUpdates() {
 
 /*
 =========================================================
-START AND STOP FIVE-MINUTE CHECKS
+STARTER MONITOR
 =========================================================
 */
 
 function hasPregameGamesRemaining() {
-  return (todayData?.games || []).some(game =>
-    gameHasNotStarted(game)
+  return (todayData?.games || []).some(
+    game => gameHasNotStarted(game)
   );
 }
 
@@ -574,19 +1177,21 @@ function startStarterRefresh() {
   }, STARTER_REFRESH_INTERVAL);
 
   console.log(
-    "✅ POPS starter monitor active: checking every 5 minutes."
+    "✅ POPS starter monitor active."
   );
 }
 
 function stopStarterRefreshWhenFinished() {
-  if (hasPregameGamesRemaining()) return;
+  if (hasPregameGamesRemaining()) {
+    return;
+  }
 
   if (starterRefreshTimer) {
     clearInterval(starterRefreshTimer);
     starterRefreshTimer = null;
 
     console.log(
-      "🛑 POPS starter monitor stopped: today's games have started."
+      "🛑 POPS starter monitor stopped."
     );
   }
 }
@@ -613,13 +1218,20 @@ function mergeBatterStats(batter = {}) {
     slg,
     ops,
 
-    homeRuns: Number(hitting.homeRuns || 0),
-    hits: Number(hitting.hits || 0),
-    atBats: Number(hitting.atBats || 0),
+    homeRuns:
+      Number(hitting.homeRuns || 0),
+
+    hits:
+      Number(hitting.hits || 0),
+
+    atBats:
+      Number(hitting.atBats || 0),
 
     iso:
       slg && avg
-        ? Number((slg - avg).toFixed(3))
+        ? Number(
+            (slg - avg).toFixed(3)
+          )
         : 0
   };
 }
@@ -637,42 +1249,48 @@ function addHRPick(
   pitcherStats,
   pitcherHand = ""
 ) {
-  const batterStats = mergeBatterStats(batter);
+  const batterStats =
+    mergeBatterStats(batter);
 
-  const bvpStats = batter.bvp || {
-    atBats: 0,
-    hits: 0,
-    avg: ".000",
-    homeRuns: 0
-  };
+  const bvpStats =
+    batter.bvp || {
+      atBats: 0,
+      hits: 0,
+      avg: ".000",
+      homeRuns: 0
+    };
 
-  const bvpHR = Number(
-    bvpStats.homeRuns || 0
-  );
+  const bvpHR =
+    Number(bvpStats.homeRuns || 0);
 
-  const hitStreak = Number(
-    batter.hitStreak || 0
-  );
+  const hitStreak =
+    Number(batter.hitStreak || 0);
 
   const batterHand =
     batter.batSide || "";
 
   const hasPlatoonAdvantage =
     batterHand === "S" ||
-    (batterHand === "L" &&
-      pitcherHand === "R") ||
-    (batterHand === "R" &&
-      pitcherHand === "L");
+    (
+      batterHand === "L" &&
+      pitcherHand === "R"
+    ) ||
+    (
+      batterHand === "R" &&
+      pitcherHand === "L"
+    );
 
-  const pitcherData = {
-    id:
-      pitcherStats?.id ||
-      pitcherStats?.playerId ||
-      pitcherStats?.pitcherId ||
-      0,
+  if (
+    typeof Formula === "undefined" ||
+    typeof Formula.getHRScore !==
+      "function"
+  ) {
+    console.error(
+      "Formula.getHRScore is unavailable."
+    );
 
-    ...pitcherStats
-  };
+    return;
+  }
 
   const modelBatter = {
     ...batter,
@@ -680,74 +1298,75 @@ function addHRPick(
     hitting: {
       ...batterStats,
 
-      plateAppearances: Number(
-        batterStats.plateAppearances || 0
-      ),
+      plateAppearances:
+        Number(
+          batterStats.plateAppearances || 0
+        ),
 
-      atBats: Number(
-        batterStats.atBats || 0
-      ),
+      atBats:
+        Number(batterStats.atBats || 0),
 
-      hits: Number(
-        batterStats.hits || 0
-      ),
+      hits:
+        Number(batterStats.hits || 0),
 
-      doubles: Number(
-        batterStats.doubles || 0
-      ),
+      doubles:
+        Number(batterStats.doubles || 0),
 
-      triples: Number(
-        batterStats.triples || 0
-      ),
+      triples:
+        Number(batterStats.triples || 0),
 
-      homeRuns: Number(
-        batterStats.homeRuns || 0
-      ),
+      homeRuns:
+        Number(batterStats.homeRuns || 0),
 
-      extraBaseHits: Number(
-        batterStats.extraBaseHits ||
-        (
-          Number(batterStats.doubles || 0) +
-          Number(batterStats.triples || 0) +
-          Number(batterStats.homeRuns || 0)
+      extraBaseHits:
+        Number(
+          batterStats.extraBaseHits ||
+          (
+            Number(
+              batterStats.doubles || 0
+            ) +
+            Number(
+              batterStats.triples || 0
+            ) +
+            Number(
+              batterStats.homeRuns || 0
+            )
+          )
+        ),
+
+      avg:
+        Number(batterStats.avg || 0),
+
+      slg:
+        Number(batterStats.slg || 0),
+
+      ops:
+        Number(batterStats.ops || 0),
+
+      iso:
+        Number(batterStats.iso || 0),
+
+      hrRate:
+        Number(batterStats.hrRate || 0),
+
+      extraBaseHitRate:
+        Number(
+          batterStats.extraBaseHitRate ||
+          0
         )
-      ),
-
-      avg: Number(
-        batterStats.avg || 0
-      ),
-
-      slg: Number(
-        batterStats.slg || 0
-      ),
-
-      ops: Number(
-        batterStats.ops || 0
-      ),
-
-      iso: Number(
-        batterStats.iso || 0
-      ),
-
-      hrRate: Number(
-        batterStats.hrRate || 0
-      ),
-
-      extraBaseHitRate: Number(
-        batterStats.extraBaseHitRate || 0
-      )
     },
 
-    statcast: batter.statcast || {
-      available: false,
-      barrelPct: null,
-      hardHitPct: null,
-      avgExitVelocity: null,
-      launchAngle: null,
-      sweetSpotPct: null,
-      flyBallPct: null,
-      pullPct: null
-    },
+    statcast:
+      batter.statcast || {
+        available: false,
+        barrelPct: null,
+        hardHitPct: null,
+        avgExitVelocity: null,
+        launchAngle: null,
+        sweetSpotPct: null,
+        flyBallPct: null,
+        pullPct: null
+      },
 
     recentForm:
       batter.recentForm || {},
@@ -756,36 +1375,30 @@ function addHRPick(
       batter.handednessSplit || {},
 
     bvp: bvpStats,
-
     hitStreak,
-
     batSide: batterHand
   };
 
-  if (
-  typeof Formula === "undefined" ||
-  typeof Formula.getHRScore !== "function"
-) {
-  console.error(
-    "POPS Formula is unavailable. Make sure formula.js loads before app.js."
-  );
+  const result = Formula.getHRScore({
+    batter: modelBatter,
 
-  return;
-}
+    pitcher: {
+      ...pitcherStats
+    },
 
-const result = Formula.getHRScore({
-  batter: modelBatter,
-  pitcher: pitcherData,
-  pitcherHand,
-  handednessSplit:
-    batter.handednessSplit || {},
-  recentForm:
-    batter.recentForm || {}
-});
+    pitcherHand,
 
-const breakdown = Array.isArray(result.breakdown)
-  ? result.breakdown
-  : [];
+    handednessSplit:
+      batter.handednessSplit || {},
+
+    recentForm:
+      batter.recentForm || {}
+  });
+
+  const breakdown =
+    Array.isArray(result?.breakdown)
+      ? result.breakdown
+      : [];
 
   hrPicks.push({
     player: batter.name,
@@ -817,72 +1430,57 @@ const breakdown = Array.isArray(result.breakdown)
     bvpStats,
     hitStreak,
 
-    score: Number(result.score || 0),
+    score:
+      Number(result?.score || 0),
 
     tier:
-      result.tier,
+      result?.tier || "",
 
     confidence:
-      result.confidence,
+      result?.confidence || {},
 
-    breakdown,
-
-    modelBreakdown:
-      result.breakdown,
-
-    reasons:
-      result.tier
+    breakdown
   });
 }
 
 async function loadHRPicks() {
+  if (!hrPicksBox) return;
+
   hrPicksBox.innerHTML =
     "<p>Loading HR Pickz...</p>";
 
   hrPicks = [];
 
   for (const game of todayData.games) {
-    const awayPitcherInfo =
-      game.awayPitcherId &&
-      typeof API !== "undefined" &&
-      typeof API.getPlayerInfo === "function"
-        ? await safe(
+    const [
+      awayPitcherInfo,
+      homePitcherInfo
+    ] = await Promise.all([
+      game.awayPitcherId
+        ? safe(
             () =>
               API.getPlayerInfo(
                 game.awayPitcherId
               ),
             {}
           )
-        : {};
+        : Promise.resolve({}),
 
-    const homePitcherInfo =
-      game.homePitcherId &&
-      typeof API !== "undefined" &&
-      typeof API.getPlayerInfo === "function"
-        ? await safe(
+      game.homePitcherId
+        ? safe(
             () =>
               API.getPlayerInfo(
                 game.homePitcherId
               ),
             {}
           )
-        : {};
+        : Promise.resolve({})
+    ]);
 
-    const awayLineup = (
+    for (
+      const batter of
       game.awayLineup || []
-    ).map(batter => ({
-      ...batter,
-      team: game.awayTeam
-    }));
-
-    const homeLineup = (
-      game.homeLineup || []
-    ).map(batter => ({
-      ...batter,
-      team: game.homeTeam
-    }));
-
-    for (const batter of awayLineup) {
+    ) {
       addHRPick(
         game,
         batter,
@@ -892,7 +1490,10 @@ async function loadHRPicks() {
       );
     }
 
-    for (const batter of homeLineup) {
+    for (
+      const batter of
+      game.homeLineup || []
+    ) {
       addHRPick(
         game,
         batter,
@@ -905,26 +1506,36 @@ async function loadHRPicks() {
 
   const uniquePlayers = {};
 
-  hrPicks.forEach(pick => {
-    const key = `${pick.player}-${pick.team}`;
+  for (const pick of hrPicks) {
+    const key =
+      `${pick.player}-${pick.team}`;
 
     if (
       !uniquePlayers[key] ||
-      pick.score > uniquePlayers[key].score
+      pick.score >
+        uniquePlayers[key].score
     ) {
       uniquePlayers[key] = pick;
     }
-  });
+  }
 
-  hrPicks = Object.values(uniquePlayers).sort(
-    (a, b) => b.score - a.score
-  );
+  hrPicks =
+    Object.values(uniquePlayers).sort(
+      (a, b) => b.score - a.score
+    );
 
   window.hrPicks = hrPicks;
 
   if (!hrPicks.length) {
-    hrPicksBox.innerHTML =
-      "<p>No HR Pickz found.</p>";
+    hrPicksBox.innerHTML = `
+      <div class="pick-card">
+        <h3>No HR Pickz Found</h3>
+        <p>
+          Lineups or player data may not
+          be available yet.
+        </p>
+      </div>
+    `;
 
     return;
   }
@@ -934,13 +1545,26 @@ async function loadHRPicks() {
     .map(
       (pick, index) => `
         <div class="hr-card">
-          <div class="hr-rank">#${index + 1}</div>
+          <div class="hr-rank">
+            #${index + 1}
+          </div>
 
           <h3>💣 ${pick.player}</h3>
 
-          <p><strong>Team:</strong> ${pick.team}</p>
-          <p><strong>Game:</strong> ${pick.game}</p>
-          <p><strong>Date/Time:</strong> ${pick.gameTime}</p>
+          <p>
+            <strong>Team:</strong>
+            ${pick.team}
+          </p>
+
+          <p>
+            <strong>Game:</strong>
+            ${pick.game}
+          </p>
+
+          <p>
+            <strong>Date/Time:</strong>
+            ${pick.gameTime}
+          </p>
 
           <p>
             <strong>Vs Pitcher:</strong>
@@ -962,16 +1586,6 @@ async function loadHRPicks() {
           </p>
 
           <p>
-            <strong>Batter Hand:</strong>
-            ${pick.batterHand || "N/A"}
-          </p>
-
-          <p>
-            <strong>Pitcher Hand:</strong>
-            ${pick.pitcherHand || "N/A"}
-          </p>
-
-          <p>
             <strong>Platoon Edge:</strong>
             ${
               pick.hasPlatoonAdvantage
@@ -990,12 +1604,14 @@ async function loadHRPicks() {
             ${pick.bvpStats?.hits || 0}/${
               pick.bvpStats?.atBats || 0
             },
-            AVG ${pick.bvpStats?.avg || ".000"}
+            AVG ${
+              pick.bvpStats?.avg || ".000"
+            }
           </p>
 
           <p>
             <strong>Hit Streak:</strong>
-            ${pick.hitStreak}+ games
+            ${pick.hitStreak} games
           </p>
 
           <p>
@@ -1006,31 +1622,39 @@ async function loadHRPicks() {
           </p>
 
           <div class="hr-breakdown">
-  ${(pick.breakdown || []).map(item => `
-    <div class="hr-breakdown-row">
-      <span class="hr-breakdown-label">
-        ${item.icon} ${item.label}
-      </span>
+            ${(pick.breakdown || [])
+              .map(item => `
+                <div class="hr-breakdown-row">
+                  <span class="hr-breakdown-label">
+                    ${item.icon || ""}
+                    ${item.label || ""}
+                  </span>
 
-      <span class="hr-breakdown-score">
-        ${item.score}/${item.max}
-      </span>
-    </div>
-  `).join("")}
-</div>
+                  <span class="hr-breakdown-score">
+                    ${item.score || 0}/${
+                      item.max || 0
+                    }
+                  </span>
+                </div>
+              `)
+              .join("")}
+          </div>
 
-<div class="hr-model-summary">
-  <p>
-    ⭐ <strong>Confidence:</strong>
-    ${pick.confidence?.label || "Low"}
-    (${pick.confidence?.score || 0}%)
-  </p>
+          <div class="hr-model-summary">
+            <p>
+              ⭐ <strong>Confidence:</strong>
+              ${
+                pick.confidence?.label ||
+                "Low"
+              }
+              (${
+                pick.confidence?.score ||
+                0
+              }%)
+            </p>
 
-  <p>
-    ${pick.tier || ""}
-  </p>
-</div>
-
+            <p>${pick.tier || ""}</p>
+          </div>
         </div>
       `
     )
@@ -1048,107 +1672,118 @@ function addHitPick(
   batter,
   pitcherName
 ) {
-  const stats = mergeBatterStats(batter);
+  const stats =
+    mergeBatterStats(batter);
 
-  const bvpStats = batter.bvp || {
-    atBats: 0,
-    hits: 0,
-    avg: ".000",
-    homeRuns: 0
-  };
+  const bvpStats =
+    batter.bvp || {
+      atBats: 0,
+      hits: 0,
+      avg: ".000",
+      homeRuns: 0
+    };
 
-  const bvpHR = Number(
-    bvpStats.homeRuns || 0
-  );
+  const bvpHR =
+    Number(bvpStats.homeRuns || 0);
 
-  const hitStreak = Number(
-    batter.hitStreak || 0
-  );
+  const hitStreak =
+    Number(batter.hitStreak || 0);
 
   if (
-    hitStreak >= 2 ||
-    bvpHR > 0 ||
-    Number(bvpStats.hits || 0) > 0
+    hitStreak < 2 &&
+    bvpHR <= 0 &&
+    Number(bvpStats.hits || 0) <= 0
   ) {
-    const score = Formula.getHitScore(
-      batter.name,
-      batter.lineupSpot,
-      hitStreak,
-      bvpHR,
-      stats
-    );
+    return;
+  }
 
-    hitPicks.push({
-      player: batter.name,
-      team: batter.team,
+  if (
+    typeof Formula === "undefined" ||
+    typeof Formula.getHitScore !==
+      "function"
+  ) {
+    return;
+  }
 
-      pitcher: normalizePitcherName(
+  const score = Formula.getHitScore(
+    batter.name,
+    batter.lineupSpot,
+    hitStreak,
+    bvpHR,
+    stats
+  );
+
+  hitPicks.push({
+    player: batter.name,
+    team: batter.team,
+
+    pitcher:
+      normalizePitcherName(
         pitcherName
       ),
 
-      lineupSpot: batter.lineupSpot,
-      confirmed: batter.confirmed,
+    lineupSpot:
+      batter.lineupSpot,
 
-      hitStreak,
-      bvpHR,
-      bvpStats,
-      score
-    });
-  }
+    confirmed:
+      batter.confirmed,
+
+    hitStreak,
+    bvpHR,
+    bvpStats,
+    score
+  });
 }
 
 async function loadHitPicks() {
+  if (!hitPicksBox) return;
+
   hitPicksBox.innerHTML =
     "<p>Loading Hit Pickz...</p>";
 
   hitPicks = [];
 
   for (const game of todayData.games) {
-    const awayLineup = (
+    for (
+      const batter of
       game.awayLineup || []
-    ).map(batter => ({
-      ...batter,
-      team: game.awayTeam
-    }));
-
-    const homeLineup = (
-      game.homeLineup || []
-    ).map(batter => ({
-      ...batter,
-      team: game.homeTeam
-    }));
-
-    awayLineup.forEach(batter =>
+    ) {
       addHitPick(
         game,
         batter,
         game.homePitcher
-      )
-    );
+      );
+    }
 
-    homeLineup.forEach(batter =>
+    for (
+      const batter of
+      game.homeLineup || []
+    ) {
       addHitPick(
         game,
         batter,
         game.awayPitcher
-      )
-    );
+      );
+    }
   }
 
-  const uniqueHitPlayers = {};
+  const uniquePlayers = {};
 
-  hitPicks.forEach(pick => {
-    const key = `${pick.player}-${pick.team}`;
+  for (const pick of hitPicks) {
+    const key =
+      `${pick.player}-${pick.team}`;
 
     if (
-      !uniqueHitPlayers[key] ||
-      pick.score > uniqueHitPlayers[key].score
+      !uniquePlayers[key] ||
+      pick.score >
+        uniquePlayers[key].score
     ) {
-      uniqueHitPlayers[key] = pick;
+      uniquePlayers[key] = pick;
     }
-  });
+  }
 
-  hitPicks = Object.values(uniqueHitPlayers);
+  hitPicks =
+    Object.values(uniquePlayers);
 
   hitPicks.sort(
     (a, b) =>
@@ -1165,10 +1800,12 @@ async function loadHitPicks() {
     hitPicksBox.innerHTML = `
       <div class="pick-card">
         <h3>No Hit Pickz Found</h3>
+
         <p>
-          No lineup batters currently have a
-          2+ game hit streak or previous success
-          against the current pitcher.
+          No available batters currently
+          have a 2+ game hit streak or
+          previous success against today's
+          pitcher.
         </p>
       </div>
     `;
@@ -1177,6 +1814,7 @@ async function loadHitPicks() {
   }
 
   hitPicksBox.innerHTML = hitPicks
+    .slice(0, 20)
     .map(
       (pick, index) => `
         <div class="pick-card">
@@ -1185,7 +1823,8 @@ async function loadHitPicks() {
           </span>
 
           <h3>
-            ${pick.player} - ${pick.team}
+            ${pick.player} -
+            ${pick.team}
           </h3>
 
           <p>
@@ -1246,7 +1885,7 @@ async function loadHitPicks() {
 
 /*
 =========================================================
-RECALCULATE EVERY POPS SECTION
+RECALCULATE ALL POPS SECTIONS
 =========================================================
 */
 
@@ -1256,21 +1895,24 @@ async function recalculateAllPicks() {
   recalculationRunning = true;
 
   try {
-    console.log(
-      "🔄 POPS recalculating after starter update..."
-    );
-
     rebuildGamesArray();
+    renderGames();
 
-    if (typeof Pitchers !== "undefined") {
+    if (
+      typeof Pitchers !== "undefined"
+    ) {
       Pitchers.box =
-        document.getElementById("pitchersBox");
+        document.getElementById(
+          "pitchersBox"
+        );
 
       if (
-        typeof Pitchers.loadPitcherTargets ===
+        typeof Pitchers
+          .loadPitcherTargets ===
         "function"
       ) {
-        await Pitchers.loadPitcherTargets();
+        await Pitchers
+          .loadPitcherTargets();
       }
     }
 
@@ -1279,7 +1921,8 @@ async function recalculateAllPicks() {
 
     if (
       typeof Moneyline !== "undefined" &&
-      typeof Moneyline.load === "function"
+      typeof Moneyline.load ===
+        "function"
     ) {
       await Moneyline.load(games);
     }
@@ -1299,63 +1942,158 @@ async function recalculateAllPicks() {
 
 /*
 =========================================================
+NEW-DAY RELOAD
+=========================================================
+*/
+
+async function reloadForNewDay() {
+  if (dailyReloadRunning) return;
+
+  dailyReloadRunning = true;
+
+  try {
+    console.log(
+      "📅 POPS loading a new daily schedule."
+    );
+
+    if (starterRefreshTimer) {
+      clearInterval(starterRefreshTimer);
+      starterRefreshTimer = null;
+    }
+
+    if (
+      typeof API !== "undefined" &&
+      typeof API.clearAllCaches ===
+        "function"
+    ) {
+      API.clearAllCaches();
+    }
+
+    games = [];
+    hrPicks = [];
+    hitPicks = [];
+
+    todayData = {
+      date: API.today(),
+      games: []
+    };
+
+    clearPageSections();
+
+    await loadTodayData(true);
+    await recalculateAllPicks();
+    await checkForStarterUpdates();
+
+    if (hasPregameGamesRemaining()) {
+      startStarterRefresh();
+    }
+  } catch (err) {
+    console.error(
+      "POPS new-day reload error:",
+      err
+    );
+  } finally {
+    dailyReloadRunning = false;
+  }
+}
+
+function startDateWatcher() {
+  if (dateCheckTimer) {
+    clearInterval(dateCheckTimer);
+  }
+
+  dateCheckTimer = setInterval(() => {
+    const currentDate = API.today();
+
+    if (
+      loadedScheduleDate &&
+      currentDate !== loadedScheduleDate
+    ) {
+      console.log(
+        `📅 Date changed: ${loadedScheduleDate} → ${currentDate}`
+      );
+
+      reloadForNewDay();
+    }
+  }, DATE_CHECK_INTERVAL);
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (
+        document.visibilityState ===
+        "visible"
+      ) {
+        const currentDate = API.today();
+
+        if (
+          loadedScheduleDate &&
+          currentDate !== loadedScheduleDate
+        ) {
+          reloadForNewDay();
+        }
+      }
+    }
+  );
+}
+
+/*
+=========================================================
 INITIALIZE APP
 =========================================================
 */
 
 async function init() {
-  hrPicksBox.innerHTML =
-    "<p>Starting POPS Pickz 10.0...</p>";
+  clearPageSections();
 
-  await loadTodayData();
+  console.log(
+    "🚀 Starting POPS Pickz 10.0"
+  );
+
+  console.log(
+    "📅 Browser date:",
+    API.today()
+  );
+
+  await loadTodayData(true);
+
+  renderGames();
 
   /*
-  Check the live MLB feed immediately instead of waiting
-  five minutes for the first refresh.
+  Check probable starters immediately.
   */
   await checkForStarterUpdates();
 
-  /*
-  If no starter changed, perform the regular initial load.
-  checkForStarterUpdates() performs this automatically
-  when a change is detected.
-  */
-  if (!recalculationRunning) {
-    if (typeof Pitchers !== "undefined") {
-      Pitchers.box =
-        document.getElementById("pitchersBox");
-
-      if (
-        typeof Pitchers.loadPitcherTargets ===
-        "function"
-      ) {
-        await Pitchers.loadPitcherTargets();
-      }
-    }
-
-    await loadHRPicks();
-    await loadHitPicks();
-
-    if (
-      typeof Moneyline !== "undefined" &&
-      typeof Moneyline.load === "function"
-    ) {
-      await Moneyline.load(games);
-    }
-  }
+  await recalculateAllPicks();
 
   if (hasPregameGamesRemaining()) {
     startStarterRefresh();
   }
+
+  startDateWatcher();
 }
 
 init().catch(err => {
-  console.error("POPS app error:", err);
+  console.error(
+    "POPS app error:",
+    err
+  );
 
-  hrPicksBox.innerHTML = `
-    <div class="pick-card">
-      <h3>⚠️ Site loading error</h3>
-      <p>${err.message}</p>
-    </div>
-  `;
+  if (hrPicksBox) {
+    hrPicksBox.innerHTML = `
+      <div class="pick-card">
+        <h3>⚠️ Site Loading Error</h3>
+        <p>${err.message}</p>
+      </div>
+    `;
+  }
+
+  if (gamesBox) {
+    gamesBox.innerHTML = `
+      <div class="pick-card">
+        <h3>⚠️ Games Could Not Load</h3>
+        <p>${err.message}</p>
+      </div>
+    `;
+  }
 });
