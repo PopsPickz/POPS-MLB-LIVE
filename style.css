@@ -257,3 +257,559 @@ font-size:22px;
     padding-right: 8px;
   }
 }
+
+/*
+=========================================================
+POPS HR PARLAY BUILDER
+DESIGN OPTION 2
+=========================================================
+*/
+
+#parlays {
+  overflow: hidden;
+}
+
+#parlayBox {
+  width: 100%;
+}
+
+.parlay-hero-v2 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+  padding: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 119, 20, 0.55);
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      circle at 85% 50%,
+      rgba(255, 103, 0, 0.24),
+      transparent 36%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(24, 24, 24, 0.98),
+      rgba(7, 7, 7, 0.98)
+    );
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.35),
+    inset 0 0 24px rgba(255, 110, 0, 0.05);
+}
+
+.parlay-hero-copy {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+}
+
+.parlay-kicker-v2 {
+  display: inline-block;
+  margin-bottom: 7px;
+  color: #ff8a25;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.parlay-hero-v2 h2 {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-size: clamp(1.45rem, 5vw, 2.15rem);
+  line-height: 1.1;
+}
+
+.parlay-hero-v2 p {
+  max-width: 560px;
+  margin: 0 0 16px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+
+.parlay-refresh-v2 {
+  min-height: 42px;
+  padding: 10px 18px;
+  border: 1px solid #ff7417;
+  border-radius: 12px;
+  color: #ffffff;
+  background:
+    linear-gradient(
+      135deg,
+      #ff7417,
+      #e84c00
+    );
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow:
+    0 8px 22px rgba(255, 91, 0, 0.25);
+}
+
+.parlay-refresh-v2:active {
+  transform: scale(0.97);
+}
+
+.parlay-hero-ball {
+  display: grid;
+  flex: 0 0 auto;
+  width: 120px;
+  height: 120px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 5.4rem;
+  filter:
+    drop-shadow(
+      0 0 20px rgba(255, 99, 0, 0.55)
+    );
+  transform: rotate(-12deg);
+}
+
+.parlay-stack-v2 {
+  display: grid;
+  gap: 12px;
+}
+
+.parlay-card-v2 {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(22, 22, 22, 0.98),
+      rgba(7, 7, 7, 0.98)
+    );
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.parlay-safe-v2 {
+  border-color: rgba(72, 222, 73, 0.75);
+}
+
+.parlay-balanced-v2 {
+  border-color: rgba(255, 200, 0, 0.72);
+}
+
+.parlay-value-v2 {
+  border-color: rgba(255, 113, 20, 0.78);
+}
+
+.parlay-longshot-v2 {
+  border-color: rgba(255, 68, 54, 0.72);
+}
+
+.parlay-card-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 16px;
+  border: 0;
+  color: #ffffff;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.parlay-card-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+}
+
+.parlay-card-icon {
+  flex: 0 0 auto;
+  font-size: 1.25rem;
+}
+
+.parlay-card-label {
+  display: block;
+  margin-bottom: 3px;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.parlay-card-title h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+
+.parlay-card-right {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.parlay-card-average {
+  padding: 6px 9px;
+  border-radius: 8px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.78rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.parlay-safe-v2 .parlay-card-average {
+  color: #9dff91;
+  background: rgba(49, 181, 49, 0.15);
+}
+
+.parlay-balanced-v2 .parlay-card-average {
+  color: #ffe26b;
+  background: rgba(255, 203, 0, 0.14);
+}
+
+.parlay-value-v2 .parlay-card-average {
+  color: #ffad66;
+  background: rgba(255, 112, 20, 0.15);
+}
+
+.parlay-longshot-v2 .parlay-card-average {
+  color: #ff8b82;
+  background: rgba(255, 62, 48, 0.14);
+}
+
+.parlay-chevron {
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1.35rem;
+  transition: transform 0.22s ease;
+}
+
+.parlay-card-v2.open .parlay-chevron {
+  transform: rotate(180deg);
+}
+
+.parlay-card-content {
+  display: none;
+  padding:
+    0
+    15px
+    16px;
+}
+
+.parlay-card-v2.open .parlay-card-content {
+  display: block;
+}
+
+.parlay-card-description {
+  margin: 0 0 13px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.parlay-player-list-v2 {
+  display: grid;
+  gap: 10px;
+}
+
+.parlay-player-row {
+  position: relative;
+  display: flex;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 13px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.055),
+      rgba(255, 255, 255, 0.015)
+    );
+}
+
+.parlay-safe-v2 .parlay-player-row {
+  border-color: rgba(72, 222, 73, 0.27);
+}
+
+.parlay-balanced-v2 .parlay-player-row {
+  border-color: rgba(255, 200, 0, 0.24);
+}
+
+.parlay-value-v2 .parlay-player-row {
+  border-color: rgba(255, 113, 20, 0.25);
+}
+
+.parlay-longshot-v2 .parlay-player-row {
+  border-color: rgba(255, 68, 54, 0.24);
+}
+
+.parlay-player-rank {
+  display: grid;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  color: #ffffff;
+  background:
+    linear-gradient(
+      135deg,
+      #3fa83d,
+      #1f681e
+    );
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.parlay-balanced-v2 .parlay-player-rank {
+  color: #181300;
+  background:
+    linear-gradient(
+      135deg,
+      #ffe15b,
+      #c99600
+    );
+}
+
+.parlay-value-v2 .parlay-player-rank {
+  background:
+    linear-gradient(
+      135deg,
+      #ff8d34,
+      #ba3c00
+    );
+}
+
+.parlay-longshot-v2 .parlay-player-rank {
+  background:
+    linear-gradient(
+      135deg,
+      #ff6155,
+      #a81912
+    );
+}
+
+.parlay-player-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.parlay-player-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.parlay-player-top h4 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.parlay-player-score {
+  flex: 0 0 auto;
+  color: #84ff70;
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.parlay-balanced-v2 .parlay-player-score {
+  color: #ffe15b;
+}
+
+.parlay-value-v2 .parlay-player-score {
+  color: #ff9c50;
+}
+
+.parlay-longshot-v2 .parlay-player-score {
+  color: #ff786d;
+}
+
+.parlay-player-game {
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.87);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.parlay-player-detail {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.61);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.parlay-player-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.parlay-badge {
+  padding: 5px 8px;
+  border: 1px solid rgba(111, 236, 94, 0.3);
+  border-radius: 7px;
+  color: #b5ffa9;
+  background: rgba(71, 183, 57, 0.11);
+  font-size: 0.69rem;
+  font-weight: 800;
+}
+
+.parlay-badge.confirmed {
+  color: #9dff90;
+  border-color: rgba(83, 224, 67, 0.4);
+  background: rgba(49, 156, 39, 0.18);
+}
+
+.parlay-badge.projected {
+  color: #ffd56c;
+  border-color: rgba(255, 196, 0, 0.35);
+  background: rgba(178, 132, 0, 0.14);
+}
+
+.parlay-reason-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap:
+    5px
+    12px;
+  margin-top: 10px;
+}
+
+.parlay-reason {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.parlay-empty-v2,
+.parlay-waiting-v2 {
+  padding: 22px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.parlay-waiting-icon {
+  margin-bottom: 8px;
+  font-size: 2rem;
+}
+
+.parlay-waiting-v2 h3 {
+  margin: 0 0 7px;
+  color: #ffffff;
+}
+
+.parlay-waiting-v2 p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.parlay-note-v2 {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.parlay-note-v2 p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.67);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.parlay-note-v2 strong {
+  color: #ffd05a;
+}
+
+/*
+=========================================================
+MOBILE
+=========================================================
+*/
+
+@media (max-width: 700px) {
+  .parlay-hero-v2 {
+    padding: 18px;
+  }
+
+  .parlay-hero-ball {
+    width: 76px;
+    height: 76px;
+    font-size: 3.4rem;
+    opacity: 0.9;
+  }
+
+  .parlay-card-toggle {
+    padding: 14px 13px;
+  }
+
+  .parlay-card-content {
+    padding:
+      0
+      12px
+      13px;
+  }
+
+  .parlay-player-row {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .parlay-player-rank {
+    flex-basis: 30px;
+    width: 30px;
+    height: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .parlay-hero-v2 {
+    align-items: flex-start;
+  }
+
+  .parlay-hero-ball {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
+    opacity: 0.2;
+  }
+
+  .parlay-hero-copy {
+    width: 100%;
+  }
+
+  .parlay-card-label {
+    display: none;
+  }
+
+  .parlay-card-title h3 {
+    font-size: 0.98rem;
+  }
+
+  .parlay-card-average {
+    font-size: 0.69rem;
+  }
+
+  .parlay-player-top h4 {
+    font-size: 0.94rem;
+  }
+}
