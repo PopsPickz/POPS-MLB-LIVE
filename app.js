@@ -2170,13 +2170,20 @@ async function recalculateAllPicks() {
     await loadHRPicks();
     await loadHitPicks();
 
-    if (
-      typeof Moneyline !== "undefined" &&
-      typeof Moneyline.load ===
-        "function"
-    ) {
-      await Moneyline.load(games);
-    }
+if (
+  typeof NRFI !== "undefined" &&
+  typeof NRFI.load === "function"
+) {
+  await NRFI.load(games);
+}
+
+if (
+  typeof Moneyline !== "undefined" &&
+  typeof Moneyline.load ===
+    "function"
+) {
+  await Moneyline.load(games);
+}
 
     console.log(
       "✅ POPS recalculation complete."
