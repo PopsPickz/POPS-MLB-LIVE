@@ -106,26 +106,30 @@ const Parlays = {
   */
 
   getPlayerName(player = {}) {
-    return this.text(
-      player.name ||
-      player.playerName ||
-      player.batterName ||
-      player.fullName ||
-      player.player?.fullName,
-      "Unknown Player"
-    );
-  },
+  return this.text(
+    typeof player.player === "string"
+      ? player.player
+      : (
+          player.name ||
+          player.playerName ||
+          player.batterName ||
+          player.fullName ||
+          player.player?.fullName
+        ),
+    "Unknown Player"
+  );
+},
 
   getPlayerId(player = {}) {
-    return this.text(
-      player.id ||
-      player.playerId ||
-      player.batterId ||
-      player.personId ||
-      player.player?.id ||
-      this.getPlayerName(player)
-    );
-  },
+  return this.text(
+    player.id ||
+    player.playerId ||
+    player.batterId ||
+    player.personId ||
+    player.player?.id ||
+    `${this.getPlayerName(player)}-${this.getTeam(player)}`
+  );
+},
 
   getScore(player = {}) {
     return this.num(
@@ -371,34 +375,52 @@ const Parlays = {
   */
 
   normalizePlayers(hrPicks = []) {
-    if (!Array.isArray(hrPicks)) {
-      return [];
-    }
+  if (!Array.isArray(hrPicks)) {
+    return [];
+  }
 
-    const normalized = hrPicks
-      .filter(Boolean)
-      .map(player => ({
-        ...player,
+  const topHrPicks = hrPicks
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        this.getScore(b) -
+        this.getScore(a)
+    )
+    .slice(0, 20);
 
-        _parlayName: this.getPlayerName(player),
-        _parlayId: this.getPlayerId(player),
-        _parlayScore: this.getScore(player),
-        _parlayTeam: this.getTeam(player),
-        _parlayOpponent: this.getOpponent(player),
-        _parlayPitcher: this.getPitcher(player),
-        _parlayGameKey: this.getGameKey(player),
-        _parlayConfirmed: this.isConfirmed(player)
-      }))
-      .filter(player =>
-        player._parlayName !== "Unknown Player" &&
-        player._parlayScore >= this.settings.minimumScore
-      );
+  const normalized = topHrPicks.map(player => ({
+    ...player,
 
-    const uniquePlayers = this.uniqueBy(
-      normalized,
-      player => player._parlayId
-    );
+    _parlayName:
+      this.getPlayerName(player),
 
+    _parlayId:
+      this.getPlayerId(player),
+
+    _parlayScore:
+      this.getScore(player),
+
+    _parlayTeam:
+      this.getTeam(player),
+
+    _parlayOpponent:
+      this.getOpponent(player),
+
+    _parlayPitcher:
+      this.getPitcher(player),
+
+    _parlayGameKey:
+      this.getGameKey(player),
+
+    _parlayConfirmed:
+      this.isConfirmed(player)
+  }));
+
+  return this.uniqueBy(
+    normalized,
+    player => player._parlayId
+  );
+},
     return uniquePlayers.sort(
       (a, b) => b._parlayScore - a._parlayScore
     );
@@ -554,9 +576,22 @@ const Parlays = {
   */
 
   build(hrPicks = []) {
-    let players = this.normalizePlayers(hrPicks);
-    players = this.filterConfirmed(players);
+  let sourcePicks = hrPicks;
 
+  if (
+    !Array.isArray(sourcePicks) ||
+    !sourcePicks.length
+  ) {
+    sourcePicks = Array.isArray(window.hrPicks)
+      ? window.hrPicks
+      : [];
+  }
+
+  let players =
+    this.normalizePlayers(sourcePicks);
+
+  players =
+    this.filterConfirmed(players);
     const usedCombinationKeys = new Set();
 
     const safe = this.createCombination(
