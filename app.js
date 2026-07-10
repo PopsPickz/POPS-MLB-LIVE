@@ -14,7 +14,7 @@ let hitPicks = [];
 
 /*
 =========================================================
-POPS REFRESH SETTINGS
+POPS PICKZ 11.0 REFRESH SETTINGS
 =========================================================
 */
 
@@ -54,6 +54,26 @@ function formatTime(dateString) {
   });
 }
 
+function formatDecimal(value, places = 3) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return Number(0).toFixed(places);
+  }
+
+  return number.toFixed(places);
+}
+
+function formatMetric(value, suffix = "", places = 1) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number <= 0) {
+    return "N/A";
+  }
+
+  return `${number.toFixed(places)}${suffix}`;
+}
+
 async function safe(fn, fallback) {
   try {
     return await fn();
@@ -85,10 +105,7 @@ function hasNamedStarter(name, id) {
 }
 
 function getGameStatusObject(game = {}) {
-  if (
-    game.status &&
-    typeof game.status === "object"
-  ) {
+  if (game.status && typeof game.status === "object") {
     return game.status;
   }
 
@@ -151,10 +168,6 @@ function gameHasNotStarted(game = {}) {
     return true;
   }
 
-  /*
-  Continue checking for 30 minutes after scheduled time.
-  This helps with delays and late starter announcements.
-  */
   return Date.now() < firstPitch + 30 * 60 * 1000;
 }
 
@@ -167,6 +180,72 @@ function getBatterId(batter = {}) {
     batter?.person?.id ||
     0
   );
+}
+
+function emptyRecentForm() {
+  return {
+    games: 0,
+    avg: 0,
+    obp: 0,
+    slg: 0,
+    ops: 0,
+    iso: 0,
+    atBats: 0,
+    hits: 0,
+    doubles: 0,
+    triples: 0,
+    homeRuns: 0,
+    extraBaseHits: 0
+  };
+}
+
+function emptyStatcast() {
+  return {
+    available: false,
+    hasStatcastData: false,
+
+    barrelRate: 0,
+    barrelPct: 0,
+
+    hardHitRate: 0,
+    hardHitPct: 0,
+
+    exitVelocity: 0,
+    avgExitVelo: 0,
+    avgExitVelocity: 0,
+
+    launchAngle: 0,
+    avgLaunchAngle: 0,
+
+    sweetSpotRate: 0,
+    sweetSpotPct: 0,
+
+    flyBallRate: 0,
+    flyBallPct: 0,
+
+    pullRate: 0,
+    pullPct: 0
+  };
+}
+
+function mergeStatcastWithFallback(
+  playerName,
+  liveStats = {}
+) {
+  if (
+    typeof StatcastData !== "undefined" &&
+    typeof StatcastData.mergeWithLive === "function"
+  ) {
+    return StatcastData.mergeWithLive(
+      playerName,
+      liveStats
+    );
+  }
+
+  return {
+    ...emptyStatcast(),
+    ...(liveStats || {})
+  };
 }
 
 function clearPageSections() {
@@ -288,6 +367,8 @@ async function enrichBatter(
     playerInfo,
     hitting,
     hitStreak,
+    recentForm,
+    liveStatcast,
     bvp
   ] = await Promise.all([
     safe(
@@ -304,6 +385,22 @@ async function enrichBatter(
       () => API.getHitStreak(batterId),
       0
     ),
+
+    safe(
+      () => API.getRecentForm(batterId),
+      emptyRecentForm()
+    ),
+
+    typeof StatcastAPI !== "undefined" &&
+    typeof StatcastAPI.getPlayerPowerStats === "function"
+      ? safe(
+          () =>
+            StatcastAPI.getPlayerPowerStats(
+              batterId
+            ),
+          emptyStatcast()
+        )
+      : Promise.resolve(emptyStatcast()),
 
     opposingPitcherId
       ? safe(
@@ -327,13 +424,21 @@ async function enrichBatter(
         })
   ]);
 
+  const playerName =
+    batter.name ||
+    playerInfo.name ||
+    "Unknown";
+
+  const statcast =
+    mergeStatcastWithFallback(
+      playerName,
+      liveStatcast
+    );
+
   return {
     id: batterId,
 
-    name:
-      batter.name ||
-      playerInfo.name ||
-      "Unknown",
+    name: playerName,
 
     team: teamName,
 
@@ -353,20 +458,13 @@ async function enrichBatter(
 
     hitting: hitting || {},
 
-    statcast: {
-      available: false,
-      barrelPct: null,
-      hardHitPct: null,
-      avgExitVelocity: null,
-      launchAngle: null,
-      sweetSpotPct: null,
-      flyBallPct: null,
-      pullPct: null
-    },
+    statcast,
 
-    recentForm: {},
+    recentForm:
+      recentForm || emptyRecentForm(),
 
-    handednessSplit: {},
+    handednessSplit:
+      batter.handednessSplit || {},
 
     hitStreak:
       Number(hitStreak || 0),
@@ -716,16 +814,12 @@ async function loadTodayData(
 
   loadedScheduleDate = requestedDate;
 
-  /*
-  Build each game one at a time to reduce MLB API congestion.
-  */
   for (const scheduleGame of schedule) {
     const game = await buildGameData(
       scheduleGame
     );
 
     todayData.games.push(game);
-
     rebuildGamesArray();
   }
 
@@ -767,13 +861,8 @@ function renderGames() {
           ${game.homeTeam}
         </h3>
 
-        <p>
-          ⏰ ${formatTime(game.date)}
-        </p>
-
-        <p>
-          🏟️ ${game.venue}
-        </p>
+        <p>⏰ ${formatTime(game.date)}</p>
+        <p>🏟️ ${game.venue}</p>
 
         <p>
           <strong>${game.awayTeam}:</strong>
@@ -1204,7 +1293,6 @@ BATTER STAT HELPERS
 
 function mergeBatterStats(batter = {}) {
   const hitting = batter.hitting || {};
-  const statcast = batter.statcast || {};
 
   const avg = Number(hitting.avg || 0);
   const slg = Number(hitting.slg || 0);
@@ -1212,7 +1300,6 @@ function mergeBatterStats(batter = {}) {
 
   return {
     ...hitting,
-    ...statcast,
 
     avg,
     slg,
@@ -1228,11 +1315,14 @@ function mergeBatterStats(batter = {}) {
       Number(hitting.atBats || 0),
 
     iso:
-      slg && avg
-        ? Number(
-            (slg - avg).toFixed(3)
-          )
-        : 0
+      Number(
+        hitting.iso ||
+        (
+          slg > 0
+            ? slg - avg
+            : 0
+        )
+      )
   };
 }
 
@@ -1249,44 +1339,67 @@ function addHRPick(
   pitcherStats,
   pitcherHand = ""
 ) {
-  
   const batterStats =
     mergeBatterStats(batter);
 
-  const recentForm = batter.recentForm || {};
+  const recentForm =
+    batter.recentForm || emptyRecentForm();
 
-const statcast = batter.statcast || {};
+  const statcast =
+    batter.statcast || emptyStatcast();
 
-const hrLast10 =
-  Number(recentForm.homeRuns || 0);
+  const hrLast10 =
+    Number(recentForm.homeRuns || 0);
 
-const opsLast10 =
-  Number(recentForm.ops || 0);
+  const opsLast10 =
+    Number(recentForm.ops || 0);
 
-const isoLast10 =
-  Number(recentForm.iso || 0);
+  const isoLast10 =
+    Number(recentForm.iso || 0);
 
-const barrelRate =
-  Number(
-    statcast.barrelRate ||
-    statcast.barrelPct ||
-    0
-  );
+  const barrelRate =
+    Number(
+      statcast.barrelRate ||
+      statcast.barrelPct ||
+      0
+    );
 
-const hardHitRate =
-  Number(
-    statcast.hardHitRate ||
-    statcast.hardHitPct ||
-    0
-  );
+  const hardHitRate =
+    Number(
+      statcast.hardHitRate ||
+      statcast.hardHitPct ||
+      0
+    );
 
-const exitVelocity =
-  Number(
-    statcast.avgExitVelo ||
-    statcast.exitVelocity ||
-    0
-  );
-  
+  const exitVelocity =
+    Number(
+      statcast.avgExitVelo ||
+      statcast.avgExitVelocity ||
+      statcast.exitVelocity ||
+      0
+    );
+
+  const flyBallRate =
+    Number(
+      statcast.flyBallRate ||
+      statcast.flyBallPct ||
+      0
+    );
+
+  const launchAngle =
+    Number(
+      statcast.launchAngle ||
+      statcast.avgLaunchAngle ||
+      0
+    );
+
+  const sweetSpotRate =
+    Number(
+      statcast.sweetSpotRate ||
+      statcast.sweetSpotPct ||
+      0
+    );
+
   const bvpStats =
     batter.bvp || {
       atBats: 0,
@@ -1302,17 +1415,22 @@ const exitVelocity =
     Number(batter.hitStreak || 0);
 
   const batterHand =
-    batter.batSide || "";
+    String(batter.batSide || "")
+      .toUpperCase();
+
+  const normalizedPitcherHand =
+    String(pitcherHand || "")
+      .toUpperCase();
 
   const hasPlatoonAdvantage =
     batterHand === "S" ||
     (
       batterHand === "L" &&
-      pitcherHand === "R"
+      normalizedPitcherHand === "R"
     ) ||
     (
       batterHand === "R" &&
-      pitcherHand === "L"
+      normalizedPitcherHand === "L"
     );
 
   if (
@@ -1391,20 +1509,8 @@ const exitVelocity =
         )
     },
 
-    statcast:
-      batter.statcast || {
-        available: false,
-        barrelPct: null,
-        hardHitPct: null,
-        avgExitVelocity: null,
-        launchAngle: null,
-        sweetSpotPct: null,
-        flyBallPct: null,
-        pullPct: null
-      },
-
-    recentForm:
-      batter.recentForm || {},
+    statcast,
+    recentForm,
 
     handednessSplit:
       batter.handednessSplit || {},
@@ -1415,34 +1521,20 @@ const exitVelocity =
   };
 
   const result = Formula.getHRScore({
-
-    batter: {
-        ...modelBatter,
-
-        recentForm: batter.recentForm || {},
-
-        statcast: batter.statcast || {},
-
-        bvp: bvpStats,
-
-        lineupSpot: batter.lineupSpot,
-
-        batSide: batterHand
-    },
+    batter: modelBatter,
 
     pitcher: {
-        ...pitcherStats
+      ...pitcherStats
     },
 
-    pitcherHand,
+    pitcherHand:
+      normalizedPitcherHand,
 
     handednessSplit:
-        batter.handednessSplit || {},
+      batter.handednessSplit || {},
 
-    recentForm:
-        batter.recentForm || {}
-
-});
+    recentForm
+  });
 
   const breakdown =
     Array.isArray(result?.breakdown)
@@ -1468,35 +1560,32 @@ const exitVelocity =
     lineupSpot:
       batter.lineupSpot,
 
-    hitStreak,
-
-    hrLast10,
-
-    recentForm:
-       batter.recentForm || {},
-
-    statcast:
-       batter.statcast || {},
-
-    barrelRate,
-
-    hardHitRate,
-
-    exitVelocity,
-
-    flyBallRate,
-
-    launchAngle,    
     confirmed:
-      batter.confirmed,
+      Boolean(batter.confirmed),
 
     batterHand,
-    pitcherHand,
+    pitcherHand:
+      normalizedPitcherHand,
+
     hasPlatoonAdvantage,
 
     bvpHR,
     bvpStats,
     hitStreak,
+
+    hrLast10,
+    opsLast10,
+    isoLast10,
+
+    recentForm,
+    statcast,
+
+    barrelRate,
+    hardHitRate,
+    exitVelocity,
+    flyBallRate,
+    launchAngle,
+    sweetSpotRate,
 
     score:
       Number(result?.score || 0),
@@ -1507,7 +1596,10 @@ const exitVelocity =
     confidence:
       result?.confidence || {},
 
-    breakdown
+    breakdown,
+
+    dataAvailability:
+      result?.dataAvailability || {}
   });
 }
 
@@ -1545,56 +1637,39 @@ async function loadHRPicks() {
         : Promise.resolve({})
     ]);
 
-    for (const batter of game.awayLineup || []) {
+    /*
+    Batter enrichment already loaded:
+    - season hitting
+    - hit streak
+    - recent form
+    - Statcast
+    - BvP
+    */
+    for (
+      const batter of
+      game.awayLineup || []
+    ) {
+      addHRPick(
+        game,
+        batter,
+        game.homePitcher,
+        game.homePitcherStats || {},
+        homePitcherInfo.pitchHand || ""
+      );
+    }
 
-  if (batter.id) {
-
-    batter.recentForm = await safe(
-      () => API.getRecentForm(batter.id),
-      {}
-    );
-
-    batter.statcast = await safe(
-      () => StatcastAPI.getPlayerPowerStats(batter.id),
-      {}
-    );
-
-  }
-
-  addHRPick(
-    game,
-    batter,
-    game.homePitcher,
-    game.homePitcherStats || {},
-    homePitcherInfo.pitchHand || ""
-  );
-
-}
-    for (const batter of game.homeLineup || []) {
-
-  if (batter.id) {
-
-    batter.recentForm = await safe(
-      () => API.getRecentForm(batter.id),
-      {}
-    );
-
-    batter.statcast = await safe(
-      () => StatcastAPI.getPlayerPowerStats(batter.id),
-      {}
-    );
-
-  }
-
-  addHRPick(
-    game,
-    batter,
-    game.awayPitcher,
-    game.awayPitcherStats || {},
-    awayPitcherInfo.pitchHand || ""
-  );
-
-}
+    for (
+      const batter of
+      game.homeLineup || []
+    ) {
+      addHRPick(
+        game,
+        batter,
+        game.awayPitcher,
+        game.awayPitcherStats || {},
+        awayPitcherInfo.pitchHand || ""
+      );
+    }
   }
 
   const uniquePlayers = {};
@@ -1708,6 +1783,75 @@ async function loadHRPicks() {
           </p>
 
           <p>
+            <strong>💣 HR in Last 10 Games:</strong>
+            ${pick.hrLast10}
+          </p>
+
+          <p>
+            <strong>📈 OPS Last 10:</strong>
+            ${formatDecimal(
+              pick.opsLast10,
+              3
+            )}
+          </p>
+
+          <div class="hr-statcast-summary">
+            <p>
+              <strong>🔥 Barrel Rate:</strong>
+              ${formatMetric(
+                pick.barrelRate,
+                "%",
+                1
+              )}
+            </p>
+
+            <p>
+              <strong>💥 Hard-Hit Rate:</strong>
+              ${formatMetric(
+                pick.hardHitRate,
+                "%",
+                1
+              )}
+            </p>
+
+            <p>
+              <strong>🚀 Exit Velocity:</strong>
+              ${formatMetric(
+                pick.exitVelocity,
+                " MPH",
+                1
+              )}
+            </p>
+
+            <p>
+              <strong>📐 Launch Angle:</strong>
+              ${formatMetric(
+                pick.launchAngle,
+                "°",
+                1
+              )}
+            </p>
+
+            <p>
+              <strong>☁️ Fly-Ball Rate:</strong>
+              ${formatMetric(
+                pick.flyBallRate,
+                "%",
+                1
+              )}
+            </p>
+
+            <p>
+              <strong>🎯 Sweet-Spot Rate:</strong>
+              ${formatMetric(
+                pick.sweetSpotRate,
+                "%",
+                1
+              )}
+            </p>
+          </div>
+
+          <p>
             <strong>POPS HR Score:</strong>
             <span class="score">
               ${pick.score}/100
@@ -1803,7 +1947,11 @@ function addHitPick(
     batter.lineupSpot,
     hitStreak,
     bvpHR,
-    stats
+    {
+      ...stats,
+      recentForm:
+        batter.recentForm || {}
+    }
   );
 
   hitPicks.push({
@@ -2062,6 +2210,14 @@ async function reloadForNewDay() {
       API.clearAllCaches();
     }
 
+    if (
+      typeof StatcastAPI !== "undefined" &&
+      typeof StatcastAPI.clearCache ===
+        "function"
+    ) {
+      StatcastAPI.clearCache();
+    }
+
     games = [];
     hrPicks = [];
     hitPicks = [];
@@ -2140,7 +2296,7 @@ async function init() {
   clearPageSections();
 
   console.log(
-    "🚀 Starting POPS Pickz 10.0"
+    "🚀 Starting POPS Pickz 11.0"
   );
 
   console.log(
@@ -2152,11 +2308,7 @@ async function init() {
 
   renderGames();
 
-  /*
-  Check probable starters immediately.
-  */
   await checkForStarterUpdates();
-
   await recalculateAllPicks();
 
   if (hasPregameGamesRemaining()) {
