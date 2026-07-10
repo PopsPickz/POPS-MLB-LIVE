@@ -269,64 +269,78 @@ getTeamHittingStats(stats = {}) {
 },
   
   getTeamAverage(stats = {}) {
-    return this.num(
-      stats.avg ??
-      stats.battingAverage ??
-      stats.average,
-      0
-    );
-  },
+  const hitting =
+    this.getTeamHittingStats(stats);
+
+  return this.num(
+    hitting.avg ??
+    hitting.battingAverage ??
+    hitting.average,
+    0
+  );
+},
 
   getTeamOPS(stats = {}) {
-    return this.num(
-      stats.ops ??
-      stats.OPS,
-      0
-    );
-  },
+  const hitting =
+    this.getTeamHittingStats(stats);
+
+  return this.num(
+    hitting.ops ??
+    hitting.OPS,
+    0
+  );
+},
 
   getTeamRuns(stats = {}) {
-    return this.num(
-      stats.runs ??
-      stats.r ??
-      stats.runsScored,
-      0
-    );
-  },
+  const hitting =
+    this.getTeamHittingStats(stats);
+
+  return this.num(
+    hitting.runs ??
+    hitting.r ??
+    hitting.runsScored,
+    0
+  );
+},
 
   getTeamGamesPlayed(stats = {}) {
-    return this.num(
-      stats.gamesPlayed ??
-      stats.games ??
-      stats.g,
-      0
-    );
-  },
+  const hitting =
+    this.getTeamHittingStats(stats);
+
+  return this.num(
+    hitting.gamesPlayed ??
+    hitting.games ??
+    hitting.g,
+    0
+  );
+},
 
   getTeamRunsPerGame(stats = {}) {
-    const directValue = this.num(
-      stats.runsPerGame ??
-      stats.rpg,
-      0
-    );
+  const hitting =
+    this.getTeamHittingStats(stats);
 
-    if (directValue > 0) {
-      return directValue;
-    }
+  const directValue = this.num(
+    hitting.runsPerGame ??
+    hitting.rpg,
+    0
+  );
 
-    const gamesPlayed =
-      this.getTeamGamesPlayed(stats);
+  if (directValue > 0) {
+    return directValue;
+  }
 
-    const runs =
-      this.getTeamRuns(stats);
+  const gamesPlayed =
+    this.getTeamGamesPlayed(stats);
 
-    if (gamesPlayed <= 0) {
-      return 0;
-    }
+  const runs =
+    this.getTeamRuns(stats);
 
-    return runs / gamesPlayed;
-  },
+  if (gamesPlayed <= 0) {
+    return 0;
+  }
 
+  return runs / gamesPlayed;
+},
   /*
   =======================================================
   LINEUP HELPERS
