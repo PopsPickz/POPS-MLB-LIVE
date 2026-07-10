@@ -762,18 +762,30 @@ function addHRPick(
     batSide: batterHand
   };
 
-  const result = POPSModels.getHRScore({
-    batter: modelBatter,
-    pitcher: pitcherData,
-    pitcherHand,
-    handednessSplit:
-      batter.handednessSplit || {},
-    recentForm:
-      batter.recentForm || {}
-  });
+  if (
+  typeof Formula === "undefined" ||
+  typeof Formula.getHRScore !== "function"
+) {
+  console.error(
+    "POPS Formula is unavailable. Make sure formula.js loads before app.js."
+  );
 
-  const breakdown =
-    POPSModels.formatBreakdown(result);
+  return;
+}
+
+const result = Formula.getHRScore({
+  batter: modelBatter,
+  pitcher: pitcherData,
+  pitcherHand,
+  handednessSplit:
+    batter.handednessSplit || {},
+  recentForm:
+    batter.recentForm || {}
+});
+
+const breakdown = Array.isArray(result.breakdown)
+  ? result.breakdown
+  : [];
 
   hrPicks.push({
     player: batter.name,
