@@ -24,20 +24,20 @@ Parlays.render(hrPicks);
 
 const Parlays = {
   settings: {
-    minimumScore: 70,
-    safeMinimumScore: 85,
-    balancedMinimumScore: 78,
-    valueMinimumScore: 70,
+  minimumScore: 0,
+  safeMinimumScore: 0,
+  balancedMinimumScore: 0,
+  valueMinimumScore: 0,
 
-    requireConfirmedLineup: false,
-    preferDifferentGames: true,
-    preferDifferentTeams: true,
+  requireConfirmedLineup: false,
+  preferDifferentGames: true,
+  preferDifferentTeams: true,
 
-    safeLegs: 2,
-    balancedLegs: 3,
-    valueLegs: 3,
-    longshotLegs: 4
-  },
+  safeLegs: 2,
+  balancedLegs: 3,
+  valueLegs: 3,
+  longshotLegs: 4
+},
 
   /*
   =======================================================
