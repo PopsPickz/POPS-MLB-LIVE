@@ -1477,31 +1477,53 @@ async function loadHRPicks() {
         : Promise.resolve({})
     ]);
 
-    for (
-      const batter of
-      game.awayLineup || []
-    ) {
-      addHRPick(
+    for (const batter of game.awayLineup || []) {
+
+    if (batter.id) {
+
+        batter.recentForm =
+            await API.getRecentForm(batter.id);
+
+        batter.statcast =
+            await StatcastAPI.getPlayerPowerStats(
+                batter.id
+            );
+
+    }
+
+    addHRPick(
         game,
         batter,
         game.homePitcher,
         game.homePitcherStats || {},
         homePitcherInfo.pitchHand || ""
-      );
+    );
+
+}
+
+    for (const batter of game.homeLineup || []) {
+
+    if (batter.id) {
+
+        batter.recentForm =
+            await API.getRecentForm(batter.id);
+
+        batter.statcast =
+            await StatcastAPI.getPlayerPowerStats(
+                batter.id
+            );
+
     }
 
-    for (
-      const batter of
-      game.homeLineup || []
-    ) {
-      addHRPick(
+    addHRPick(
         game,
         batter,
         game.awayPitcher,
         game.awayPitcherStats || {},
         awayPitcherInfo.pitchHand || ""
-      );
-    }
+    );
+
+}
   }
 
   const uniquePlayers = {};
