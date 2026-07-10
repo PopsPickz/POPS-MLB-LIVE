@@ -1200,140 +1200,175 @@ const API = {
   =========================================================
   */
 
-  async getBvPStats(
-    batterId,
-    pitcherId,
-    forceRefresh = false
+async getBvPStats(
+  batterId,
+  pitcherId,
+  forceRefresh = false
+) {
+  batterId = Number(batterId || 0);
+  pitcherId = Number(pitcherId || 0);
+
+  const empty = {
+    atBats: 0,
+    hits: 0,
+    doubles: 0,
+    triples: 0,
+    homeRuns: 0,
+    rbi: 0,
+    baseOnBalls: 0,
+    strikeOuts: 0,
+    avg: ".000",
+    obp: ".000",
+    slg: ".000",
+    ops: ".000"
+  };
+
+  if (!batterId || !pitcherId) {
+    return empty;
+  }
+
+  const cacheKey =
+    `career-${batterId}-${pitcherId}`;
+
+  if (
+    !forceRefresh &&
+    this.cache.bvp[cacheKey]
   ) {
-    batterId =
-      Number(batterId || 0);
+    return this.cache.bvp[cacheKey];
+  }
 
-    pitcherId =
-      Number(pitcherId || 0);
-
-    const empty = {
-      atBats: 0,
-      hits: 0,
-      avg: ".000",
-      homeRuns: 0
-    };
-
-    if (!batterId || !pitcherId) {
-      return empty;
-    }
-
-    const cacheKey =
-      `${batterId}-${pitcherId}`;
-
-    if (
-      !forceRefresh &&
-      this.cache.bvp[cacheKey]
-    ) {
-      return this.cache.bvp[
-        cacheKey
-      ];
-    }
-
-    if (forceRefresh) {
-      delete this.cache.bvp[
-        cacheKey
-      ];
-    }
-
-    const season =
-      this.currentSeason();
-
-    const url =
-      `${this.base}/people/` +
-      `${batterId}/stats` +
-      `?stats=vsPlayer` +
-      `&group=hitting` +
-      `&opposingPlayerId=${pitcherId}` +
-      `&season=${season}`;
-
-    const data = await this.fetchJSON(
-      url,
-      forceRefresh
-    );
-
-    const stat =
-      data?.stats?.[0]?.splits?.[0]
-        ?.stat || {};
-
-    const result = {
-      atBats:
-        Number(stat.atBats || 0),
-
-      hits:
-        Number(stat.hits || 0),
-
-      avg:
-        stat.avg || ".000",
-
-      homeRuns:
-        Number(stat.homeRuns || 0)
-    };
-
-    this.cache.bvp[cacheKey] =
-      result;
-
-    return result;
-  },
-
-  async getBvP(
-    batterId,
-    pitcherId,
-    forceRefresh = false
-  ) {
-    return await this.getBvPStats(
-      batterId,
-      pitcherId,
-      forceRefresh
-    );
-  },
-
-  async getBVP(
-    batterId,
-    pitcherId,
-    forceRefresh = false
-  ) {
-    return await this.getBvPStats(
-      batterId,
-      pitcherId,
-      forceRefresh
-    );
-  },
-
-  async getBatterVsPitcher(
-    batterId,
-    pitcherId,
-    forceRefresh = false
-  ) {
-    return await this.getBvPStats(
-      batterId,
-      pitcherId,
-      forceRefresh
-    );
-  },
-
-  async getBvPHR(
-    batterId,
-    pitcherId,
-    forceRefresh = false
-  ) {
-    const stats =
-      await this.getBvPStats(
-        batterId,
-        pitcherId,
-        forceRefresh
-      );
-
-    return Number(
-      stats.homeRuns || 0
-    );
-  },
+  if (forceRefresh) {
+    delete this.cache.bvp[cacheKey];
+  }
 
   /*
+  IMPORTANT:
+  Do not include &season= here.
+
+  Without the season parameter, this requests the
+  batter's career history against the pitcher.
+  */
+  const url =
+    `${this.base}/people/${batterId}/stats` +
+    `?stats=vsPlayer` +
+    `&group=hitting` +
+    `&opposingPlayerId=${pitcherId}` +
+    `&sportId=1`;
+
+  const data = await this.fetchJSON(
+    url,
+    forceRefresh
+  );
+
+  const splits =
+    data?.stats?.[0]?.splits || [];
+
+  /*
+  Some responses may contain more than one split.
+  Add them together instead of reading only splits[0].
+  */
+  let atBats = 0;
+  let hits = 0;
+  let doubles = 0;
+  let triples = 0;
+  let homeRuns = 0;
+  let rbi = 0;
+  let baseOnBalls = 0;
+  let strikeOuts = 0;
+  let hitByPitch = 0;
+  let sacFlies = 0;
+
+  for (const split of splits) {
+    const stat = split?.stat || {};
+
+    atBats += Number(stat.atBats || 0);
+    hits += Number(stat.hits || 0);
+    doubles += Number(stat.doubles || 0);
+    triples += Number(stat.triples || 0);
+    homeRuns += Number(stat.homeRuns || 0);
+    rbi += Number(stat.rbi || 0);
+    baseOnBalls += Number(
+      stat.baseOnBalls || 0
+    );
+    strikeOuts += Number(
+      stat.strikeOuts || 0
+    );
+    hitByPitch += Number(
+      stat.hitByPitch || 0
+    );
+    sacFlies += Number(
+      stat.sacFlies || 0
+    );
+  }
+
+  const singles = Math.max(
+    0,
+    hits - doubles - triples - homeRuns
+  );
+
+  const totalBases =
+    singles +
+    doubles * 2 +
+    triples * 3 +
+    homeRuns * 4;
+
+  const avg =
+    atBats > 0
+      ? hits / atBats
+      : 0;
+
+  const obpDenominator =
+    atBats +
+    baseOnBalls +
+    hitByPitch +
+    sacFlies;
+
+  const obp =
+    obpDenominator > 0
+      ? (
+          hits +
+          baseOnBalls +
+          hitByPitch
+        ) / obpDenominator
+      : 0;
+
+  const slg =
+    atBats > 0
+      ? totalBases / atBats
+      : 0;
+
+  const ops = obp + slg;
+
+  const result = {
+    atBats,
+    hits,
+    doubles,
+    triples,
+    homeRuns,
+    rbi,
+    baseOnBalls,
+    strikeOuts,
+
+    avg: avg.toFixed(3),
+    obp: obp.toFixed(3),
+    slg: slg.toFixed(3),
+    ops: ops.toFixed(3)
+  };
+
+  this.cache.bvp[cacheKey] = result;
+
+  console.log(
+    "⚾ Career BvP:",
+    {
+      batterId,
+      pitcherId,
+      url,
+      result
+    }
+  );
+
+  return result;
+},
   =========================================================
   PLAYER INFORMATION
   =========================================================
