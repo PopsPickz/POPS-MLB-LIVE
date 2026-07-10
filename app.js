@@ -817,8 +817,7 @@ const breakdown = Array.isArray(result.breakdown)
     bvpStats,
     hitStreak,
 
-    score:
-      result.score,
+    score: Number(result.score || 0),
 
     tier:
       result.tier,
