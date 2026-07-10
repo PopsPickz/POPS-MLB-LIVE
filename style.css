@@ -209,3 +209,51 @@ font-size:22px;
 .pitcher-target-card + .pitcher-target-card {
   margin-top: 40px;
 }
+
+.hr-breakdown {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 115, 20, 0.45);
+}
+
+.hr-breakdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  font-size: 0.98rem;
+}
+
+.hr-breakdown-label {
+  color: #f3f3f3;
+  font-weight: 700;
+}
+
+.hr-breakdown-score {
+  flex-shrink: 0;
+  color: #ff8a1f;
+  font-weight: 800;
+}
+
+.hr-model-summary {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 115, 20, 0.45);
+  border-radius: 14px;
+  background: rgba(255, 115, 20, 0.06);
+}
+
+.hr-model-summary p {
+  margin: 6px 0;
+}
+
+@media (max-width: 520px) {
+  .hr-breakdown-row {
+    font-size: 0.9rem;
+  }
+
+  .hr-breakdown-label {
+    padding-right: 8px;
+  }
+}
