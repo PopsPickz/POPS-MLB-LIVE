@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>POPS Pickz MLB 10.0</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>POPS Pickz MLB 11.0</title>
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -13,29 +17,52 @@
   <div class="app">
 
     <header class="hero">
-      <h1>⚾ POPS Pickz 10.0</h1>
-      <p>Automatic MLB HR Pickz • Hit Pickz • Moneyline Edges</p>
+      <h1>⚾ POPS Pickz 11.0</h1>
+
+      <p>
+        Automatic MLB HR Pickz • Hit Pickz • Moneyline Edges
+      </p>
     </header>
 
     <nav class="tabs">
-      <button onclick="showTab('pitchers')">
+      <button
+        type="button"
+        onclick="showTab('pitchers', this)"
+        class="active-tab"
+      >
         🎯 Pitchers
       </button>
 
-      <button onclick="showTab('homeruns')">
+      <button
+        type="button"
+        onclick="showTab('homeruns', this)"
+      >
         💣 HR Pickz
       </button>
 
-      <button onclick="showTab('hits')">
+      <button
+        type="button"
+        onclick="showTab('hits', this)"
+      >
         🔥 Hit Pickz
       </button>
 
-      <button onclick="showTab('moneyline')">
+      <button
+        type="button"
+        onclick="showTab('moneyline', this)"
+      >
         💰 Moneyline
       </button>
     </nav>
 
-    <div id="gamesBox" style="display: none;"></div>
+    <!--
+    Kept hidden for app.js compatibility.
+    app.js still looks for gamesBox.
+    -->
+    <div
+      id="gamesBox"
+      style="display: none;"
+    ></div>
 
     <section
       class="card tab-section active"
@@ -77,24 +104,37 @@
       <h2>💰 POPS Moneyline Pickz</h2>
 
       <div id="moneylineBox">
-        <p>Loading moneyline picks...</p>
+        <p>Loading Moneyline Pickz...</p>
       </div>
     </section>
 
   </div>
 
   <script>
-    function showTab(id) {
+    function showTab(id, clickedButton) {
       document
         .querySelectorAll(".tab-section")
         .forEach(section => {
           section.classList.remove("active");
         });
 
-      const target = document.getElementById(id);
+      document
+        .querySelectorAll(".tabs button")
+        .forEach(button => {
+          button.classList.remove("active-tab");
+        });
+
+      const target =
+        document.getElementById(id);
 
       if (target) {
         target.classList.add("active");
+      }
+
+      if (clickedButton) {
+        clickedButton.classList.add(
+          "active-tab"
+        );
       }
 
       window.scrollTo({
@@ -104,19 +144,32 @@
     }
   </script>
 
+  <!--
+  =========================================================
+  SCRIPT LOAD ORDER
+
+  Every file must load before the file that uses it.
+  =========================================================
+  -->
+
+  <!-- 1. Main MLB API -->
   <script src="api.js"></script>
+
+  <!-- 2. Live Baseball Savant Statcast API -->
+  <script src="statcast-api.js"></script>
+
+  <!-- 3. Optional manual Statcast fallback data -->
   <script src="statcast.js"></script>
+
+  <!-- 4. POPS scoring formula -->
   <script src="formula.js"></script>
 
-  <!-- New POPS HR Formula 3.0 engine -->
-  
-
-  <script src="statcast-api.js"></script>
+  <!-- 5. Supporting site modules -->
   <script src="moneyline.js"></script>
   <script src="homerun.js"></script>
   <script src="pitchers.js"></script>
 
-  <!-- app.js must load last -->
+  <!-- 6. Main app must always load last -->
   <script src="app.js"></script>
 </body>
 </html>
