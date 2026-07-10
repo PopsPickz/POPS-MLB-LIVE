@@ -1896,8 +1896,18 @@ async function loadHRPicks() {
       `
     )
     .join("");
-}
 
+  /*
+  Generate the HR parlay combinations after
+  the final HR rankings are ready.
+  */
+  if (
+    typeof Parlays !== "undefined" &&
+    typeof Parlays.render === "function"
+  ) {
+    Parlays.render(hrPicks);
+  }
+}
 /*
 =========================================================
 HIT PICKS
