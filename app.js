@@ -994,7 +994,32 @@ async function loadHRPicks() {
             </span>
           </p>
 
-          <p class="small">${pick.reasons}</p>
+          <div class="hr-breakdown">
+  ${(pick.breakdown || []).map(item => `
+    <div class="hr-breakdown-row">
+      <span class="hr-breakdown-label">
+        ${item.icon} ${item.label}
+      </span>
+
+      <span class="hr-breakdown-score">
+        ${item.score}/${item.max}
+      </span>
+    </div>
+  `).join("")}
+</div>
+
+<div class="hr-model-summary">
+  <p>
+    ⭐ <strong>Confidence:</strong>
+    ${pick.confidence?.label || "Low"}
+    (${pick.confidence?.score || 0}%)
+  </p>
+
+  <p>
+    ${pick.tier || ""}
+  </p>
+</div>
+
         </div>
       `
     )
