@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-10T14:58:49.684Z",
+  "generatedAt": "2026-07-10T16:32:17.950Z",
   "date": "2026-07-10",
   "version": "POPS Pickz Batter Data 3.1",
   "games": [
@@ -356,9 +356,9 @@
             "iso": 0.244
           },
           "bvp": {
-            "atBats": 11,
+            "atBats": 3,
             "hits": 1,
-            "avg": ".091",
+            "avg": ".333",
             "homeRuns": 1
           },
           "dataQuality": {
@@ -1408,9 +1408,9 @@
             "iso": 0.175
           },
           "bvp": {
-            "atBats": 8,
-            "hits": 2,
-            "avg": ".250",
+            "atBats": 3,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -5811,10 +5811,10 @@
             "iso": 0.424
           },
           "bvp": {
-            "atBats": 11,
-            "hits": 1,
-            "avg": ".091",
-            "homeRuns": 1
+            "atBats": 6,
+            "hits": 0,
+            "avg": ".000",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -5886,9 +5886,9 @@
             "iso": 0.027
           },
           "bvp": {
-            "atBats": 19,
+            "atBats": 5,
             "hits": 2,
-            "avg": ".105",
+            "avg": ".400",
             "homeRuns": 1
           },
           "dataQuality": {
@@ -6111,7 +6111,7 @@
             "iso": 0.158
           },
           "bvp": {
-            "atBats": 4,
+            "atBats": 0,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -6120,7 +6120,7 @@
             "seasonStats": true,
             "statcast": false,
             "recentForm": true,
-            "bvp": true,
+            "bvp": false,
             "confirmedLineup": false
           }
         },
@@ -6336,9 +6336,9 @@
             "iso": 0.429
           },
           "bvp": {
-            "atBats": 1,
-            "hits": 1,
-            "avg": "1.000",
+            "atBats": 3,
+            "hits": 2,
+            "avg": ".667",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -6563,7 +6563,7 @@
             "iso": 0.205
           },
           "bvp": {
-            "atBats": 3,
+            "atBats": 10,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -6638,10 +6638,10 @@
             "iso": 0.129
           },
           "bvp": {
-            "atBats": 8,
-            "hits": 4,
+            "atBats": 2,
+            "hits": 1,
             "avg": ".500",
-            "homeRuns": 1
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -6713,7 +6713,7 @@
             "iso": 0.086
           },
           "bvp": {
-            "atBats": 4,
+            "atBats": 2,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -6802,85 +6802,10 @@
           }
         },
         {
-          "id": 680574,
-          "name": "Matt McLain",
-          "position": "2B",
-          "lineupSpot": 6,
-          "confirmed": false,
-          "batSide": "R",
-          "hitting": {
-            "gamesPlayed": 83,
-            "plateAppearances": 309,
-            "atBats": 268,
-            "runs": 32,
-            "hits": 51,
-            "doubles": 13,
-            "triples": 0,
-            "homeRuns": 8,
-            "extraBaseHits": 21,
-            "rbi": 25,
-            "baseOnBalls": 36,
-            "strikeOuts": 83,
-            "avg": 0.19,
-            "obp": 0.293,
-            "slg": 0.328,
-            "ops": 0.621,
-            "iso": 0.138,
-            "hrRate": 0.0259,
-            "extraBaseHitRate": 0.0784,
-            "totalBases": 88,
-            "hasSeasonPowerData": true
-          },
-          "statcast": {
-            "available": false,
-            "barrelPct": null,
-            "hardHitPct": null,
-            "avgExitVelocity": null,
-            "launchAngle": null,
-            "sweetSpotPct": null,
-            "flyBallPct": null,
-            "pullPct": null
-          },
-          "hitStreak": 0,
-          "recentForm": {
-            "games": 10,
-            "plateAppearances": 26,
-            "atBats": 23,
-            "runs": 1,
-            "hits": 1,
-            "doubles": 0,
-            "triples": 0,
-            "homeRuns": 0,
-            "extraBaseHits": 0,
-            "totalBases": 1,
-            "rbi": 0,
-            "baseOnBalls": 2,
-            "strikeOuts": 11,
-            "avg": 0.043,
-            "obp": 0.12,
-            "slg": 0.043,
-            "ops": 0.163,
-            "iso": 0
-          },
-          "bvp": {
-            "atBats": 5,
-            "hits": 1,
-            "avg": ".200",
-            "homeRuns": 1
-          },
-          "dataQuality": {
-            "seasonStats": true,
-            "statcast": false,
-            "recentForm": true,
-            "bvp": true,
-            "confirmedLineup": false
-          }
-        },
-        {
           "id": 553993,
           "name": "Eugenio Suárez",
           "position": "DH",
-          "lineupSpot": 7,
+          "lineupSpot": 6,
           "confirmed": false,
           "batSide": "R",
           "hitting": {
@@ -6955,7 +6880,7 @@
           "id": 663886,
           "name": "Tyler Stephenson",
           "position": "C",
-          "lineupSpot": 8,
+          "lineupSpot": 7,
           "confirmed": false,
           "batSide": "R",
           "hitting": {
@@ -7030,7 +6955,7 @@
           "id": 682622,
           "name": "Noelvi Marte",
           "position": "RF",
-          "lineupSpot": 9,
+          "lineupSpot": 8,
           "confirmed": false,
           "batSide": "R",
           "hitting": {
@@ -7089,6 +7014,81 @@
           },
           "bvp": {
             "atBats": 5,
+            "hits": 0,
+            "avg": ".000",
+            "homeRuns": 0
+          },
+          "dataQuality": {
+            "seasonStats": true,
+            "statcast": false,
+            "recentForm": true,
+            "bvp": true,
+            "confirmedLineup": false
+          }
+        },
+        {
+          "id": 670770,
+          "name": "TJ Friedl",
+          "position": "CF",
+          "lineupSpot": 9,
+          "confirmed": false,
+          "batSide": "L",
+          "hitting": {
+            "gamesPlayed": 57,
+            "plateAppearances": 210,
+            "atBats": 184,
+            "runs": 18,
+            "hits": 32,
+            "doubles": 6,
+            "triples": 1,
+            "homeRuns": 3,
+            "extraBaseHits": 10,
+            "rbi": 11,
+            "baseOnBalls": 16,
+            "strikeOuts": 51,
+            "avg": 0.174,
+            "obp": 0.254,
+            "slg": 0.266,
+            "ops": 0.52,
+            "iso": 0.092,
+            "hrRate": 0.0143,
+            "extraBaseHitRate": 0.0543,
+            "totalBases": 49,
+            "hasSeasonPowerData": true
+          },
+          "statcast": {
+            "available": false,
+            "barrelPct": null,
+            "hardHitPct": null,
+            "avgExitVelocity": null,
+            "launchAngle": null,
+            "sweetSpotPct": null,
+            "flyBallPct": null,
+            "pullPct": null
+          },
+          "hitStreak": 1,
+          "recentForm": {
+            "games": 10,
+            "plateAppearances": 32,
+            "atBats": 28,
+            "runs": 3,
+            "hits": 4,
+            "doubles": 0,
+            "triples": 1,
+            "homeRuns": 1,
+            "extraBaseHits": 2,
+            "totalBases": 9,
+            "rbi": 3,
+            "baseOnBalls": 3,
+            "strikeOuts": 9,
+            "avg": 0.143,
+            "obp": 0.226,
+            "slg": 0.321,
+            "ops": 0.547,
+            "iso": 0.179
+          },
+          "bvp": {
+            "atBats": 3,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -7306,8 +7306,8 @@
             "iso": 0.222
           },
           "bvp": {
-            "atBats": 1,
-            "hits": 1,
+            "atBats": 2,
+            "hits": 2,
             "avg": "1.000",
             "homeRuns": 0
           },
@@ -7381,7 +7381,7 @@
             "iso": 0.067
           },
           "bvp": {
-            "atBats": 2,
+            "atBats": 4,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -7531,9 +7531,9 @@
             "iso": 0.026
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 1,
-            "avg": ".167",
+            "atBats": 2,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -7606,9 +7606,9 @@
             "iso": 0.051
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 3,
-            "avg": ".500",
+            "atBats": 2,
+            "hits": 2,
+            "avg": "1.000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -7681,10 +7681,10 @@
             "iso": 0.143
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 2,
-            "avg": ".333",
-            "homeRuns": 1
+            "atBats": 1,
+            "hits": 0,
+            "avg": ".000",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -8433,9 +8433,9 @@
             "iso": 0.154
           },
           "bvp": {
-            "atBats": 7,
-            "hits": 1,
-            "avg": ".143",
+            "atBats": 4,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -8876,10 +8876,10 @@
             "iso": 0.333
           },
           "bvp": {
-            "atBats": 41,
-            "hits": 9,
-            "avg": ".220",
-            "homeRuns": 1
+            "atBats": 3,
+            "hits": 0,
+            "avg": ".000",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -10748,9 +10748,9 @@
             "iso": 0.394
           },
           "bvp": {
-            "atBats": 13,
-            "hits": 6,
-            "avg": ".462",
+            "atBats": 4,
+            "hits": 3,
+            "avg": ".750",
             "homeRuns": 1
           },
           "dataQuality": {
@@ -11348,9 +11348,9 @@
             "iso": 0.526
           },
           "bvp": {
-            "atBats": 11,
-            "hits": 3,
-            "avg": ".273",
+            "atBats": 2,
+            "hits": 1,
+            "avg": ".500",
             "homeRuns": 1
           },
           "dataQuality": {
@@ -11941,9 +11941,9 @@
             "iso": 0.069
           },
           "bvp": {
-            "atBats": 5,
-            "hits": 1,
-            "avg": ".200",
+            "atBats": 2,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -12257,10 +12257,85 @@
           }
         },
         {
+          "id": 808959,
+          "name": "Munetaka Murakami",
+          "position": "1B",
+          "lineupSpot": 3,
+          "confirmed": false,
+          "batSide": "L",
+          "hitting": {
+            "gamesPlayed": 57,
+            "plateAppearances": 246,
+            "atBats": 200,
+            "runs": 43,
+            "hits": 48,
+            "doubles": 4,
+            "triples": 0,
+            "homeRuns": 20,
+            "extraBaseHits": 24,
+            "rbi": 41,
+            "baseOnBalls": 44,
+            "strikeOuts": 80,
+            "avg": 0.24,
+            "obp": 0.378,
+            "slg": 0.56,
+            "ops": 0.938,
+            "iso": 0.32,
+            "hrRate": 0.0813,
+            "extraBaseHitRate": 0.12,
+            "totalBases": 112,
+            "hasSeasonPowerData": true
+          },
+          "statcast": {
+            "available": false,
+            "barrelPct": null,
+            "hardHitPct": null,
+            "avgExitVelocity": null,
+            "launchAngle": null,
+            "sweetSpotPct": null,
+            "flyBallPct": null,
+            "pullPct": null
+          },
+          "hitStreak": 0,
+          "recentForm": {
+            "games": 10,
+            "plateAppearances": 43,
+            "atBats": 35,
+            "runs": 10,
+            "hits": 8,
+            "doubles": 2,
+            "triples": 0,
+            "homeRuns": 3,
+            "extraBaseHits": 5,
+            "totalBases": 19,
+            "rbi": 9,
+            "baseOnBalls": 7,
+            "strikeOuts": 14,
+            "avg": 0.229,
+            "obp": 0.372,
+            "slg": 0.543,
+            "ops": 0.915,
+            "iso": 0.314
+          },
+          "bvp": {
+            "atBats": 0,
+            "hits": 0,
+            "avg": ".000",
+            "homeRuns": 0
+          },
+          "dataQuality": {
+            "seasonStats": true,
+            "statcast": false,
+            "recentForm": true,
+            "bvp": false,
+            "confirmedLineup": false
+          }
+        },
+        {
           "id": 805367,
           "name": "Chase Meidroth",
           "position": "2B",
-          "lineupSpot": 3,
+          "lineupSpot": 4,
           "confirmed": false,
           "batSide": "R",
           "hitting": {
@@ -12335,7 +12410,7 @@
           "id": 643217,
           "name": "Andrew Benintendi",
           "position": "DH",
-          "lineupSpot": 4,
+          "lineupSpot": 5,
           "confirmed": false,
           "batSide": "L",
           "hitting": {
@@ -12410,7 +12485,7 @@
           "id": 803011,
           "name": "Sam Antonacci",
           "position": "LF",
-          "lineupSpot": 5,
+          "lineupSpot": 6,
           "confirmed": false,
           "batSide": "L",
           "hitting": {
@@ -12485,7 +12560,7 @@
           "id": 671976,
           "name": "Tristan Peters",
           "position": "CF",
-          "lineupSpot": 6,
+          "lineupSpot": 7,
           "confirmed": false,
           "batSide": "L",
           "hitting": {
@@ -12560,7 +12635,7 @@
           "id": 545341,
           "name": "Randal Grichuk",
           "position": "DH",
-          "lineupSpot": 7,
+          "lineupSpot": 8,
           "confirmed": false,
           "batSide": "R",
           "hitting": {
@@ -12635,7 +12710,7 @@
           "id": 691011,
           "name": "Drew Romo",
           "position": "C",
-          "lineupSpot": 8,
+          "lineupSpot": 9,
           "confirmed": false,
           "batSide": "S",
           "hitting": {
@@ -12691,81 +12766,6 @@
             "slg": 0.069,
             "ops": 0.225,
             "iso": 0
-          },
-          "bvp": {
-            "atBats": 0,
-            "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
-          },
-          "dataQuality": {
-            "seasonStats": true,
-            "statcast": false,
-            "recentForm": true,
-            "bvp": false,
-            "confirmedLineup": false
-          }
-        },
-        {
-          "id": 695731,
-          "name": "Braden Montgomery",
-          "position": "RF",
-          "lineupSpot": 9,
-          "confirmed": false,
-          "batSide": "S",
-          "hitting": {
-            "gamesPlayed": 26,
-            "plateAppearances": 104,
-            "atBats": 93,
-            "runs": 13,
-            "hits": 21,
-            "doubles": 8,
-            "triples": 0,
-            "homeRuns": 2,
-            "extraBaseHits": 10,
-            "rbi": 8,
-            "baseOnBalls": 10,
-            "strikeOuts": 22,
-            "avg": 0.226,
-            "obp": 0.298,
-            "slg": 0.376,
-            "ops": 0.674,
-            "iso": 0.15,
-            "hrRate": 0.0192,
-            "extraBaseHitRate": 0.1075,
-            "totalBases": 35,
-            "hasSeasonPowerData": true
-          },
-          "statcast": {
-            "available": false,
-            "barrelPct": null,
-            "hardHitPct": null,
-            "avgExitVelocity": null,
-            "launchAngle": null,
-            "sweetSpotPct": null,
-            "flyBallPct": null,
-            "pullPct": null
-          },
-          "hitStreak": 1,
-          "recentForm": {
-            "games": 10,
-            "plateAppearances": 41,
-            "atBats": 36,
-            "runs": 3,
-            "hits": 7,
-            "doubles": 3,
-            "triples": 0,
-            "homeRuns": 0,
-            "extraBaseHits": 3,
-            "totalBases": 10,
-            "rbi": 0,
-            "baseOnBalls": 5,
-            "strikeOuts": 6,
-            "avg": 0.194,
-            "obp": 0.293,
-            "slg": 0.278,
-            "ops": 0.57,
-            "iso": 0.083
           },
           "bvp": {
             "atBats": 0,
@@ -12911,10 +12911,10 @@
             "iso": 0.3
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "atBats": 7,
+            "hits": 1,
+            "avg": ".143",
+            "homeRuns": 1
           },
           "dataQuality": {
             "seasonStats": true,
@@ -12986,10 +12986,10 @@
             "iso": 0.235
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 1,
-            "avg": ".333",
-            "homeRuns": 0
+            "atBats": 18,
+            "hits": 8,
+            "avg": ".444",
+            "homeRuns": 2
           },
           "dataQuality": {
             "seasonStats": true,
@@ -13061,7 +13061,7 @@
             "iso": 0.175
           },
           "bvp": {
-            "atBats": 8,
+            "atBats": 1,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -13211,10 +13211,10 @@
             "iso": 0.225
           },
           "bvp": {
-            "atBats": 16,
-            "hits": 4,
-            "avg": ".250",
-            "homeRuns": 1
+            "atBats": 2,
+            "hits": 1,
+            "avg": ".500",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -13361,10 +13361,10 @@
             "iso": 0.205
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 2,
-            "avg": ".667",
-            "homeRuns": 0
+            "atBats": 6,
+            "hits": 3,
+            "avg": ".500",
+            "homeRuns": 1
           },
           "dataQuality": {
             "seasonStats": true,
@@ -13511,7 +13511,7 @@
             "iso": 0.12
           },
           "bvp": {
-            "atBats": 2,
+            "atBats": 1,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -13588,10 +13588,10 @@
             "iso": 0.075
           },
           "bvp": {
-            "atBats": 10,
-            "hits": 5,
-            "avg": ".500",
-            "homeRuns": 2
+            "atBats": 4,
+            "hits": 3,
+            "avg": ".750",
+            "homeRuns": 1
           },
           "dataQuality": {
             "seasonStats": true,
@@ -13738,9 +13738,9 @@
             "iso": 0.225
           },
           "bvp": {
-            "atBats": 13,
-            "hits": 2,
-            "avg": ".154",
+            "atBats": 5,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -13813,9 +13813,9 @@
             "iso": 0.114
           },
           "bvp": {
-            "atBats": 6,
-            "hits": 1,
-            "avg": ".167",
+            "atBats": 3,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -13963,9 +13963,9 @@
             "iso": 0.409
           },
           "bvp": {
-            "atBats": 8,
+            "atBats": 13,
             "hits": 1,
-            "avg": ".125",
+            "avg": ".077",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -14188,9 +14188,9 @@
             "iso": 0.107
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 1,
-            "avg": ".500",
+            "atBats": 6,
+            "hits": 2,
+            "avg": ".333",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -14331,9 +14331,9 @@
             "iso": 0.256
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 4,
+            "hits": 1,
+            "avg": ".250",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -16051,7 +16051,7 @@
             "iso": 0.132
           },
           "bvp": {
-            "atBats": 2,
+            "atBats": 1,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -16126,9 +16126,9 @@
             "iso": 0.105
           },
           "bvp": {
-            "atBats": 3,
+            "atBats": 4,
             "hits": 2,
-            "avg": ".667",
+            "avg": ".500",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -17396,9 +17396,9 @@
             "iso": 0.119
           },
           "bvp": {
-            "atBats": 1,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 10,
+            "hits": 1,
+            "avg": ".100",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -17471,10 +17471,10 @@
             "iso": 0.031
           },
           "bvp": {
-            "atBats": 5,
-            "hits": 3,
-            "avg": ".600",
-            "homeRuns": 1
+            "atBats": 2,
+            "hits": 1,
+            "avg": ".500",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -17923,10 +17923,10 @@
             "iso": 0.152
           },
           "bvp": {
-            "atBats": 18,
-            "hits": 5,
-            "avg": ".278",
-            "homeRuns": 2
+            "atBats": 1,
+            "hits": 0,
+            "avg": ".000",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -18148,9 +18148,9 @@
             "iso": 0.118
           },
           "bvp": {
-            "atBats": 8,
-            "hits": 4,
-            "avg": ".500",
+            "atBats": 3,
+            "hits": 1,
+            "avg": ".333",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -18223,10 +18223,10 @@
             "iso": 0.086
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 1,
-            "avg": ".333",
-            "homeRuns": 0
+            "atBats": 11,
+            "hits": 4,
+            "avg": ".364",
+            "homeRuns": 1
           },
           "dataQuality": {
             "seasonStats": true,
@@ -18591,9 +18591,9 @@
             "iso": 0.25
           },
           "bvp": {
-            "atBats": 5,
-            "hits": 1,
-            "avg": ".200",
+            "atBats": 2,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -18741,9 +18741,9 @@
             "iso": 0.263
           },
           "bvp": {
-            "atBats": 4,
+            "atBats": 2,
             "hits": 1,
-            "avg": ".250",
+            "avg": ".500",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -18891,9 +18891,9 @@
             "iso": 0.028
           },
           "bvp": {
-            "atBats": 5,
-            "hits": 1,
-            "avg": ".200",
+            "atBats": 3,
+            "hits": 0,
+            "avg": ".000",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -18966,7 +18966,7 @@
             "iso": 0.042
           },
           "bvp": {
-            "atBats": 4,
+            "atBats": 2,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -19418,9 +19418,9 @@
             "iso": 0.143
           },
           "bvp": {
-            "atBats": 10,
-            "hits": 3,
-            "avg": ".300",
+            "atBats": 5,
+            "hits": 2,
+            "avg": ".400",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -19568,10 +19568,10 @@
             "iso": 0.031
           },
           "bvp": {
-            "atBats": 20,
-            "hits": 2,
-            "avg": ".100",
-            "homeRuns": 1
+            "atBats": 4,
+            "hits": 1,
+            "avg": ".250",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -20386,9 +20386,9 @@
             "iso": 0.081
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 1,
-            "avg": ".333",
+            "atBats": 9,
+            "hits": 2,
+            "avg": ".222",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -20461,9 +20461,9 @@
             "iso": 0.226
           },
           "bvp": {
-            "atBats": 2,
+            "atBats": 6,
             "hits": 1,
-            "avg": ".500",
+            "avg": ".167",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -20913,9 +20913,9 @@
             "iso": 0.22
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 12,
+            "hits": 1,
+            "avg": ".083",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -21063,9 +21063,9 @@
             "iso": 0.405
           },
           "bvp": {
-            "atBats": 5,
+            "atBats": 3,
             "hits": 1,
-            "avg": ".200",
+            "avg": ".333",
             "homeRuns": 0
           },
           "dataQuality": {
