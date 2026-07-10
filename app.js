@@ -654,43 +654,148 @@ function addHRPick(
     batter.hitStreak || 0
   );
 
-  const batterHand = batter.batSide || "";
+  const batterHand =
+    batter.batSide || "";
 
   const hasPlatoonAdvantage =
     batterHand === "S" ||
-    (batterHand === "L" && pitcherHand === "R") ||
-    (batterHand === "R" && pitcherHand === "L");
+    (batterHand === "L" &&
+      pitcherHand === "R") ||
+    (batterHand === "R" &&
+      pitcherHand === "L");
 
-  const risk = Formula.pitcherRisk(
-    pitcherStats || {}
-  );
+  const pitcherData = {
+    id:
+      pitcherStats?.id ||
+      pitcherStats?.playerId ||
+      pitcherStats?.pitcherId ||
+      0,
 
-  const result = Formula.getHrScore(
-    batter.name,
-    batter.lineupSpot,
-    risk,
-    {
-      batterStats,
-      bvpHR,
-      hitStreak,
-      hasPlatoonAdvantage
-    }
-  );
+    ...pitcherStats
+  };
+
+  const modelBatter = {
+    ...batter,
+
+    hitting: {
+      ...batterStats,
+
+      plateAppearances: Number(
+        batterStats.plateAppearances || 0
+      ),
+
+      atBats: Number(
+        batterStats.atBats || 0
+      ),
+
+      hits: Number(
+        batterStats.hits || 0
+      ),
+
+      doubles: Number(
+        batterStats.doubles || 0
+      ),
+
+      triples: Number(
+        batterStats.triples || 0
+      ),
+
+      homeRuns: Number(
+        batterStats.homeRuns || 0
+      ),
+
+      extraBaseHits: Number(
+        batterStats.extraBaseHits ||
+        (
+          Number(batterStats.doubles || 0) +
+          Number(batterStats.triples || 0) +
+          Number(batterStats.homeRuns || 0)
+        )
+      ),
+
+      avg: Number(
+        batterStats.avg || 0
+      ),
+
+      slg: Number(
+        batterStats.slg || 0
+      ),
+
+      ops: Number(
+        batterStats.ops || 0
+      ),
+
+      iso: Number(
+        batterStats.iso || 0
+      ),
+
+      hrRate: Number(
+        batterStats.hrRate || 0
+      ),
+
+      extraBaseHitRate: Number(
+        batterStats.extraBaseHitRate || 0
+      )
+    },
+
+    statcast: batter.statcast || {
+      available: false,
+      barrelPct: null,
+      hardHitPct: null,
+      avgExitVelocity: null,
+      launchAngle: null,
+      sweetSpotPct: null,
+      flyBallPct: null,
+      pullPct: null
+    },
+
+    recentForm:
+      batter.recentForm || {},
+
+    handednessSplit:
+      batter.handednessSplit || {},
+
+    bvp: bvpStats,
+
+    hitStreak,
+
+    batSide: batterHand
+  };
+
+  const result = POPSModels.getHRScore({
+    batter: modelBatter,
+    pitcher: pitcherData,
+    pitcherHand,
+    handednessSplit:
+      batter.handednessSplit || {},
+    recentForm:
+      batter.recentForm || {}
+  });
+
+  const breakdown =
+    POPSModels.formatBreakdown(result);
 
   hrPicks.push({
     player: batter.name,
     team: batter.team,
     position: batter.position,
 
-    pitcher: normalizePitcherName(
-      pitcherName
-    ),
+    pitcher:
+      normalizePitcherName(
+        pitcherName
+      ),
 
-    game: `${game.awayTeam} vs ${game.homeTeam}`,
-    gameTime: formatTime(game.date),
+    game:
+      `${game.awayTeam} vs ${game.homeTeam}`,
 
-    lineupSpot: batter.lineupSpot,
-    confirmed: batter.confirmed,
+    gameTime:
+      formatTime(game.date),
+
+    lineupSpot:
+      batter.lineupSpot,
+
+    confirmed:
+      batter.confirmed,
 
     batterHand,
     pitcherHand,
@@ -700,8 +805,22 @@ function addHRPick(
     bvpStats,
     hitStreak,
 
-    score: result.score,
-    reasons: result.reasons
+    score:
+      result.score,
+
+    tier:
+      result.tier,
+
+    confidence:
+      result.confidence,
+
+    breakdown,
+
+    modelBreakdown:
+      result.breakdown,
+
+    reasons:
+      result.tier
   });
 }
 
