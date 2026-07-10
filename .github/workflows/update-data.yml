@@ -1,12 +1,20 @@
 name: Update POPS MLB Data
 
 on:
-  schedule:
-    - cron: "0 11 * * *"
   workflow_dispatch:
+
+  schedule:
+    # GitHub Actions uses UTC time.
+    # Runs at 7 AM, 10 AM, 1 PM, 4 PM, and 7 PM Eastern
+    # while Eastern Daylight Time is UTC-4.
+    - cron: "0 11,14,17,20,23 * * *"
 
 permissions:
   contents: write
+
+concurrency:
+  group: update-pops-mlb-data
+  cancel-in-progress: true
 
 jobs:
   update:
@@ -15,19 +23,34 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: "22"
 
-      - name: Build POPS daily data
-        run: node scripts/build-data.js
+      - name: Build POPS Daily Data
+        run: node scripts/build-today.js
+
+      - name: Verify Today Data Exists
+        run: |
+          if [ ! -f data/today.json ]; then
+            echo "data/today.json was not created."
+            exit 1
+          fi
 
       - name: Commit Updated Data
         run: |
           git config user.name "POPS Pickz Bot"
-          git config user.email "actions@github.com"
+          git config user.email "actions@users.noreply.github.com"
+
           git add data/today.json
-          git diff --cached --quiet || git commit -m "Update POPS today data"
-          git push
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update POPS today data"
+            git push
+          fi
