@@ -1,195 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+<meta charset="UTF-8" />
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+/>
 
-  <title>POPS Pickz MLB 11.0</title>
+<title>POPS Pickz MLB 11.0</title>
 
-  <link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <div class="app">
 
-    <header class="hero">
-      <h1>⚾ POPS Pickz 11.0</h1>
+<div class="app">
 
-      <p>
-        Automatic MLB HR Pickz • Hit Pickz • Moneyline Edges
-      </p>
-    </header>
+<header class="hero">
+<h1>⚾ POPS Pickz 11.0</h1>
 
-    <nav class="tabs">
-      <button
-        type="button"
-        onclick="showTab('pitchers', this)"
-        class="active-tab"
-      >
-        🎯 Pitchers
-      </button>
+<p>
+Automatic MLB HR Pickz • Hit Pickz • Moneyline • NRFI
+</p>
+</header>
 
-      <button
-        type="button"
-        onclick="showTab('homeruns', this)"
-      >
-        💣 HR Pickz
-      </button>
-      
-      <button
-        type="button"
-        onclick="showTab('parlays', this)"
->
-    🎯 HR Parlays
-  </button>
-      
-      <button
-        type="button"
-        onclick="showTab('hits', this)"
-      >
-        🔥 Hit Pickz
-      </button>
+<nav class="tabs">
 
-      <button
-        type="button"
-        onclick="showTab('moneyline', this)"
-      >
-        💰 Moneyline
-      </button>
-    </nav>
+<button
+type="button"
+onclick="showTab('pitchers', this)"
+class="active-tab">
+🎯 Pitchers
+</button>
 
-    <!--
-    Kept hidden for app.js compatibility.
-    app.js still looks for gamesBox.
-    -->
-    <div
-      id="gamesBox"
-      style="display: none;"
-    ></div>
+<button
+type="button"
+onclick="showTab('homeruns', this)">
+💣 HR Pickz
+</button>
 
-    <section
-      class="card tab-section active"
-      id="pitchers"
-    >
-      <h2>🎯 Today's Pitchers To Target</h2>
+<button
+type="button"
+onclick="showTab('parlays', this)">
+🎯 HR Parlays
+</button>
 
-      <div id="pitchersBox">
-        <p>Loading pitcher targets...</p>
-      </div>
-    </section>
+<button
+type="button"
+onclick="showTab('nrfi', this)">
+🟢 NRFI
+</button>
 
-    <section
-  class="card tab-section"
-  id="homeruns"
->
-  <h2>💣 POPS Home Run Pickz</h2>
+<button
+type="button"
+onclick="showTab('hits', this)">
+🔥 Hit Pickz
+</button>
 
-  <div id="hrPicksBox">
-    <p>Loading HR Pickz...</p>
-  </div>
-</section>
+<button
+type="button"
+onclick="showTab('moneyline', this)">
+💰 Moneyline
+</button>
+
+</nav>
+
+<!-- Hidden but required by app.js -->
+
+<div
+id="gamesBox"
+style="display:none;">
+</div>
+
+<!-- Pitchers -->
 
 <section
-  class="card tab-section"
-  id="parlays"
->
-  <h2>🎯 POPS HR Parlays</h2>
+class="card tab-section active"
+id="pitchers">
 
-  <div id="parlayBox">
-    <p>Generating today's HR parlays...</p>
-  </div>
+<h2>🎯 Today's Pitchers To Target</h2>
+
+<div id="pitchersBox">
+<p>Loading pitcher targets...</p>
+</div>
+
 </section>
+
+<!-- HR Picks -->
 
 <section
-  class="card tab-section"
-  id="hits"
->
-  <h2>🔥 POPS Hit Pickz</h2>
+class="card tab-section"
+id="homeruns">
 
-  <div id="hitPicksBox">
-    <p>Loading Hit Pickz...</p>
-  </div>
+<h2>💣 POPS Home Run Pickz</h2>
+
+<div id="hrPicksBox">
+<p>Loading HR Pickz...</p>
+</div>
+
 </section>
+
+<!-- HR Parlays -->
 
 <section
-  class="card tab-section"
-  id="moneyline"
->
-  <h2>💰 POPS Moneyline Pickz</h2>
+class="card tab-section"
+id="parlays">
 
-  <div id="moneylineBox">
-    <p>Loading Moneyline Pickz...</p>
-  </div>
+<h2>🎯 POPS HR Parlays</h2>
+
+<div id="parlayBox">
+<p>Generating today's HR parlays...</p>
+</div>
+
 </section>
 
-  </div>
+<!-- NRFI -->
 
-  <script>
-    function showTab(id, clickedButton) {
-      document
-        .querySelectorAll(".tab-section")
-        .forEach(section => {
-          section.classList.remove("active");
-        });
+<section
+class="card tab-section"
+id="nrfi">
 
-      document
-        .querySelectorAll(".tabs button")
-        .forEach(button => {
-          button.classList.remove("active-tab");
-        });
+<h2>🟢 POPS NRFI Predictions</h2>
 
-      const target =
-        document.getElementById(id);
+<div id="nrfiBox">
+<p>Loading NRFI predictions...</p>
+</div>
 
-      if (target) {
-        target.classList.add("active");
-      }
+</section>
 
-      if (clickedButton) {
-        clickedButton.classList.add(
-          "active-tab"
-        );
-      }
+<!-- Hit Picks -->
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-    }
-  </script>
+<section
+class="card tab-section"
+id="hits">
 
-  <!--
-  =========================================================
-  SCRIPT LOAD ORDER
+<h2>🔥 POPS Hit Pickz</h2>
 
-  Every file must load before the file that uses it.
-  =========================================================
-  -->
+<div id="hitPicksBox">
+<p>Loading Hit Pickz...</p>
+</div>
 
-  <!-- 1. Main MLB API -->
-  <script src="api.js"></script>
+</section>
 
-  <!-- 2. Live Baseball Savant Statcast API -->
-  <script src="statcast.api.js"></script>
+<!-- Moneyline -->
 
-  <!-- 3. Optional manual Statcast fallback data -->
-  <script src="statcast.js"></script>
+<section
+class="card tab-section"
+id="moneyline">
 
-  <!-- 4. POPS scoring formula -->
-  <script src="formula.js"></script>
+<h2>💰 POPS Moneyline Pickz</h2>
 
- <!-- 5. Supporting site modules -->
+<div id="moneylineBox">
+<p>Loading Moneyline Pickz...</p>
+</div>
+
+</section>
+
+</div>
+
+<script>
+
+function showTab(id, button){
+
+document
+.querySelectorAll(".tab-section")
+.forEach(section=>section.classList.remove("active"));
+
+document
+.querySelectorAll(".tabs button")
+.forEach(btn=>btn.classList.remove("active-tab"));
+
+document
+.getElementById(id)
+.classList.add("active");
+
+button.classList.add("active-tab");
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
+}
+
+</script>
+
+<!-- MLB API -->
+
+<script src="api.js"></script>
+
+<!-- Statcast -->
+
+<script src="statcast.api.js"></script>
+<script src="statcast.js"></script>
+
+<!-- Formula -->
+
+<script src="formula.js"></script>
+
+<!-- Modules -->
+
 <script src="moneyline.js"></script>
 <script src="homerun.js"></script>
 <script src="pitchers.js"></script>
 <script src="parlays.js"></script>
 <script src="nrfi.js"></script>
 
-<!-- 6. Main app must always load last -->
+<!-- Main App -->
+
 <script src="app.js"></script>
+
 </body>
 </html>
