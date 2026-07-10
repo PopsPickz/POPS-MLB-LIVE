@@ -2,16 +2,28 @@ const API = {
   base: "https://statsapi.mlb.com/api/v1",
   liveBase: "https://statsapi.mlb.com/api/v1.1",
 
-  cache: {
-    playerInfo: {},
-    pitcherStats: {},
-    batterStats: {},
-    teamStats: {},
-    bvp: {},
-    hitStreak: {},
-    roster: {}
-  },
+ cache: {
+  playerInfo: {},
+  pitcherStats: {},
+  batterStats: {},
+  teamStats: {},
 
+  recentForm: {},
+  last10: {},
+  statcast: {},
+
+  bvp: {},
+  hitStreak: {},
+  roster: {},
+  lineup: {},
+
+  schedule: {},
+  liveFeed: {},
+
+  splits: {},
+
+  weather: {}
+},
   today() {
     /*
     Uses the browser's local date rather than UTC.
@@ -563,6 +575,157 @@ const API = {
   },
 
   /*
+
+/*
+=========================================================
+LAST 10 GAMES
+=========================================================
+*/
+
+async getRecentForm(playerId, forceRefresh = false) {
+
+  playerId = Number(playerId || 0);
+
+  if (!playerId) {
+    return {
+      games: 0,
+      avg: 0,
+      ops: 0,
+      iso: 0,
+      homeRuns: 0,
+      hits: 0,
+      doubles: 0,
+      triples: 0,
+      extraBaseHits: 0
+    };
+  }
+
+  const cacheKey = String(playerId);
+
+  if (!forceRefresh && this.cache.recentForm[cacheKey]) {
+    return this.cache.recentForm[cacheKey];
+  }
+
+  if (forceRefresh) {
+    delete this.cache.recentForm[cacheKey];
+  }
+
+  const season = this.currentSeason();
+
+  const url =
+    `${this.base}/people/${playerId}/stats` +
+    `?stats=gameLog` +
+    `&group=hitting` +
+    `&season=${season}`;
+
+  const data = await this.fetchJSON(url, forceRefresh);
+
+  let logs = data?.stats?.[0]?.splits || [];
+
+  logs = logs
+    .filter(g => g.date)
+    .sort((a,b)=>new Date(b.date)-new Date(a.date))
+    .slice(0,10);
+
+  let atBats = 0;
+  let hits = 0;
+  let doubles = 0;
+  let triples = 0;
+  let homeRuns = 0;
+  let walks = 0;
+  let hbp = 0;
+  let sacFlies = 0;
+
+  for (const game of logs){
+
+    const stat = game.stat || {};
+
+    atBats += Number(stat.atBats || 0);
+    hits += Number(stat.hits || 0);
+
+    doubles += Number(stat.doubles || 0);
+    triples += Number(stat.triples || 0);
+
+    homeRuns += Number(stat.homeRuns || 0);
+
+    walks += Number(stat.baseOnBalls || 0);
+
+    hbp += Number(stat.hitByPitch || 0);
+
+    sacFlies += Number(stat.sacFlies || 0);
+
+  }
+
+  const singles =
+    hits -
+    doubles -
+    triples -
+    homeRuns;
+
+  const totalBases =
+    singles +
+    doubles*2 +
+    triples*3 +
+    homeRuns*4;
+
+  const avg =
+    atBats
+      ? hits/atBats
+      : 0;
+
+  const obpDen =
+    atBats +
+    walks +
+    hbp +
+    sacFlies;
+
+  const obp =
+    obpDen
+      ? (hits+walks+hbp)/obpDen
+      : 0;
+
+  const slg =
+    atBats
+      ? totalBases/atBats
+      : 0;
+
+  const ops =
+    obp + slg;
+
+  const iso =
+    slg - avg;
+
+  const result = {
+
+    games: logs.length,
+
+    avg:Number(avg.toFixed(3)),
+
+    ops:Number(ops.toFixed(3)),
+
+    iso:Number(iso.toFixed(3)),
+
+    hits,
+
+    doubles,
+
+    triples,
+
+    homeRuns,
+
+    extraBaseHits:
+      doubles+
+      triples+
+      homeRuns
+
+  };
+
+  this.cache.recentForm[cacheKey]=result;
+
+  return result;
+
+},  
+  */
   =========================================================
   BATTER VS PITCHER STATS
   =========================================================
