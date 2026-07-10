@@ -1,47 +1,52 @@
 /*
 =========================================================
 POPS PICKZ 11.0 HR PARLAY BUILDER
+DESIGN OPTION 2
 File: parlays.js
 =========================================================
 
-Uses the same hrPicks array displayed in:
-
-POPS Home Run Pickz
+Uses the exact same ranked hrPicks array displayed
+inside the POPS Home Run Pickz section.
 
 Required HTML:
 
-<div id="parlayBox"></div>
+<section
+  class="card tab-section"
+  id="parlays"
+>
+  <h2>🎯 POPS HR Parlays</h2>
+
+  <div id="parlayBox">
+    <p>Generating today's HR parlays...</p>
+  </div>
+</section>
 
 Required script order:
 
-<script src="api.js"></script>
-<script src="formula.js"></script>
 <script src="parlays.js"></script>
 <script src="app.js"></script>
 
-After app.js finishes calculating HR picks:
+At the end of loadHRPicks() in app.js:
 
-Parlays.render(hrPicks);
+if (
+  typeof Parlays !== "undefined" &&
+  typeof Parlays.render === "function"
+) {
+  Parlays.render(hrPicks);
+}
 =========================================================
 */
 
 const Parlays = {
   settings: {
-    /*
-    Use every hitter appearing in the POPS HR Pickz list.
-    The ranking order determines parlay priority.
-    */
+    maximumPlayerPool: 20,
+
     minimumScore: 0,
     safeMinimumScore: 0,
     balancedMinimumScore: 0,
     valueMinimumScore: 0,
 
     requireConfirmedLineup: false,
-
-    preferDifferentGames: true,
-    preferDifferentTeams: true,
-
-    maximumPlayerPool: 20,
 
     safeLegs: 2,
     balancedLegs: 3,
@@ -86,16 +91,16 @@ const Parlays = {
   },
 
   uniqueBy(items = [], getKey) {
-    const seen = new Set();
+    const usedKeys = new Set();
 
     return items.filter(item => {
       const key = getKey(item);
 
-      if (!key || seen.has(key)) {
+      if (!key || usedKeys.has(key)) {
         return false;
       }
 
-      seen.add(key);
+      usedKeys.add(key);
 
       return true;
     });
@@ -109,10 +114,9 @@ const Parlays = {
       index > 0;
       index -= 1
     ) {
-      const randomIndex =
-        Math.floor(
-          Math.random() * (index + 1)
-        );
+      const randomIndex = Math.floor(
+        Math.random() * (index + 1)
+      );
 
       [
         copy[index],
@@ -175,8 +179,10 @@ const Parlays = {
       return this.text(directId);
     }
 
-    return `${this.getPlayerName(player)}-${this.getTeam(player)}`
-      .toLowerCase();
+    return (
+      `${this.getPlayerName(player)}-${this.getTeam(player)}`
+        .toLowerCase()
+    );
   },
 
   getScore(player = {}) {
@@ -208,16 +214,6 @@ const Parlays = {
     );
   },
 
-  getOpponent(player = {}) {
-    return this.text(
-      player.opponent ||
-      player.opponentName ||
-      player.vs ||
-      player.opposingTeam,
-      ""
-    );
-  },
-
   getPitcher(player = {}) {
     return this.text(
       player.pitcher ||
@@ -229,63 +225,25 @@ const Parlays = {
   },
 
   getGameKey(player = {}) {
-    const gamePk = this.text(
+    const gameId = this.text(
       player.gamePk ||
       player.gameId ||
       player.gameID ||
       player.game?.gamePk
     );
 
-    if (gamePk) {
-      return gamePk;
+    if (gameId) {
+      return gameId;
     }
 
-    const matchup = this.getGame(player);
+    const game = this.getGame(player);
 
-    if (matchup !== "Game TBD") {
-      return matchup.toLowerCase();
+    if (game !== "Game TBD") {
+      return game.toLowerCase();
     }
 
-    const team = this.getTeam(player);
-    const opponent = this.getOpponent(player);
-
-    if (opponent) {
-      return [team, opponent]
-        .sort()
-        .join("-")
-        .toLowerCase();
-    }
-
-    return team.toLowerCase();
-  },
-
-  getISO(player = {}) {
-    const iso = this.num(
-      player.iso ??
-      player.ISO ??
-      player.hitting?.iso ??
-      player.stats?.iso ??
-      player.recentForm?.iso,
-      0
-    );
-
-    return iso > 0
-      ? iso.toFixed(3)
-      : "";
-  },
-
-  getHRX(player = {}) {
-    const hrx = this.num(
-      player.hrx ??
-      player.HRX ??
-      player.expectedHomeRuns ??
-      player.xHR,
-      0
-    );
-
-    return hrx > 0
-      ? hrx.toFixed(1)
-      : "";
+    return this.getTeam(player)
+      .toLowerCase();
   },
 
   getLineupSpot(player = {}) {
@@ -296,6 +254,26 @@ const Parlays = {
       player.spot,
       0
     );
+  },
+
+  getISOValue(player = {}) {
+    return this.num(
+      player.iso ??
+      player.ISO ??
+      player.hitting?.iso ??
+      player.stats?.iso ??
+      player.recentForm?.iso ??
+      player.isoLast10,
+      0
+    );
+  },
+
+  getISO(player = {}) {
+    const iso = this.getISOValue(player);
+
+    return iso > 0
+      ? iso.toFixed(3)
+      : "";
   },
 
   getBvpHomeRuns(player = {}) {
@@ -372,19 +350,19 @@ const Parlays = {
   */
 
   getTier(score = 0) {
-    if (score >= 92) {
+    if (score >= 90) {
       return "Elite";
     }
 
-    if (score >= 86) {
+    if (score >= 84) {
       return "Excellent";
     }
 
-    if (score >= 80) {
+    if (score >= 78) {
       return "Very Strong";
     }
 
-    if (score >= 74) {
+    if (score >= 72) {
       return "Strong";
     }
 
@@ -422,17 +400,14 @@ const Parlays = {
     const score =
       this.getScore(player);
 
-    const lineupSpot =
-      this.getLineupSpot(player);
-
     const bvpHR =
       this.getBvpHomeRuns(player);
 
-    const hitStreak =
-      this.getHitStreak(player);
-
     const hrLast10 =
       this.getHrLast10(player);
+
+    const iso =
+      this.getISOValue(player);
 
     const barrelRate =
       this.getBarrelRate(player);
@@ -440,13 +415,11 @@ const Parlays = {
     const hardHitRate =
       this.getHardHitRate(player);
 
-    const iso = this.num(
-      player.iso ??
-      player.ISO ??
-      player.hitting?.iso ??
-      player.recentForm?.iso,
-      0
-    );
+    const hitStreak =
+      this.getHitStreak(player);
+
+    const lineupSpot =
+      this.getLineupSpot(player);
 
     if (score >= 90) {
       reasons.push(
@@ -476,11 +449,7 @@ const Parlays = {
       );
     }
 
-    if (hrLast10 >= 3) {
-      reasons.push(
-        `${hrLast10} HR in last 10 games`
-      );
-    } else if (hrLast10 >= 1) {
+    if (hrLast10 > 0) {
       reasons.push(
         `${hrLast10} HR in last 10 games`
       );
@@ -543,11 +512,7 @@ const Parlays = {
       return [];
     }
 
-    /*
-    Copy the array before sorting so the original
-    POPS HR rankings are not accidentally changed.
-    */
-    const topHrPicks = [...hrPicks]
+    const rankedPicks = [...hrPicks]
       .filter(Boolean)
       .sort(
         (a, b) =>
@@ -559,8 +524,8 @@ const Parlays = {
         this.settings.maximumPlayerPool
       );
 
-    const normalized = topHrPicks.map(
-      player => ({
+    const normalized =
+      rankedPicks.map(player => ({
         ...player,
 
         _parlayName:
@@ -581,9 +546,6 @@ const Parlays = {
         _parlayGameTime:
           this.getGameTime(player),
 
-        _parlayOpponent:
-          this.getOpponent(player),
-
         _parlayPitcher:
           this.getPitcher(player),
 
@@ -592,8 +554,7 @@ const Parlays = {
 
         _parlayConfirmed:
           this.isConfirmed(player)
-      })
-    );
+      }));
 
     return this.uniqueBy(
       normalized,
@@ -621,7 +582,7 @@ const Parlays = {
 
   /*
   =======================================================
-  COMBINATION HELPERS
+  COMBINATION GENERATOR
   =======================================================
   */
 
@@ -635,41 +596,39 @@ const Parlays = {
       uniqueTeams = true
     } = options;
 
-    const alreadySelected =
+    const alreadyUsed =
       selected.some(
         selectedPlayer =>
           selectedPlayer._parlayId ===
           player._parlayId
       );
 
-    if (alreadySelected) {
+    if (alreadyUsed) {
       return false;
     }
 
     if (uniqueGames) {
-      const gameAlreadyUsed =
+      const gameUsed =
         selected.some(
           selectedPlayer =>
-            selectedPlayer
-              ._parlayGameKey ===
+            selectedPlayer._parlayGameKey ===
             player._parlayGameKey
         );
 
-      if (gameAlreadyUsed) {
+      if (gameUsed) {
         return false;
       }
     }
 
     if (uniqueTeams) {
-      const teamAlreadyUsed =
+      const teamUsed =
         selected.some(
           selectedPlayer =>
-            selectedPlayer
-              ._parlayTeam ===
+            selectedPlayer._parlayTeam ===
             player._parlayTeam
         );
 
-      if (teamAlreadyUsed) {
+      if (teamUsed) {
         return false;
       }
     }
@@ -683,19 +642,10 @@ const Parlays = {
     options = {}
   ) {
     const {
-      minimumScore =
-        this.settings.minimumScore,
-
-      uniqueGames =
-        this.settings
-          .preferDifferentGames,
-
-      uniqueTeams =
-        this.settings
-          .preferDifferentTeams,
-
+      minimumScore = 0,
+      uniqueGames = true,
+      uniqueTeams = true,
       randomize = false,
-
       excludedPlayerIds = []
     } = options;
 
@@ -714,10 +664,6 @@ const Parlays = {
 
     const selected = [];
 
-    /*
-    First attempt:
-    different games and different teams.
-    */
     for (const player of pool) {
       if (
         this.canAddPlayer(
@@ -732,18 +678,11 @@ const Parlays = {
         selected.push(player);
       }
 
-      if (
-        selected.length === legCount
-      ) {
+      if (selected.length === legCount) {
         return selected;
       }
     }
 
-    /*
-    Second attempt:
-    allow multiple players from one team,
-    but keep different games.
-    */
     for (const player of pool) {
       if (
         this.canAddPlayer(
@@ -758,17 +697,11 @@ const Parlays = {
         selected.push(player);
       }
 
-      if (
-        selected.length === legCount
-      ) {
+      if (selected.length === legCount) {
         return selected;
       }
     }
 
-    /*
-    Final attempt:
-    allow players from the same game.
-    */
     for (const player of pool) {
       if (
         this.canAddPlayer(
@@ -783,9 +716,7 @@ const Parlays = {
         selected.push(player);
       }
 
-      if (
-        selected.length === legCount
-      ) {
+      if (selected.length === legCount) {
         return selected;
       }
     }
@@ -803,23 +734,12 @@ const Parlays = {
       .join("|");
   },
 
-  /*
-  =======================================================
-  VALUE RANKING
-  =======================================================
-  */
-
   getValueScore(player = {}) {
-    const popsScore =
+    const score =
       player._parlayScore;
 
-    const iso = this.num(
-      player.iso ??
-      player.ISO ??
-      player.hitting?.iso ??
-      player.recentForm?.iso,
-      0
-    );
+    const iso =
+      this.getISOValue(player);
 
     const bvpHR =
       this.getBvpHomeRuns(player);
@@ -834,7 +754,7 @@ const Parlays = {
       this.getHardHitRate(player);
 
     return (
-      popsScore +
+      score +
       iso * 50 +
       bvpHR * 4 +
       hrLast10 * 2 +
@@ -845,17 +765,13 @@ const Parlays = {
 
   /*
   =======================================================
-  BUILD PARLAYS FROM POPS HR PICKS
+  BUILD PARLAYS
   =======================================================
   */
 
   build(hrPicks = []) {
     let sourcePicks = hrPicks;
 
-    /*
-    If no array is passed directly,
-    use the public HR picks array from app.js.
-    */
     if (
       !Array.isArray(sourcePicks) ||
       !sourcePicks.length
@@ -874,13 +790,8 @@ const Parlays = {
     players =
       this.filterConfirmed(players);
 
-    const usedCombinationKeys =
-      new Set();
+    const usedKeys = new Set();
 
-    /*
-    Safer parlay:
-    Top-ranked POPS hitters.
-    */
     const safe =
       this.createCombination(
         players,
@@ -899,16 +810,11 @@ const Parlays = {
       safe.length ===
       this.settings.safeLegs
     ) {
-      usedCombinationKeys.add(
+      usedKeys.add(
         this.combinationKey(safe)
       );
     }
 
-    /*
-    Balanced parlay:
-    Avoid using the first safe pick
-    when enough alternatives exist.
-    */
     let balanced =
       this.createCombination(
         players,
@@ -922,20 +828,17 @@ const Parlays = {
           uniqueTeams: true,
 
           excludedPlayerIds:
-            players.length >
-            this.settings.balancedLegs
-              ? safe
-                  .slice(0, 1)
-                  .map(
-                    player =>
-                      player._parlayId
-                  )
-              : []
+            safe
+              .slice(0, 1)
+              .map(
+                player =>
+                  player._parlayId
+              )
         }
       );
 
     if (
-      balanced.length !==
+      balanced.length <
       this.settings.balancedLegs
     ) {
       balanced =
@@ -957,20 +860,15 @@ const Parlays = {
       balanced.length ===
       this.settings.balancedLegs
     ) {
-      usedCombinationKeys.add(
+      usedKeys.add(
         this.combinationKey(
           balanced
         )
       );
     }
 
-    /*
-    Value parlay:
-    Uses POPS score plus ISO, BvP,
-    recent HRs and contact quality.
-    */
-    const valuePool = [...players]
-      .sort(
+    const valuePool =
+      [...players].sort(
         (a, b) =>
           this.getValueScore(b) -
           this.getValueScore(a)
@@ -991,7 +889,7 @@ const Parlays = {
       );
 
     if (
-      usedCombinationKeys.has(
+      usedKeys.has(
         this.combinationKey(value)
       )
     ) {
@@ -1015,16 +913,11 @@ const Parlays = {
       value.length ===
       this.settings.valueLegs
     ) {
-      usedCombinationKeys.add(
+      usedKeys.add(
         this.combinationKey(value)
       );
     }
 
-    /*
-    Longshot parlay:
-    Uses four ranked POPS hitters
-    with randomized combinations.
-    */
     let longshot =
       this.createCombination(
         this.shuffle(players),
@@ -1042,9 +935,7 @@ const Parlays = {
     let attempts = 0;
 
     while (
-      longshot.length ===
-        this.settings.longshotLegs &&
-      usedCombinationKeys.has(
+      usedKeys.has(
         this.combinationKey(longshot)
       ) &&
       attempts < 10
@@ -1055,8 +946,7 @@ const Parlays = {
           this.settings.longshotLegs,
           {
             minimumScore:
-              this.settings
-                .minimumScore,
+              this.settings.minimumScore,
 
             uniqueGames: true,
             uniqueTeams: true,
@@ -1072,12 +962,7 @@ const Parlays = {
       balanced,
       value,
       longshot,
-
-      playerCount:
-        players.length,
-
-      generatedAt:
-        new Date()
+      playerCount: players.length
     };
   },
 
@@ -1104,262 +989,321 @@ const Parlays = {
     );
   },
 
-  renderPlayer(
-    player = {},
-    index = 0
-  ) {
-    const name = this.escapeHTML(
-      player._parlayName
-    );
-
-    const team = this.escapeHTML(
-      player._parlayTeam
-    );
-
-    const game = this.escapeHTML(
-      player._parlayGame
-    );
-
-    const gameTime = this.escapeHTML(
-      player._parlayGameTime
-    );
-
-    const pitcher = this.escapeHTML(
-      player._parlayPitcher
-    );
-
-    const score = Math.round(
-      player._parlayScore
-    );
-
-    const tier =
-      this.getTier(score);
-
-    const iso =
-      this.getISO(player);
-
-    const hrx =
-      this.getHRX(player);
-
+  renderReasonTags(player = {}) {
     const reasons =
       this.getReasons(player);
 
-    const statParts = [];
-
-    if (iso) {
-      statParts.push(
-        `ISO ${iso}`
-      );
+    if (!reasons.length) {
+      return "";
     }
-
-    if (hrx) {
-      statParts.push(
-        `HRX ${hrx}`
-      );
-    }
-
-    const statsHTML =
-      statParts.length
-        ? `
-          <span class="parlay-player-stats">
-            ${statParts.join(" • ")}
-          </span>
-        `
-        : "";
-
-    const gameHTML =
-      game !== "Game TBD"
-        ? `
-          <span>
-            ${game}
-          </span>
-        `
-        : `
-          <span>
-            ${team}
-          </span>
-        `;
-
-    const timeHTML =
-      gameTime
-        ? `
-          <span class="parlay-game-time">
-            ${gameTime}
-          </span>
-        `
-        : "";
-
-    const pitcherHTML =
-      pitcher !== "Pitcher TBD"
-        ? `
-          <span class="parlay-pitcher">
-            vs ${pitcher}
-          </span>
-        `
-        : "";
-
-    const reasonsHTML =
-      reasons.length
-        ? `
-          <div class="parlay-reasons">
-            ${reasons
-              .map(
-                reason => `
-                  <span>
-                    ✓ ${this.escapeHTML(
-                      reason
-                    )}
-                  </span>
-                `
-              )
-              .join("")}
-          </div>
-        `
-        : "";
 
     return `
-      <div class="parlay-player">
-        <div class="parlay-leg-number">
-          ${index + 1}
-        </div>
-
-        <div class="parlay-player-info">
-          <div class="parlay-player-name-row">
-            <strong class="parlay-player-name">
-              ${name}
-            </strong>
-
-            <span class="parlay-score">
-              ${score}
-            </span>
-          </div>
-
-          <div class="parlay-player-matchup">
-            ${gameHTML}
-            ${timeHTML}
-            ${pitcherHTML}
-          </div>
-
-          <div class="parlay-player-tags">
-            <span class="parlay-tier">
-              ${tier}
-            </span>
-
-            ${statsHTML}
-
-            ${
-              player._parlayConfirmed
-                ? `
-                  <span class="parlay-confirmed">
-                    Confirmed
-                  </span>
-                `
-                : `
-                  <span class="parlay-projected">
-                    Projected
-                  </span>
-                `
-            }
-          </div>
-
-          ${reasonsHTML}
-        </div>
+      <div class="parlay-reason-list">
+        ${reasons
+          .map(
+            reason => `
+              <span class="parlay-reason">
+                ✓ ${this.escapeHTML(reason)}
+              </span>
+            `
+          )
+          .join("")}
       </div>
     `;
   },
 
-  renderCard({
+  renderPlayer(
+    player = {},
+    index = 0
+  ) {
+    const name =
+      this.escapeHTML(
+        player._parlayName
+      );
+
+    const team =
+      this.escapeHTML(
+        player._parlayTeam
+      );
+
+    const game =
+      this.escapeHTML(
+        player._parlayGame
+      );
+
+    const gameTime =
+      this.escapeHTML(
+        player._parlayGameTime
+      );
+
+    const pitcher =
+      this.escapeHTML(
+        player._parlayPitcher
+      );
+
+    const score =
+      Math.round(
+        player._parlayScore
+      );
+
+    const iso =
+      this.getISO(player);
+
+    const hrLast10 =
+      this.getHrLast10(player);
+
+    const tier =
+      this.getTier(score);
+
+    return `
+      <article class="parlay-player-row">
+        <div class="parlay-player-rank">
+          ${index + 1}
+        </div>
+
+        <div class="parlay-player-main">
+          <div class="parlay-player-top">
+            <h4>
+              ${name}
+            </h4>
+
+            <span class="parlay-player-score">
+              ${score}
+            </span>
+          </div>
+
+          <div class="parlay-player-game">
+            ${game !== "Game TBD"
+              ? game
+              : team}
+          </div>
+
+          ${
+            gameTime
+              ? `
+                <div class="parlay-player-detail">
+                  ${gameTime}
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            pitcher !== "Pitcher TBD"
+              ? `
+                <div class="parlay-player-detail">
+                  vs ${pitcher}
+                </div>
+              `
+              : ""
+          }
+
+          <div class="parlay-player-badges">
+            <span class="parlay-badge">
+              ${tier}
+            </span>
+
+            ${
+              iso
+                ? `
+                  <span class="parlay-badge">
+                    ISO ${iso}
+                  </span>
+                `
+                : ""
+            }
+
+            ${
+              hrLast10 > 0
+                ? `
+                  <span class="parlay-badge">
+                    ${hrLast10} HR / 10
+                  </span>
+                `
+                : ""
+            }
+
+            <span class="
+              parlay-badge
+              ${
+                player._parlayConfirmed
+                  ? "confirmed"
+                  : "projected"
+              }
+            ">
+              ${
+                player._parlayConfirmed
+                  ? "Confirmed"
+                  : "Projected"
+              }
+            </span>
+          </div>
+
+          ${this.renderReasonTags(player)}
+        </div>
+      </article>
+    `;
+  },
+
+  renderParlayCard({
+    key,
     title,
     icon,
     label,
     description,
     players = [],
     requiredLegs = 2,
-    className = ""
+    className = "",
+    expanded = false
   }) {
-    if (
-      players.length <
-      requiredLegs
-    ) {
-      return `
-        <article
-          class="
-            parlay-card
-            ${className}
-            parlay-unavailable
-          "
-        >
-          <div class="parlay-card-header">
-            <div>
-              <span class="parlay-label">
-                ${label}
-              </span>
+    const available =
+      players.length >=
+      requiredLegs;
 
-              <h3>
-                ${icon} ${title}
-              </h3>
-            </div>
-          </div>
-
-          <p class="parlay-description">
-            ${description}
-          </p>
-
-          <div class="parlay-empty">
-            Not enough POPS HR picks
-            are available yet.
-          </div>
-        </article>
-      `;
-    }
-
-    const averageScore =
+    const average =
       this.getAverageScore(players);
 
     return `
       <article
         class="
-          parlay-card
+          parlay-card-v2
           ${className}
+          ${expanded ? "open" : ""}
+          ${available ? "" : "unavailable"}
         "
+        data-parlay-card="${key}"
       >
-        <div class="parlay-card-header">
-          <div>
-            <span class="parlay-label">
-              ${label}
+        <button
+          type="button"
+          class="parlay-card-toggle"
+          data-parlay-toggle="${key}"
+          aria-expanded="${expanded}"
+        >
+          <div class="parlay-card-title">
+            <span class="parlay-card-icon">
+              ${icon}
             </span>
 
-            <h3>
-              ${icon} ${title}
-            </h3>
+            <div>
+              <span class="parlay-card-label">
+                ${label}
+              </span>
+
+              <h3>
+                ${title}
+              </h3>
+            </div>
           </div>
 
-          <div class="parlay-average">
-            <span>AVG</span>
+          <div class="parlay-card-right">
+            <span class="parlay-card-average">
+              AVG ${average}
+            </span>
 
-            <strong>
-              ${averageScore}
-            </strong>
+            <span class="parlay-chevron">
+             ⌄
+            </span>
           </div>
-        </div>
+        </button>
 
-        <p class="parlay-description">
-          ${description}
-        </p>
+        <div class="parlay-card-content">
+          <p class="parlay-card-description">
+            ${description}
+          </p>
 
-        <div class="parlay-player-list">
-          ${players
-            .map(
-              (player, index) =>
-                this.renderPlayer(
-                  player,
-                  index
-                )
-            )
-            .join("")}
+          ${
+            available
+              ? `
+                <div class="parlay-player-list-v2">
+                  ${players
+                    .map(
+                      (player, index) =>
+                        this.renderPlayer(
+                          player,
+                          index
+                        )
+                    )
+                    .join("")}
+                </div>
+              `
+              : `
+                <div class="parlay-empty-v2">
+                  Not enough POPS HR picks
+                  are available yet.
+                </div>
+              `
+          }
         </div>
       </article>
     `;
+  },
+
+  /*
+  =======================================================
+  ACCORDION EVENTS
+  =======================================================
+  */
+
+  bindAccordionEvents() {
+    document
+      .querySelectorAll(
+        "[data-parlay-toggle]"
+      )
+      .forEach(button => {
+        button.addEventListener(
+          "click",
+          () => {
+            const key =
+              button.dataset
+                .parlayToggle;
+
+            const card =
+              document.querySelector(
+                `[data-parlay-card="${key}"]`
+              );
+
+            if (!card) {
+              return;
+            }
+
+            const isOpen =
+              card.classList.contains(
+                "open"
+              );
+
+            document
+              .querySelectorAll(
+                ".parlay-card-v2"
+              )
+              .forEach(otherCard => {
+                otherCard.classList.remove(
+                  "open"
+                );
+
+                const otherButton =
+                  otherCard.querySelector(
+                    ".parlay-card-toggle"
+                  );
+
+                if (otherButton) {
+                  otherButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                  );
+                }
+              });
+
+            if (!isOpen) {
+              card.classList.add("open");
+
+              button.setAttribute(
+                "aria-expanded",
+                "true"
+              );
+            }
+          }
+        );
+      });
   },
 
   /*
@@ -1388,18 +1332,20 @@ const Parlays = {
     const results =
       this.build(hrPicks);
 
-    if (
-      results.playerCount < 2
-    ) {
+    if (results.playerCount < 2) {
       box.innerHTML = `
-        <div class="parlay-message">
+        <div class="parlay-waiting-v2">
+          <div class="parlay-waiting-icon">
+            🔥
+          </div>
+
           <h3>
-            🔥 POPS HR Parlay Builder
+            POPS HR Parlay Builder
           </h3>
 
           <p>
             Waiting for the POPS Home Run
-            Pickz rankings to load.
+            Pickz rankings to finish loading.
           </p>
         </div>
       `;
@@ -1408,9 +1354,9 @@ const Parlays = {
     }
 
     box.innerHTML = `
-      <div class="parlay-builder-header">
-        <div>
-          <span class="parlay-builder-kicker">
+      <div class="parlay-hero-v2">
+        <div class="parlay-hero-copy">
+          <span class="parlay-kicker-v2">
             Built From POPS HR Pickz
           </span>
 
@@ -1419,102 +1365,98 @@ const Parlays = {
           </h2>
 
           <p>
-            These combinations use the same
-            ranked hitters displayed in the
+            Smart daily combinations using
+            the same hitters ranked in the
             POPS Home Run Pickz section.
           </p>
+
+          <button
+            type="button"
+            class="parlay-refresh-v2"
+            id="refreshParlaysButton"
+          >
+            ↻ New Combinations
+          </button>
         </div>
 
-        <button
-          type="button"
-          class="parlay-refresh-button"
-          id="refreshParlaysButton"
-        >
-          ↻ New Combinations
-        </button>
+        <div class="parlay-hero-ball">
+          ⚾
+        </div>
       </div>
 
-      <div class="parlay-grid">
-        ${this.renderCard({
+      <div class="parlay-stack-v2">
+        ${this.renderParlayCard({
+          key: "safe",
           title: "Safer 2-Leg",
           icon: "🟢",
           label: "Top POPS Picks",
-
           description:
-            "Two of the highest-ranked POPS HR picks from different matchups.",
-
-          players:
-            results.safe,
-
+            "Two of the strongest ranked hitters from different matchups.",
+          players: results.safe,
           requiredLegs:
             this.settings.safeLegs,
-
           className:
-            "parlay-safe"
+            "parlay-safe-v2",
+          expanded: true
         })}
 
-        ${this.renderCard({
+        ${this.renderParlayCard({
+          key: "balanced",
           title: "Balanced 3-Leg",
           icon: "🟡",
           label: "Balanced Card",
-
           description:
             "Three ranked POPS HR picks with matchup diversity.",
-
-          players:
-            results.balanced,
-
+          players: results.balanced,
           requiredLegs:
             this.settings.balancedLegs,
-
           className:
-            "parlay-balanced"
+            "parlay-balanced-v2"
         })}
 
-        ${this.renderCard({
+        ${this.renderParlayCard({
+          key: "value",
           title: "Value 3-Leg",
           icon: "🟠",
           label: "Power Upside",
-
           description:
-            "Three POPS HR picks ranked using power, recent form and BvP upside.",
-
-          players:
-            results.value,
-
+            "Three hitters ranked using POPS score, power and recent production.",
+          players: results.value,
           requiredLegs:
             this.settings.valueLegs,
-
           className:
-            "parlay-value"
+            "parlay-value-v2"
         })}
 
-        ${this.renderCard({
+        ${this.renderParlayCard({
+          key: "longshot",
           title: "Longshot 4-Leg",
-          icon: "🚀",
+          icon: "🔴",
           label: "High Risk",
-
           description:
-            "Four hitters selected from today's ranked POPS HR Pickz.",
-
-          players:
-            results.longshot,
-
+            "Four ranked hitters combined for maximum upside.",
+          players: results.longshot,
           requiredLegs:
             this.settings.longshotLegs,
-
           className:
-            "parlay-longshot"
+            "parlay-longshot-v2"
         })}
       </div>
 
-      <div class="parlay-disclaimer">
-        <strong>POPS Note:</strong>
-        These are model-generated combinations,
-        not guaranteed outcomes. Confirm lineups
-        before using any selection.
+      <div class="parlay-note-v2">
+        <span>⭐</span>
+
+        <p>
+          <strong>POPS Note:</strong>
+          These are model-generated
+          combinations and are not
+          guaranteed outcomes. Confirm
+          lineups before using any pick.
+        </p>
       </div>
     `;
+
+    this.bindAccordionEvents();
 
     const refreshButton =
       document.getElementById(
@@ -1578,7 +1520,7 @@ window.addEventListener(
 
 /*
 =========================================================
-MAKE PARLAY BUILDER GLOBAL
+MAKE GLOBAL
 =========================================================
 */
 
