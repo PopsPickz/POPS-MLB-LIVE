@@ -256,7 +256,18 @@ const NRFI = {
   TEAM OFFENSE HELPERS
   =======================================================
   */
+  
+getTeamHittingStats(stats = {}) {
+  if (
+    stats.hitting &&
+    typeof stats.hitting === "object"
+  ) {
+    return stats.hitting;
+  }
 
+  return stats;
+},
+  
   getTeamAverage(stats = {}) {
     return this.num(
       stats.avg ??
