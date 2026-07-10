@@ -269,6 +269,14 @@ function clearPageSections() {
       "<p>Loading Moneyline Pickz...</p>";
   }
 
+  const nrfiBox =
+  document.getElementById("nrfiBox");
+
+if (nrfiBox) {
+  nrfiBox.innerHTML =
+    "<p>Loading NRFI predictions...</p>";
+}
+  
   const pitchersBox =
     document.getElementById("pitchersBox");
 
