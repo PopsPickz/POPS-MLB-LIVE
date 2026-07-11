@@ -1379,19 +1379,13 @@ const Parlays = {
             🔥 POPS HR Parlay Builder
           </h2>
 
-          <p>
-            Smart daily combinations using
-            the same hitters ranked in the
-            POPS Home Run Pickz section.
-          </p>
 
-          <button
-            type="button"
-            class="parlay-refresh-v2"
-            id="refreshParlaysButton"
-          >
-            ↻ New Combinations
-          </button>
+       <p>
+            Automatically generated daily
+            from today's POPS Home Run Pickz.
+            Every hitter is used only once.
+          </p>   
+          
         </div>
 
         <div class="parlay-hero-ball">
