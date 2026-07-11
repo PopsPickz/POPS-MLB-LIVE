@@ -1644,7 +1644,21 @@ getTeamHittingStats(stats = {}) {
       ).length;
 
     this.box.innerHTML = `
-      <div class="nrfi-summary">
+
+<div class="nrfi-hero">
+
+  <div class="nrfi-light nrfi-light-left"></div>
+
+  <div class="nrfi-light nrfi-light-right"></div>
+
+  <h1>
+    POPS NRFI
+    <span>PREDICTIONS</span>
+  </h1>
+
+</div>
+
+<div class="nrfi-summary">
         <div>
           <span>
             Games Analyzed
