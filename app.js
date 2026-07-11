@@ -638,6 +638,67 @@ LOAD CURRENT MLB SCHEDULE
 =========================================================
 */
 
+async function loadPrebuiltTodayData() {
+  try {
+    const response = await fetch(
+      `data/today.json?_=${Date.now()}`,
+      {
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `today.json returned HTTP ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    if (
+      !data ||
+      !Array.isArray(data.games)
+    ) {
+      throw new Error(
+        "today.json does not contain a valid games array."
+      );
+    }
+
+    const currentDate = API.today();
+
+    if (data.date !== currentDate) {
+      console.warn(
+        `POPS today.json is for ${data.date}, but today is ${currentDate}.`
+      );
+
+      return false;
+    }
+
+    todayData = {
+      ...data,
+      games: data.games
+    };
+
+    loadedScheduleDate = data.date;
+
+    rebuildGamesArray();
+
+    console.log(
+      `⚡ POPS loaded ${data.games.length} games from today.json.`
+    );
+
+    return true;
+  } catch (error) {
+    console.warn(
+      "POPS could not load prebuilt today.json:",
+      error.message
+    );
+
+    return false;
+  }
+}
+
+
 async function buildGameData(
   scheduleGame
 ) {
@@ -787,7 +848,7 @@ async function buildGameData(
 }
 
 async function loadTodayData(
-  forceRefresh = true
+  forceRefresh = false
 ) {
   if (
     typeof API === "undefined" ||
@@ -798,15 +859,41 @@ async function loadTodayData(
     );
   }
 
+  /*
+  First try the prebuilt GitHub data.
+
+  This file already contains:
+  - Games
+  - Starting pitchers
+  - Pitcher stats
+  - Lineups
+  - Batter stats
+  - Recent form
+  - Hit streaks
+  - BvP
+  */
+  if (!forceRefresh) {
+    const prebuiltLoaded =
+      await loadPrebuiltTodayData();
+
+    if (prebuiltLoaded) {
+      return;
+    }
+  }
+
+  /*
+  Fall back to live MLB requests only when
+  today.json is unavailable or outdated.
+  */
   const requestedDate = API.today();
 
   console.log(
-    "📅 POPS requesting MLB schedule:",
+    "📡 POPS loading live MLB schedule:",
     requestedDate
   );
 
   const schedule = await API.getSchedule(
-    forceRefresh
+    true
   );
 
   if (!Array.isArray(schedule)) {
@@ -822,19 +909,40 @@ async function loadTodayData(
 
   loadedScheduleDate = requestedDate;
 
-  for (const scheduleGame of schedule) {
-    const game = await buildGameData(
-      scheduleGame
+  /*
+  Process multiple games at once instead of
+  waiting for every game one by one.
+  */
+  const GAME_LOAD_LIMIT = 3;
+
+  for (
+    let index = 0;
+    index < schedule.length;
+    index += GAME_LOAD_LIMIT
+  ) {
+    const batch = schedule.slice(
+      index,
+      index + GAME_LOAD_LIMIT
     );
 
-    todayData.games.push(game);
+    const builtGames = await Promise.all(
+      batch.map(scheduleGame =>
+        buildGameData(scheduleGame)
+      )
+    );
+
+    todayData.games.push(
+      ...builtGames.filter(Boolean)
+    );
+
     rebuildGamesArray();
+    renderGames();
   }
 
   rebuildGamesArray();
 
   console.log(
-    `✅ POPS loaded ${todayData.games.length} games for ${loadedScheduleDate}.`
+    `✅ POPS loaded ${todayData.games.length} live games for ${loadedScheduleDate}.`
   );
 }
 
@@ -2329,16 +2437,28 @@ async function init() {
     API.today()
   );
 
-  await loadTodayData(true);
-
+  await loadTodayData(false);
+  
   renderGames();
 
-  await checkForStarterUpdates();
   await recalculateAllPicks();
 
-  if (hasPregameGamesRemaining()) {
-    startStarterRefresh();
-  }
+/*
+Check for starter changes after the page
+has already finished its main loading.
+*/
+if (hasPregameGamesRemaining()) {
+  startStarterRefresh();
+
+  setTimeout(() => {
+    checkForStarterUpdates().catch(error => {
+      console.warn(
+        "Initial starter update warning:",
+        error
+      );
+    });
+  }, 10000);
+}
 
   startDateWatcher();
 }
