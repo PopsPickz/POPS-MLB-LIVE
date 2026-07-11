@@ -2367,3 +2367,393 @@ init().catch(err => {
     `;
   }
 });
+
+/*
+=========================================================
+POPS NRFI STADIUM CARD RENDERER
+=========================================================
+*/
+
+function nrfiNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function nrfiText(value, fallback = "N/A") {
+  return value !== undefined && value !== null && value !== ""
+    ? value
+    : fallback;
+}
+
+function getTeamLetters(teamName = "") {
+  const words = teamName
+    .replace(/[^a-zA-Z\s]/g, "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!words.length) return "MLB";
+
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+
+  return words
+    .slice(-2)
+    .map(word => word.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
+function formatNrfiGameTime(dateValue) {
+  if (!dateValue) return "Time TBD";
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return nrfiText(dateValue, "Time TBD");
+  }
+
+  return date.toLocaleString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
+function getNrfiRating(score) {
+  score = nrfiNumber(score);
+
+  if (score >= 85) {
+    return {
+      title: "Elite NRFI",
+      description: "Top NRFI opportunity",
+      cardClass: "elite-card"
+    };
+  }
+
+  if (score >= 75) {
+    return {
+      title: "Strong NRFI",
+      description: "Strong NRFI lean",
+      cardClass: "strong-card"
+    };
+  }
+
+  if (score >= 65) {
+    return {
+      title: "Lean NRFI",
+      description: "Small NRFI lean",
+      cardClass: "lean-card"
+    };
+  }
+
+  return {
+    title: "YRFI Alert",
+    description: "First-inning run danger",
+    cardClass: "yrfi-card"
+  };
+}
+
+function createPitcherCard(pitcher = {}) {
+  const name = nrfiText(
+    pitcher.name || pitcher.fullName,
+    "Pitcher TBD"
+  );
+
+  const era = nrfiText(pitcher.era, "--");
+  const whip = nrfiText(pitcher.whip, "--");
+
+  const hr9 = nrfiText(
+    pitcher.hr9 ??
+    pitcher.hrPer9 ??
+    pitcher.homeRunsPer9,
+    "--"
+  );
+
+  const score = nrfiNumber(
+    pitcher.score ??
+    pitcher.pitcherScore ??
+    pitcher.nrfiScore,
+    0
+  );
+
+  return `
+    <div class="nrfi-pitcher-card">
+      <h4>${name}</h4>
+
+      <div class="nrfi-stat-row">
+        <span>ERA</span>
+        <strong>${era}</strong>
+      </div>
+
+      <div class="nrfi-stat-row">
+        <span>WHIP</span>
+        <strong>${whip}</strong>
+      </div>
+
+      <div class="nrfi-stat-row">
+        <span>HR/9</span>
+        <strong>${hr9}</strong>
+      </div>
+
+      <div class="nrfi-pitcher-total">
+        <span>Pitcher Score</span>
+
+        <div>
+          <strong>${score}</strong>
+          <small>/30</small>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderNrfiPredictions(nrfiGames = []) {
+  const box = document.getElementById("nrfiPicksBox");
+
+  if (!box) {
+    console.warn("nrfiPicksBox was not found.");
+    return;
+  }
+
+  if (!Array.isArray(nrfiGames) || nrfiGames.length === 0) {
+    box.innerHTML = `
+      <p class="nrfi-loading">
+        No NRFI predictions are available yet.
+      </p>
+    `;
+
+    updateNrfiSummary([]);
+    return;
+  }
+
+  const sortedGames = [...nrfiGames].sort((a, b) => {
+    return nrfiNumber(b.nrfiScore ?? b.score) -
+      nrfiNumber(a.nrfiScore ?? a.score);
+  });
+
+  updateNrfiSummary(sortedGames);
+
+  box.innerHTML = sortedGames.map((game, index) => {
+    const score = Math.max(
+      0,
+      Math.min(
+        100,
+        nrfiNumber(game.nrfiScore ?? game.score)
+      )
+    );
+
+    const rating = getNrfiRating(score);
+
+    const awayTeam =
+      game.awayTeam?.name ||
+      game.awayTeamName ||
+      game.away ||
+      "Away Team";
+
+    const homeTeam =
+      game.homeTeam?.name ||
+      game.homeTeamName ||
+      game.home ||
+      "Home Team";
+
+    const venue =
+      game.venue?.name ||
+      game.venue ||
+      game.ballpark ||
+      "Venue TBD";
+
+    const gameTime =
+      game.gameDate ||
+      game.date ||
+      game.startTime;
+
+    const awayPitcher =
+      game.awayPitcher ||
+      game.pitchers?.away ||
+      {};
+
+    const homePitcher =
+      game.homePitcher ||
+      game.pitchers?.home ||
+      {};
+
+    const awayConfirmed =
+      Boolean(
+        game.awayLineupConfirmed ??
+        game.lineups?.away?.confirmed
+      );
+
+    const homeConfirmed =
+      Boolean(
+        game.homeLineupConfirmed ??
+        game.lineups?.home?.confirmed
+      );
+
+    const breakdownText =
+      game.breakdown ||
+      game.explanation ||
+      game.reason ||
+      `${rating.title} based on the starting pitchers, team offense and expected top-of-order matchup.`;
+
+    return `
+      <article class="nrfi-game-card ${rating.cardClass}">
+
+        <div class="nrfi-rank">
+          #${index + 1}
+        </div>
+
+        <div class="nrfi-matchup">
+
+          <div class="nrfi-team-logo away">
+            ${getTeamLetters(awayTeam)}
+          </div>
+
+          <h3 class="nrfi-game-title">
+            ${awayTeam}
+            <small>vs</small>
+            ${homeTeam}
+          </h3>
+
+          <div class="nrfi-team-logo home">
+            ${getTeamLetters(homeTeam)}
+          </div>
+
+        </div>
+
+        <div class="nrfi-game-details">
+          <p>
+            <span class="nrfi-detail-icon">◷</span>
+            ${formatNrfiGameTime(gameTime)}
+          </p>
+
+          <p>
+            <span class="nrfi-detail-icon">▱</span>
+            ${venue}
+          </p>
+        </div>
+
+        <div class="nrfi-score-panel">
+
+          <div
+            class="nrfi-score-ring"
+            style="--nrfi-score: ${score};"
+          >
+            <div class="nrfi-score-number">
+              <strong>${score}</strong>
+              <span>/100</span>
+            </div>
+          </div>
+
+          <div class="nrfi-score-copy">
+            <span>POPS NRFI Score</span>
+            <h4>${rating.title}</h4>
+
+            <p>
+              <i class="nrfi-rating-dot"></i>
+              ${rating.description}
+            </p>
+          </div>
+
+        </div>
+
+        <div class="nrfi-pitcher-grid">
+          ${createPitcherCard(awayPitcher)}
+          ${createPitcherCard(homePitcher)}
+        </div>
+
+        <div class="nrfi-lineup-status">
+
+          <div class="nrfi-lineup-item">
+            Away lineup:
+            <span class="nrfi-check">
+              ${awayConfirmed ? "✓" : "!"}
+            </span>
+            <span class="nrfi-confirmed">
+              ${awayConfirmed ? "Confirmed" : "Projected"}
+            </span>
+          </div>
+
+          <div class="nrfi-lineup-item">
+            Home lineup:
+            <span class="nrfi-check">
+              ${homeConfirmed ? "✓" : "!"}
+            </span>
+            <span class="nrfi-confirmed">
+              ${homeConfirmed ? "Confirmed" : "Projected"}
+            </span>
+          </div>
+
+        </div>
+
+        <button
+          class="nrfi-breakdown-button"
+          type="button"
+          onclick="toggleNrfiBreakdown(this)"
+        >
+          View Prediction Breakdown
+        </button>
+
+        <div class="nrfi-breakdown">
+          <p>${breakdownText}</p>
+        </div>
+
+      </article>
+    `;
+  }).join("");
+}
+
+function updateNrfiSummary(nrfiGames = []) {
+  const gamesAnalyzed = nrfiGames.length;
+
+  const eliteCount = nrfiGames.filter(game => {
+    const score = nrfiNumber(game.nrfiScore ?? game.score);
+    return score >= 85;
+  }).length;
+
+  const strongCount = nrfiGames.filter(game => {
+    const score = nrfiNumber(game.nrfiScore ?? game.score);
+    return score >= 75 && score < 85;
+  }).length;
+
+  const yrfiCount = nrfiGames.filter(game => {
+    const score = nrfiNumber(game.nrfiScore ?? game.score);
+    return score < 65;
+  }).length;
+
+  const gamesElement =
+    document.getElementById("nrfiGamesAnalyzed");
+
+  const eliteElement =
+    document.getElementById("nrfiEliteCount");
+
+  const strongElement =
+    document.getElementById("nrfiStrongCount");
+
+  const yrfiElement =
+    document.getElementById("nrfiYrfiCount");
+
+  if (gamesElement) gamesElement.textContent = gamesAnalyzed;
+  if (eliteElement) eliteElement.textContent = eliteCount;
+  if (strongElement) strongElement.textContent = strongCount;
+  if (yrfiElement) yrfiElement.textContent = yrfiCount;
+}
+
+function toggleNrfiBreakdown(button) {
+  const card = button.closest(".nrfi-game-card");
+
+  if (!card) return;
+
+  const breakdown = card.querySelector(".nrfi-breakdown");
+
+  if (!breakdown) return;
+
+  const isOpen = breakdown.classList.toggle("open");
+
+  button.textContent = isOpen
+    ? "Hide Prediction Breakdown"
+    : "View Prediction Breakdown";
+}
