@@ -1,224 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+  <meta charset="UTF-8" />
 
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0"
-/>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
-<title>POPS Pickz MLB 11.0</title>
+  <title>POPS Pickz MLB</title>
 
-<link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 
-<div class="app">
+  <div class="app">
 
-<header class="hero">
-<h1>⚾ POPS Pickz 11.0</h1>
+    <!-- =====================================================
+    POPS PICKZ HOMEPAGE BANNER
+    ====================================================== -->
 
-<p>
-Automatic MLB HR Pickz • Hit Pickz • Moneyline • NRFI
-</p>
-</header>
+    <header class="hero premium-hero">
 
-<nav class="tabs">
+      <img
+        src="PHOTO-2026-07-10-22-15-51.jpg"
+        alt="POPS PICKZ MLB predictions"
+        class="homepage-banner"
+      />
 
-<button
-type="button"
-onclick="showTab('pitchers', this)"
-class="active-tab">
-🎯 Pitchers
-</button>
+    </header>
 
-<button
-type="button"
-onclick="showTab('homeruns', this)">
-💣 HR Pickz
-</button>
+    <!-- =====================================================
+    NAVIGATION BUTTONS
+    ====================================================== -->
 
-<button
-type="button"
-onclick="showTab('parlays', this)">
-🎯 HR Parlays
-</button>
+    <nav class="tabs">
 
-<button
-type="button"
-onclick="showTab('nrfi', this)">
-🟢 NRFI
-</button>
+      <button
+        type="button"
+        onclick="showTab('pitchers', this)"
+        class="active-tab"
+      >
+        <span class="tab-icon">🎯</span>
+        <span>Pitchers</span>
+      </button>
 
-<button
-type="button"
-onclick="showTab('hits', this)">
-🔥 Hit Pickz
-</button>
+      <button
+        type="button"
+        onclick="showTab('homeruns', this)"
+      >
+        <span class="tab-icon">💣</span>
+        <span>HR Pickz</span>
+      </button>
 
-<button
-type="button"
-onclick="showTab('moneyline', this)">
-💰 Moneyline
-</button>
+      <button
+        type="button"
+        onclick="showTab('parlays', this)"
+      >
+        <span class="tab-icon">🎯</span>
+        <span>HR Parlays</span>
+      </button>
 
-</nav>
+      <button
+        type="button"
+        onclick="showTab('nrfi', this)"
+      >
+        <span class="tab-icon">🟢</span>
+        <span>NRFI</span>
+      </button>
 
-<!-- Hidden but required by app.js -->
+      <button
+        type="button"
+        onclick="showTab('hits', this)"
+      >
+        <span class="tab-icon">🔥</span>
+        <span>Hit Pickz</span>
+      </button>
 
-<div
-id="gamesBox"
-style="display:none;">
-</div>
+      <button
+        type="button"
+        onclick="showTab('moneyline', this)"
+      >
+        <span class="tab-icon">💰</span>
+        <span>Moneyline</span>
+      </button>
 
-<!-- Pitchers -->
+    </nav>
 
-<section
-class="card tab-section active"
-id="pitchers">
+    <!-- Hidden but required by app.js -->
 
-<h2>🎯 Today's Pitchers To Target</h2>
+    <div
+      id="gamesBox"
+      style="display: none;"
+    ></div>
 
-<div id="pitchersBox">
-<p>Loading pitcher targets...</p>
-</div>
+    <!-- =====================================================
+    PITCHERS
+    ====================================================== -->
 
-</section>
+    <section
+      class="card tab-section active"
+      id="pitchers"
+    >
 
-<!-- HR Picks -->
+      <h2>🎯 Today's Pitchers To Target</h2>
 
-<section
-class="card tab-section"
-id="homeruns">
+      <div id="pitchersBox">
+        <p>Loading pitcher targets...</p>
+      </div>
 
-<h2>💣 POPS Home Run Pickz</h2>
+    </section>
 
-<div id="hrPicksBox">
-<p>Loading HR Pickz...</p>
-</div>
+    <!-- =====================================================
+    HOME RUN PICKS
+    ====================================================== -->
 
-</section>
+    <section
+      class="card tab-section"
+      id="homeruns"
+    >
 
-<!-- HR Parlays -->
+      <h2>💣 POPS Home Run Pickz</h2>
 
-<section
-class="card tab-section"
-id="parlays">
+      <div id="hrPicksBox">
+        <p>Loading HR Pickz...</p>
+      </div>
 
-<h2>🎯 POPS HR Parlays</h2>
+    </section>
 
-<div id="parlayBox">
-<p>Generating today's HR parlays...</p>
-</div>
+    <!-- =====================================================
+    HOME RUN PARLAYS
+    ====================================================== -->
 
-</section>
+    <section
+      class="card tab-section"
+      id="parlays"
+    >
 
-<!-- NRFI -->
+      <h2>🎯 POPS HR Parlays</h2>
 
-<section
-  class="card tab-section nrfi-section"
-  id="nrfi"
->
+      <div id="parlayBox">
+        <p>Generating today's HR parlays...</p>
+      </div>
 
-  <div class="nrfi-hero-title">
-    <div class="nrfi-light nrfi-light-left"></div>
-    <div class="nrfi-light nrfi-light-right"></div>
+    </section>
 
-    <h2>
-      POPS NRFI
-      <span>PREDICTIONS</span>
-    </h2>
+    <!-- =====================================================
+    NRFI
+    ====================================================== -->
+
+    <section
+      class="card tab-section nrfi-section"
+      id="nrfi"
+    >
+
+      <div class="nrfi-hero-title">
+
+        <div class="nrfi-light nrfi-light-left"></div>
+        <div class="nrfi-light nrfi-light-right"></div>
+
+        <h2>
+          POPS NRFI
+          <span>PREDICTIONS</span>
+        </h2>
+
+      </div>
+
+      <div id="nrfiBox">
+        <p>Loading NRFI predictions...</p>
+      </div>
+
+    </section>
+
+    <!-- =====================================================
+    HIT PICKS
+    ====================================================== -->
+
+    <section
+      class="card tab-section"
+      id="hits"
+    >
+
+      <h2>🔥 POPS Hit Pickz</h2>
+
+      <div id="hitPicksBox">
+        <p>Loading Hit Pickz...</p>
+      </div>
+
+    </section>
+
+    <!-- =====================================================
+    MONEYLINE
+    ====================================================== -->
+
+    <section
+      class="card tab-section"
+      id="moneyline"
+    >
+
+      <h2>💰 POPS Moneyline Pickz</h2>
+
+      <div id="moneylineBox">
+        <p>Loading Moneyline Pickz...</p>
+      </div>
+
+    </section>
+
   </div>
 
-  <div id="nrfiBox">
-    <p>Loading NRFI predictions...</p>
-  </div>
+  <!-- =====================================================
+  TAB NAVIGATION
+  ====================================================== -->
 
-</section>
+  <script>
+    function showTab(id, button) {
+      document
+        .querySelectorAll(".tab-section")
+        .forEach(section => {
+          section.classList.remove("active");
+        });
 
-<!-- Hit Picks -->
+      document
+        .querySelectorAll(".tabs button")
+        .forEach(btn => {
+          btn.classList.remove("active-tab");
+        });
 
-<section
-class="card tab-section"
-id="hits">
+      const selectedSection =
+        document.getElementById(id);
 
-<h2>🔥 POPS Hit Pickz</h2>
+      if (!selectedSection) {
+        console.warn(`POPS section not found: ${id}`);
+        return;
+      }
 
-<div id="hitPicksBox">
-<p>Loading Hit Pickz...</p>
-</div>
+      selectedSection.classList.add("active");
+      button.classList.add("active-tab");
 
-</section>
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+  </script>
 
-<!-- Moneyline -->
+  <!-- MLB API -->
 
-<section
-class="card tab-section"
-id="moneyline">
+  <script src="api.js"></script>
 
-<h2>💰 POPS Moneyline Pickz</h2>
+  <!-- Statcast -->
 
-<div id="moneylineBox">
-<p>Loading Moneyline Pickz...</p>
-</div>
+  <script src="statcast.api.js"></script>
+  <script src="statcast.js"></script>
 
-</section>
+  <!-- Formula -->
 
-</div>
+  <script src="formula.js"></script>
 
-<script>
+  <!-- Modules -->
 
-function showTab(id, button){
+  <script src="moneyline.js"></script>
+  <script src="homerun.js"></script>
+  <script src="pitchers.js"></script>
+  <script src="parlays.js"></script>
+  <script src="nrfi.js"></script>
 
-document
-.querySelectorAll(".tab-section")
-.forEach(section=>section.classList.remove("active"));
+  <!-- Main App -->
 
-document
-.querySelectorAll(".tabs button")
-.forEach(btn=>btn.classList.remove("active-tab"));
-
-document
-.getElementById(id)
-.classList.add("active");
-
-button.classList.add("active-tab");
-
-window.scrollTo({
-top:0,
-behavior:"smooth"
-});
-
-}
-
-</script>
-
-<!-- MLB API -->
-
-<script src="api.js"></script>
-
-<!-- Statcast -->
-
-<script src="statcast.api.js"></script>
-<script src="statcast.js"></script>
-
-<!-- Formula -->
-
-<script src="formula.js"></script>
-
-<!-- Modules -->
-
-<script src="moneyline.js"></script>
-<script src="homerun.js"></script>
-<script src="pitchers.js"></script>
-<script src="parlays.js"></script>
-<script src="nrfi.js"></script>
-
-<!-- Main App -->
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 
 </body>
 </html>
