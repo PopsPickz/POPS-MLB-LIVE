@@ -682,10 +682,32 @@ async function loadPrebuiltTodayData() {
     }
 
     todayData = {
-      ...data,
-      games: data.games
-    };
+  ...data,
 
+  games: data.games.map(game => ({
+    ...game,
+
+    awayLineup: (game.awayLineup || []).map(
+      batter => ({
+        ...batter,
+        team:
+          batter.team ||
+          game.awayTeam ||
+          "Away Team"
+      })
+    ),
+
+    homeLineup: (game.homeLineup || []).map(
+      batter => ({
+        ...batter,
+        team:
+          batter.team ||
+          game.homeTeam ||
+          "Home Team"
+      })
+    )
+  }))
+};
     loadedScheduleDate = data.date;
 
     rebuildGamesArray();
