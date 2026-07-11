@@ -2277,3 +2277,986 @@ WEATHER TAB VISIBILITY
   width: 100%;
   min-height: 100px;
 }
+
+
+/*
+=========================================================
+POPS PICKZ ANIMATED WEATHER CENTER
+=========================================================
+*/
+
+#weather {
+  overflow: hidden;
+  padding: 18px;
+}
+
+.weather-section-header {
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.weather-section-header h2 {
+  margin: 0 0 10px;
+  color: #ff9d2d;
+  font-family:
+    Impact,
+    Haettenschweiler,
+    "Arial Narrow Bold",
+    sans-serif;
+  font-size: clamp(30px, 7vw, 46px);
+  font-style: italic;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 14px rgba(255, 106, 0, 0.45);
+}
+
+.weather-section-note {
+  max-width: 720px;
+  margin: 0 auto;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+#weatherBox {
+  display: grid;
+  gap: 22px;
+}
+
+/*
+=========================================================
+MAIN WEATHER CARD
+=========================================================
+*/
+
+.premium-weather-card {
+  position: relative;
+  margin: 0;
+  padding: 18px;
+  overflow: hidden;
+  border: 2px solid #ff6a00;
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 50% 28%,
+      rgba(255, 91, 0, 0.11),
+      transparent 40%
+    ),
+    linear-gradient(
+      160deg,
+      rgba(24, 12, 5, 0.98),
+      rgba(3, 3, 3, 0.99)
+    );
+  box-shadow:
+    0 0 16px rgba(255, 106, 0, 0.32),
+    inset 0 0 25px rgba(255, 106, 0, 0.05);
+  animation:
+    weatherCardGlow 3.2s ease-in-out infinite;
+}
+
+.premium-weather-card::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  pointer-events: none;
+  border:
+    1px solid rgba(255, 146, 48, 0.15);
+  border-radius: 18px;
+}
+
+.premium-weather-card::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -70%;
+  width: 45%;
+  height: 200%;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.055),
+      transparent
+    );
+  transform: rotate(18deg);
+  animation:
+    weatherCardShine 6s linear infinite;
+}
+
+/*
+=========================================================
+CARD HEADER
+=========================================================
+*/
+
+.weather-card-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom:
+    1px solid rgba(255, 106, 0, 0.28);
+}
+
+.weather-matchup {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.weather-baseball-icon {
+  flex: 0 0 auto;
+  font-size: 2rem;
+  filter:
+    drop-shadow(
+      0 0 8px rgba(255, 106, 0, 0.5)
+    );
+  animation:
+    weatherBaseballFloat 2.4s ease-in-out infinite;
+}
+
+.weather-matchup h3 {
+  margin: 0;
+  color: #ffffff;
+  font-family:
+    Impact,
+    Haettenschweiler,
+    "Arial Narrow Bold",
+    sans-serif;
+  font-size: clamp(21px, 5vw, 31px);
+  font-style: italic;
+  line-height: 1.05;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+}
+
+.weather-condition-badge {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border:
+    1px solid rgba(255, 140, 35, 0.5);
+  border-radius: 12px;
+  color: #ffb35b;
+  background:
+    rgba(255, 106, 0, 0.09);
+  box-shadow:
+    inset 0 0 12px rgba(255, 106, 0, 0.05);
+}
+
+.weather-condition-badge span {
+  font-size: 1.2rem;
+}
+
+.weather-condition-badge strong {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.weather-game-meta {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  padding: 13px 4px 3px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.83rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/*
+=========================================================
+MAIN TWO-COLUMN WEATHER AREA
+=========================================================
+*/
+
+.weather-main-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.35fr)
+    minmax(180px, 0.65fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+/*
+=========================================================
+WIND PANEL
+=========================================================
+*/
+
+.weather-wind-panel {
+  position: relative;
+  min-height: 355px;
+  padding: 16px 14px 18px;
+  overflow: hidden;
+  border:
+    1px solid rgba(255, 106, 0, 0.48);
+  border-radius: 19px;
+  text-align: center;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255, 91, 0, 0.09),
+      transparent 57%
+    ),
+    rgba(0, 0, 0, 0.53);
+  box-shadow:
+    inset 0 0 24px rgba(255, 106, 0, 0.05);
+}
+
+.weather-wind-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.17;
+  background:
+    repeating-radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.11) 0 1px,
+      transparent 2px 20px
+    );
+}
+
+.weather-wind-heading {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  color: #ff9d2d;
+  font-size: 0.9rem;
+  letter-spacing: 0.19em;
+}
+
+.weather-wind-heading span {
+  height: 1px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 106, 0, 0.8)
+    );
+}
+
+.weather-wind-heading span:last-child {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 106, 0, 0.8),
+      transparent
+    );
+}
+
+.weather-wind-speed {
+  position: relative;
+  z-index: 2;
+  margin-top: 8px;
+  color: #ffffff;
+  font-family:
+    Impact,
+    Haettenschweiler,
+    "Arial Narrow Bold",
+    sans-serif;
+  font-size: clamp(32px, 8vw, 52px);
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: 1px;
+  text-shadow:
+    0 0 14px rgba(255, 106, 0, 0.36);
+}
+
+/*
+=========================================================
+ANIMATED WIND COMPASS
+=========================================================
+*/
+
+.weather-compass {
+  position: relative;
+  width: 190px;
+  height: 190px;
+  margin: 17px auto 13px;
+}
+
+.weather-compass-circle {
+  position: absolute;
+  inset: 20px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border:
+    2px solid rgba(255, 106, 0, 0.68);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 106, 0, 0.12),
+      rgba(0, 0, 0, 0.92) 67%
+    );
+  box-shadow:
+    0 0 20px rgba(255, 106, 0, 0.27),
+    inset 0 0 26px rgba(255, 106, 0, 0.09);
+}
+
+.weather-compass-circle::before,
+.weather-compass-circle::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  background:
+    rgba(255, 255, 255, 0.12);
+}
+
+.weather-compass-circle::before {
+  width: 1px;
+  height: 100%;
+}
+
+.weather-compass-circle::after {
+  width: 100%;
+  height: 1px;
+}
+
+.weather-compass-north,
+.weather-compass-east,
+.weather-compass-south,
+.weather-compass-west {
+  position: absolute;
+  z-index: 4;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.weather-compass-north {
+  top: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.weather-compass-east {
+  top: 50%;
+  right: 1px;
+  transform: translateY(-50%);
+}
+
+.weather-compass-south {
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.weather-compass-west {
+  top: 50%;
+  left: 1px;
+  transform: translateY(-50%);
+}
+
+.weather-wind-arrow-large {
+  position: relative;
+  z-index: 5;
+  display: block;
+  color: #ff7a13;
+  font-size: 92px;
+  font-weight: 900;
+  line-height: 1;
+  filter:
+    drop-shadow(
+      0 0 7px rgba(255, 106, 0, 0.95)
+    )
+    drop-shadow(
+      0 0 19px rgba(255, 74, 0, 0.58)
+    );
+  transform:
+    rotate(
+      var(--wind-arrow-rotation)
+    );
+  animation:
+    weatherWindArrowPulse
+    1.65s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.weather-wind-streak {
+  position: absolute;
+  z-index: 2;
+  width: 42px;
+  height: 3px;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 126, 35, 0.9),
+      transparent
+    );
+  opacity: 0;
+  animation:
+    weatherWindStreak
+    2.1s linear infinite;
+}
+
+.weather-wind-streak.streak-one {
+  top: 37%;
+  left: 33%;
+}
+
+.weather-wind-streak.streak-two {
+  top: 51%;
+  left: 42%;
+  animation-delay: 0.65s;
+}
+
+.weather-wind-streak.streak-three {
+  top: 64%;
+  left: 27%;
+  animation-delay: 1.2s;
+}
+
+.weather-baseball-wind-label {
+  position: relative;
+  z-index: 3;
+  margin: 0 auto;
+  color: #ffffff;
+  font-size: clamp(1rem, 4vw, 1.28rem);
+  font-weight: 900;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.weather-baseball-wind-label.favorable {
+  color: #ff983d;
+  text-shadow:
+    0 0 12px rgba(255, 106, 0, 0.35);
+}
+
+.weather-baseball-wind-label.suppressing {
+  color: #63cfff;
+  text-shadow:
+    0 0 12px rgba(0, 170, 255, 0.32);
+}
+
+.weather-wind-impact {
+  position: relative;
+  z-index: 3;
+  display: inline-block;
+  margin-top: 9px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.weather-wind-impact.favorable {
+  color: #ffb36a;
+  border:
+    1px solid rgba(255, 106, 0, 0.52);
+  background:
+    rgba(255, 106, 0, 0.1);
+}
+
+.weather-wind-impact.suppressing {
+  color: #74d7ff;
+  border:
+    1px solid rgba(0, 183, 255, 0.48);
+  background:
+    rgba(0, 154, 255, 0.1);
+}
+
+.weather-wind-impact.neutral {
+  color: #d9d9d9;
+  border:
+    1px solid rgba(255, 255, 255, 0.2);
+  background:
+    rgba(255, 255, 255, 0.055);
+}
+
+/*
+=========================================================
+RIGHT-SIDE WEATHER STATS
+=========================================================
+*/
+
+.weather-stat-panel {
+  display: grid;
+  align-content: stretch;
+  gap: 10px;
+}
+
+.weather-premium-stat {
+  display: flex;
+  min-height: 77px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border:
+    1px solid rgba(255, 106, 0, 0.4);
+  border-radius: 15px;
+  background:
+    linear-gradient(
+      140deg,
+      rgba(255, 106, 0, 0.09),
+      rgba(0, 0, 0, 0.65)
+    );
+  box-shadow:
+    inset 0 0 15px rgba(255, 106, 0, 0.035);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.weather-premium-stat:hover {
+  transform:
+    translateY(-3px);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.35),
+    0 0 12px rgba(255, 106, 0, 0.18);
+}
+
+.weather-stat-icon {
+  flex: 0 0 auto;
+  font-size: 1.85rem;
+  filter:
+    drop-shadow(
+      0 0 7px rgba(255, 106, 0, 0.25)
+    );
+}
+
+.weather-premium-stat div {
+  min-width: 0;
+}
+
+.weather-premium-stat small {
+  display: block;
+  margin-bottom: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.weather-premium-stat strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #ffffff;
+  font-size: 1.28rem;
+  line-height: 1.1;
+}
+
+.weather-premium-stat.temperature strong {
+  color: #ff9d3d;
+}
+
+.weather-premium-stat.humidity strong {
+  color: #5fcbff;
+}
+
+.weather-premium-stat.rain strong {
+  color: #71e3ff;
+}
+
+/*
+=========================================================
+DISPLAY-ONLY WEATHER RATING
+=========================================================
+*/
+
+.weather-rating-panel {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+  padding: 14px;
+  border:
+    1px solid rgba(255, 106, 0, 0.44);
+  border-radius: 17px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 106, 0, 0.08),
+      rgba(0, 0, 0, 0.72)
+    );
+}
+
+.weather-rating-title {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 9px;
+  color: #ff9a35;
+  font-size: 0.79rem;
+  letter-spacing: 0.09em;
+  text-align: center;
+}
+
+.weather-rating-title span {
+  height: 1px;
+  background:
+    rgba(255, 106, 0, 0.43);
+}
+
+.weather-rating-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.weather-rating-stars {
+  white-space: nowrap;
+}
+
+.weather-rating-star {
+  display: inline-block;
+  margin: 0 1px;
+  font-size: clamp(23px, 5vw, 34px);
+  line-height: 1;
+}
+
+.weather-rating-star.filled {
+  color: #ff871b;
+  text-shadow:
+    0 0 10px rgba(255, 106, 0, 0.65);
+  animation:
+    weatherStarPulse 1.9s ease-in-out infinite;
+}
+
+.weather-rating-star.filled:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.weather-rating-star.filled:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+.weather-rating-star.filled:nth-child(4) {
+  animation-delay: 0.36s;
+}
+
+.weather-rating-star.filled:nth-child(5) {
+  animation-delay: 0.48s;
+}
+
+.weather-rating-star.empty {
+  color: rgba(255, 255, 255, 0.16);
+}
+
+.weather-rating-label strong {
+  display: block;
+  color: #ffffff;
+  font-size: 0.98rem;
+  text-transform: uppercase;
+}
+
+.weather-rating-label small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.weather-rating-panel.excellent {
+  border-color:
+    rgba(255, 105, 0, 0.8);
+  box-shadow:
+    inset 0 0 18px rgba(255, 106, 0, 0.08);
+}
+
+.weather-rating-panel.poor,
+.weather-rating-panel.suppressing {
+  border-color:
+    rgba(0, 174, 255, 0.45);
+}
+
+/*
+=========================================================
+WEATHER NOTE AND STATUS
+=========================================================
+*/
+
+.weather-display-note {
+  position: relative;
+  z-index: 2;
+  margin: 13px 0 0;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.weather-loading,
+.weather-empty,
+.weather-error,
+.weather-unavailable {
+  padding: 24px;
+  border:
+    1px dashed rgba(255, 106, 0, 0.45);
+  border-radius: 15px;
+  color: rgba(255, 255, 255, 0.76);
+  text-align: center;
+  background:
+    rgba(255, 106, 0, 0.045);
+}
+
+.weather-card-unavailable {
+  margin: 0;
+  padding: 18px;
+  border:
+    1px solid rgba(255, 106, 0, 0.45);
+  border-radius: 18px;
+  background:
+    rgba(0, 0, 0, 0.72);
+}
+
+/*
+=========================================================
+WEATHER ANIMATIONS
+=========================================================
+*/
+
+@keyframes weatherCardGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 12px rgba(255, 106, 0, 0.27),
+      inset 0 0 22px rgba(255, 106, 0, 0.045);
+  }
+
+  50% {
+    box-shadow:
+      0 0 27px rgba(255, 106, 0, 0.53),
+      inset 0 0 28px rgba(255, 106, 0, 0.085);
+  }
+}
+
+@keyframes weatherCardShine {
+  0% {
+    left: -70%;
+  }
+
+  45%,
+  100% {
+    left: 135%;
+  }
+}
+
+@keyframes weatherBaseballFloat {
+  0%,
+  100% {
+    transform:
+      translateY(0)
+      rotate(-8deg);
+  }
+
+  50% {
+    transform:
+      translateY(-4px)
+      rotate(8deg);
+  }
+}
+
+@keyframes weatherWindArrowPulse {
+  0%,
+  100% {
+    transform:
+      rotate(
+        var(--wind-arrow-rotation)
+      )
+      scale(1);
+  }
+
+  50% {
+    transform:
+      rotate(
+        var(--wind-arrow-rotation)
+      )
+      scale(1.09);
+  }
+}
+
+@keyframes weatherWindStreak {
+  0% {
+    opacity: 0;
+    transform:
+      translateX(-54px);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translateX(54px);
+  }
+}
+
+@keyframes weatherStarPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  50% {
+    transform: scale(1.13);
+    filter: brightness(1.25);
+  }
+}
+
+/*
+=========================================================
+WEATHER RESPONSIVE DESIGN
+=========================================================
+*/
+
+@media (max-width: 720px) {
+  #weather {
+    padding: 13px;
+  }
+
+  .premium-weather-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .weather-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .weather-wind-panel {
+    min-height: 335px;
+  }
+
+  .weather-stat-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .weather-premium-stat {
+    min-height: 74px;
+  }
+}
+
+@media (max-width: 480px) {
+  .weather-card-top {
+    display: block;
+  }
+
+  .weather-condition-badge {
+    width: fit-content;
+    margin-top: 12px;
+  }
+
+  .weather-matchup h3 {
+    font-size: 22px;
+  }
+
+  .weather-game-meta {
+    display: grid;
+    gap: 7px;
+    justify-content: start;
+    text-align: left;
+  }
+
+  .weather-wind-panel {
+    min-height: 315px;
+    padding:
+      14px
+      8px
+      16px;
+  }
+
+  .weather-compass {
+    width: 175px;
+    height: 175px;
+  }
+
+  .weather-wind-arrow-large {
+    font-size: 82px;
+  }
+
+  .weather-stat-panel {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .weather-premium-stat {
+    min-height: 72px;
+    gap: 8px;
+    padding: 9px;
+  }
+
+  .weather-stat-icon {
+    font-size: 1.45rem;
+  }
+
+  .weather-premium-stat small {
+    font-size: 0.58rem;
+  }
+
+  .weather-premium-stat strong {
+    font-size: 1rem;
+  }
+
+  .weather-rating-content {
+    display: block;
+    text-align: center;
+  }
+
+  .weather-rating-label {
+    margin-top: 9px;
+  }
+}
+
+@media (max-width: 360px) {
+  .weather-stat-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .weather-compass {
+    width: 160px;
+    height: 160px;
+  }
+
+  .weather-wind-arrow-large {
+    font-size: 72px;
+  }
+}
+
+/*
+=========================================================
+REDUCED MOTION
+=========================================================
+*/
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-weather-card,
+  .premium-weather-card::after,
+  .weather-baseball-icon,
+  .weather-wind-arrow-large,
+  .weather-wind-streak,
+  .weather-rating-star {
+    animation: none !important;
+  }
+}
