@@ -1,156 +1,770 @@
+/*
+=========================================================
+POPS PICKZ WEATHER CENTER
+File: weather.js
+=========================================================
+
+DISPLAY ONLY
+
+This file does NOT affect:
+
+- HR Pickz
+- Hit Pickz
+- Moneyline
+- NRFI
+- HR Parlays
+- Any POPS prediction formula
+
+Weather is loaded for each game's scheduled start time.
+=========================================================
+*/
+
 const stadiumWeather = {
-  "Yankee Stadium": { lat: 40.8296, lon: -73.9262 },
-  "Citi Field": { lat: 40.7571, lon: -73.8458 },
-  "Fenway Park": { lat: 42.3467, lon: -71.0972 },
-  "Wrigley Field": { lat: 41.9484, lon: -87.6553 },
-  "Dodger Stadium": { lat: 34.0739, lon: -118.2400 },
-  "Coors Field": { lat: 39.7559, lon: -104.9942 },
-  "Oracle Park": { lat: 37.7786, lon: -122.3893 },
-  "Citizens Bank Park": { lat: 39.9061, lon: -75.1665 },
-  "Camden Yards": { lat: 39.2840, lon: -76.6217 },
-  "Truist Park": { lat: 33.8908, lon: -84.4678 },
-  "Rogers Centre": { lat: 43.6414, lon: -79.3894 },
-  "Tropicana Field": { lat: 27.7683, lon: -82.6534 },
-  "loanDepot park": { lat: 25.7781, lon: -80.2197 },
-  "PNC Park": { lat: 40.4469, lon: -80.0057 },
-  "Great American Ball Park": { lat: 39.0979, lon: -84.5082 },
-  "American Family Field": { lat: 43.0280, lon: -87.9712 },
-  "Busch Stadium": { lat: 38.6226, lon: -90.1928 },
-  "Minute Maid Park": { lat: 29.7573, lon: -95.3555 },
-  "Globe Life Field": { lat: 32.7473, lon: -97.0842 },
-  "Kauffman Stadium": { lat: 39.0517, lon: -94.4803 },
-  "Target Field": { lat: 44.9817, lon: -93.2776 },
-  "Comerica Park": { lat: 42.3390, lon: -83.0485 },
-  "Progressive Field": { lat: 41.4962, lon: -81.6852 },
-  "Rate Field": { lat: 41.8300, lon: -87.6339 },
-  "T-Mobile Park": { lat: 47.5914, lon: -122.3325 },
-  "Angel Stadium": { lat: 33.8003, lon: -117.8827 },
-  "Oakland Coliseum": { lat: 37.7516, lon: -122.2005 },
-  "Sutter Health Park": { lat: 38.5804, lon: -121.5139 },
-  "Petco Park": { lat: 32.7073, lon: -117.1566 },
-  "Chase Field": { lat: 33.4455, lon: -112.0667 },
-  "Nationals Park": { lat: 38.8730, lon: -77.0074 }
+  "Yankee Stadium": {
+    lat: 40.8296,
+    lon: -73.9262
+  },
+
+  "Citi Field": {
+    lat: 40.7571,
+    lon: -73.8458
+  },
+
+  "Fenway Park": {
+    lat: 42.3467,
+    lon: -71.0972
+  },
+
+  "Wrigley Field": {
+    lat: 41.9484,
+    lon: -87.6553
+  },
+
+  "Dodger Stadium": {
+    lat: 34.0739,
+    lon: -118.2400
+  },
+
+  "Coors Field": {
+    lat: 39.7559,
+    lon: -104.9942
+  },
+
+  "Oracle Park": {
+    lat: 37.7786,
+    lon: -122.3893
+  },
+
+  "Citizens Bank Park": {
+    lat: 39.9061,
+    lon: -75.1665
+  },
+
+  "Oriole Park at Camden Yards": {
+    lat: 39.2840,
+    lon: -76.6217
+  },
+
+  "Camden Yards": {
+    lat: 39.2840,
+    lon: -76.6217
+  },
+
+  "Truist Park": {
+    lat: 33.8908,
+    lon: -84.4678
+  },
+
+  "Rogers Centre": {
+    lat: 43.6414,
+    lon: -79.3894
+  },
+
+  "Tropicana Field": {
+    lat: 27.7683,
+    lon: -82.6534
+  },
+
+  "loanDepot park": {
+    lat: 25.7781,
+    lon: -80.2197
+  },
+
+  "loanDepot Park": {
+    lat: 25.7781,
+    lon: -80.2197
+  },
+
+  "PNC Park": {
+    lat: 40.4469,
+    lon: -80.0057
+  },
+
+  "Great American Ball Park": {
+    lat: 39.0979,
+    lon: -84.5082
+  },
+
+  "American Family Field": {
+    lat: 43.0280,
+    lon: -87.9712
+  },
+
+  "Busch Stadium": {
+    lat: 38.6226,
+    lon: -90.1928
+  },
+
+  "Daikin Park": {
+    lat: 29.7573,
+    lon: -95.3555
+  },
+
+  "Minute Maid Park": {
+    lat: 29.7573,
+    lon: -95.3555
+  },
+
+  "Globe Life Field": {
+    lat: 32.7473,
+    lon: -97.0842
+  },
+
+  "Kauffman Stadium": {
+    lat: 39.0517,
+    lon: -94.4803
+  },
+
+  "Target Field": {
+    lat: 44.9817,
+    lon: -93.2776
+  },
+
+  "Comerica Park": {
+    lat: 42.3390,
+    lon: -83.0485
+  },
+
+  "Progressive Field": {
+    lat: 41.4962,
+    lon: -81.6852
+  },
+
+  "Rate Field": {
+    lat: 41.8300,
+    lon: -87.6339
+  },
+
+  "Guaranteed Rate Field": {
+    lat: 41.8300,
+    lon: -87.6339
+  },
+
+  "T-Mobile Park": {
+    lat: 47.5914,
+    lon: -122.3325
+  },
+
+  "Angel Stadium": {
+    lat: 33.8003,
+    lon: -117.8827
+  },
+
+  "Oakland Coliseum": {
+    lat: 37.7516,
+    lon: -122.2005
+  },
+
+  "Sutter Health Park": {
+    lat: 38.5804,
+    lon: -121.5139
+  },
+
+  "Petco Park": {
+    lat: 32.7073,
+    lon: -117.1566
+  },
+
+  "Chase Field": {
+    lat: 33.4455,
+    lon: -112.0667
+  },
+
+  "Nationals Park": {
+    lat: 38.8730,
+    lon: -77.0074
+  }
 };
 
-function windArrow(deg) {
-  if (deg >= 337 || deg < 22) return "⬆️";
-  if (deg < 67) return "↗️";
-  if (deg < 112) return "➡️";
-  if (deg < 157) return "↘️";
-  if (deg < 202) return "⬇️";
-  if (deg < 247) return "↙️";
-  if (deg < 292) return "⬅️";
+/*
+=========================================================
+GENERAL HELPERS
+=========================================================
+*/
+
+function weatherNumber(value, fallback = 0) {
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+}
+
+function normalizeDegrees(degrees) {
+  const number = weatherNumber(degrees, 0);
+
+  return ((number % 360) + 360) % 360;
+}
+
+/*
+Open-Meteo wind direction tells us where the wind
+is coming FROM.
+
+Example:
+
+0 degrees = wind coming from north
+
+To display where the wind is blowing TOWARD,
+we add 180 degrees.
+*/
+
+function windTowardDegrees(directionFrom) {
+  return normalizeDegrees(
+    weatherNumber(directionFrom, 0) + 180
+  );
+}
+
+/*
+Arrow points toward the direction the wind is traveling.
+*/
+
+function windArrow(directionFrom) {
+  const toward = windTowardDegrees(directionFrom);
+
+  if (toward >= 337.5 || toward < 22.5) {
+    return "⬆️";
+  }
+
+  if (toward < 67.5) {
+    return "↗️";
+  }
+
+  if (toward < 112.5) {
+    return "➡️";
+  }
+
+  if (toward < 157.5) {
+    return "↘️";
+  }
+
+  if (toward < 202.5) {
+    return "⬇️";
+  }
+
+  if (toward < 247.5) {
+    return "↙️";
+  }
+
+  if (toward < 292.5) {
+    return "⬅️";
+  }
+
   return "↖️";
 }
 
-function getWeatherScore(weather = {}) {
-  let score = 0;
+function windCompassDirection(directionFrom) {
+  const toward = windTowardDegrees(directionFrom);
 
-  const wind = Number(weather.wind || 0);
-  const temp = Number(weather.temp || 0);
-  const rain = Number(weather.rain || 0);
-  const windType = weather.windType || "neutral";
+  if (toward >= 337.5 || toward < 22.5) {
+    return "North";
+  }
 
-  if (windType === "out" && wind >= 15) score += 8;
-  else if (windType === "out" && wind >= 8) score += 5;
+  if (toward < 67.5) {
+    return "Northeast";
+  }
 
-  if (windType === "in" && wind >= 15) score -= 8;
-  else if (windType === "in" && wind >= 8) score -= 5;
+  if (toward < 112.5) {
+    return "East";
+  }
 
-  if (temp >= 90) score += 5;
-  else if (temp >= 85) score += 3;
-  else if (temp < 60) score -= 3;
+  if (toward < 157.5) {
+    return "Southeast";
+  }
 
-  if (rain >= 40) score -= 5;
+  if (toward < 202.5) {
+    return "South";
+  }
 
-  return Math.max(0, Math.min(score, 15));
+  if (toward < 247.5) {
+    return "Southwest";
+  }
+
+  if (toward < 292.5) {
+    return "West";
+  }
+
+  return "Northwest";
 }
 
-async function fetchStadiumWeather(stadium) {
-  const loc = stadiumWeather[stadium];
+function getWindDisplay(weather = {}) {
+  const speed = weatherNumber(weather.wind, 0);
+  const direction = weatherNumber(
+    weather.direction,
+    0
+  );
 
-  if (!loc) return null;
+  if (speed <= 3) {
+    return {
+      arrow: "➖",
+      label: "Calm",
+      text: `${Math.round(speed)} mph`
+    };
+  }
+
+  const arrow = windArrow(direction);
+  const compass = windCompassDirection(direction);
+
+  return {
+    arrow,
+    label: `Toward ${compass}`,
+    text: `${Math.round(speed)} mph`
+  };
+}
+
+function formatWeatherGameTime(dateString) {
+  if (!dateString) {
+    return "Time TBD";
+  }
+
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Time TBD";
+  }
+
+  return date.toLocaleString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
+function weatherConditionIcon(
+  rainChance = 0,
+  temperature = 70
+) {
+  const rain = weatherNumber(rainChance, 0);
+  const temp = weatherNumber(temperature, 70);
+
+  if (rain >= 70) {
+    return "🌧️";
+  }
+
+  if (rain >= 40) {
+    return "🌦️";
+  }
+
+  if (temp >= 85) {
+    return "☀️";
+  }
+
+  return "⛅";
+}
+
+/*
+=========================================================
+HOURLY FORECAST MATCHING
+
+Finds the forecast hour closest to the game's start time.
+=========================================================
+*/
+
+function getClosestForecastIndex(
+  hourlyTimes = [],
+  gameDateString = ""
+) {
+  if (!Array.isArray(hourlyTimes)) {
+    return 0;
+  }
+
+  if (!hourlyTimes.length) {
+    return 0;
+  }
+
+  const gameDate = new Date(gameDateString);
+
+  if (Number.isNaN(gameDate.getTime())) {
+    return 0;
+  }
+
+  let closestIndex = 0;
+  let closestDifference = Infinity;
+
+  hourlyTimes.forEach((timeString, index) => {
+    const forecastDate = new Date(timeString);
+
+    if (Number.isNaN(forecastDate.getTime())) {
+      return;
+    }
+
+    const difference = Math.abs(
+      forecastDate.getTime() -
+      gameDate.getTime()
+    );
+
+    if (difference < closestDifference) {
+      closestDifference = difference;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
+}
+
+/*
+=========================================================
+FETCH STADIUM WEATHER
+=========================================================
+*/
+
+async function fetchStadiumWeather(
+  stadium,
+  gameDateString
+) {
+  const location = stadiumWeather[stadium];
+
+  if (!location) {
+    return null;
+  }
 
   const url =
-    `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}` +
-    `&hourly=temperature_2m,precipitation_probability,wind_speed_10m,wind_direction_10m` +
-    `&temperature_unit=fahrenheit&wind_speed_unit=mph&forecast_days=1`;
+    "https://api.open-meteo.com/v1/forecast" +
+    `?latitude=${location.lat}` +
+    `&longitude=${location.lon}` +
+    "&hourly=" +
+    [
+      "temperature_2m",
+      "relative_humidity_2m",
+      "precipitation_probability",
+      "wind_speed_10m",
+      "wind_direction_10m"
+    ].join(",") +
+    "&temperature_unit=fahrenheit" +
+    "&wind_speed_unit=mph" +
+    "&timezone=auto" +
+    "&forecast_days=2";
 
-  const res = await fetch(url);
-  const data = await res.json();
+  const response = await fetch(url);
 
-  const hour = new Date().getHours();
+  if (!response.ok) {
+    throw new Error(
+      `Weather request failed: ${response.status}`
+    );
+  }
 
-  const temp = Math.round(data.hourly.temperature_2m[hour]);
-  const rain = data.hourly.precipitation_probability[hour];
-  const wind = Math.round(data.hourly.wind_speed_10m[hour]);
-  const direction = data.hourly.wind_direction_10m[hour];
+  const data = await response.json();
+  const hourly = data?.hourly;
+
+  if (!hourly?.time?.length) {
+    return null;
+  }
+
+  const index = getClosestForecastIndex(
+    hourly.time,
+    gameDateString
+  );
+
+  const temperature = Math.round(
+    weatherNumber(
+      hourly.temperature_2m?.[index],
+      0
+    )
+  );
+
+  const humidity = Math.round(
+    weatherNumber(
+      hourly.relative_humidity_2m?.[index],
+      0
+    )
+  );
+
+  const rain = Math.round(
+    weatherNumber(
+      hourly.precipitation_probability?.[index],
+      0
+    )
+  );
+
+  const wind = Math.round(
+    weatherNumber(
+      hourly.wind_speed_10m?.[index],
+      0
+    )
+  );
+
+  const direction = weatherNumber(
+    hourly.wind_direction_10m?.[index],
+    0
+  );
 
   const weather = {
-    temp,
+    temp: temperature,
+    humidity,
     rain,
     wind,
     direction,
-    arrow: windArrow(direction),
-    windType: "neutral"
+    forecastTime: hourly.time[index]
   };
 
-  weather.weatherScore = getWeatherScore(weather);
+  const windDisplay = getWindDisplay(weather);
+
+  weather.arrow = windDisplay.arrow;
+  weather.windLabel = windDisplay.label;
+  weather.windText = windDisplay.text;
+  weather.icon = weatherConditionIcon(
+    rain,
+    temperature
+  );
 
   return weather;
 }
 
+/*
+=========================================================
+WEATHER CARD
+=========================================================
+*/
+
+function buildWeatherCard({
+  matchup,
+  stadium,
+  gameTime,
+  weather
+}) {
+  if (!weather) {
+    return `
+      <article class="weather-card">
+
+        <div class="weather-card-header">
+          <div>
+            <h3>🌦️ ${matchup}</h3>
+
+            <p class="weather-game-time">
+              ${formatWeatherGameTime(gameTime)}
+            </p>
+          </div>
+        </div>
+
+        <p class="weather-stadium">
+          🏟️ ${stadium || "Stadium TBD"}
+        </p>
+
+        <p class="weather-unavailable">
+          Weather information is not available for this
+          stadium yet.
+        </p>
+
+      </article>
+    `;
+  }
+
+  return `
+    <article class="weather-card">
+
+      <div class="weather-card-header">
+
+        <div>
+          <h3>
+            ${weather.icon} ${matchup}
+          </h3>
+
+          <p class="weather-game-time">
+            ${formatWeatherGameTime(gameTime)}
+          </p>
+        </div>
+
+        <div class="weather-temperature">
+          ${weather.temp}°F
+        </div>
+
+      </div>
+
+      <p class="weather-stadium">
+        🏟️ ${stadium}
+      </p>
+
+      <div class="weather-details">
+
+        <div class="weather-detail">
+          <span class="weather-detail-label">
+            Temperature
+          </span>
+
+          <strong>
+            🌡️ ${weather.temp}°F
+          </strong>
+        </div>
+
+        <div class="weather-detail">
+          <span class="weather-detail-label">
+            Wind
+          </span>
+
+          <strong class="weather-wind-value">
+            <span class="weather-wind-arrow">
+              ${weather.arrow}
+            </span>
+
+            ${weather.windText}
+          </strong>
+
+          <small class="weather-wind-direction">
+            ${weather.windLabel}
+          </small>
+        </div>
+
+        <div class="weather-detail">
+          <span class="weather-detail-label">
+            Rain chance
+          </span>
+
+          <strong>
+            🌧️ ${weather.rain}%
+          </strong>
+        </div>
+
+        <div class="weather-detail">
+          <span class="weather-detail-label">
+            Humidity
+          </span>
+
+          <strong>
+            💧 ${weather.humidity}%
+          </strong>
+        </div>
+
+      </div>
+
+      <p class="weather-display-note">
+        Weather information only — not included in POPS
+        prediction scores.
+      </p>
+
+    </article>
+  `;
+}
+
+/*
+=========================================================
+SHOW WEATHER
+=========================================================
+*/
+
 async function showWeather() {
-  showTab("weatherSection");
+  /*
+  Use this version when your existing showTab function
+  accepts the section ID directly.
+  */
+
+  if (typeof showTab === "function") {
+    showTab("weatherSection");
+  }
 
   const box = document.getElementById("weatherBox");
-  box.innerHTML = "Loading today's MLB weather...";
+
+  if (!box) {
+    console.warn(
+      "POPS Weather: #weatherBox was not found."
+    );
+
+    return;
+  }
+
+  box.innerHTML = `
+    <p class="weather-loading">
+      Loading today's MLB weather...
+    </p>
+  `;
 
   try {
     const data = await API.getSchedule();
-    const games = data.dates?.[0]?.games || [];
+
+    const games =
+      data?.dates?.[0]?.games || [];
 
     if (!games.length) {
-      box.innerHTML = "No MLB games today.";
+      box.innerHTML = `
+        <p class="weather-empty">
+          No MLB games today.
+        </p>
+      `;
+
       return;
     }
 
-    let html = "";
+    /*
+    Load every game's weather at the same time instead
+    of waiting for each request one by one.
+    */
 
-    for (const game of games) {
-      const matchup =
-        game.teams.away.team.name + " vs " + game.teams.home.team.name;
+    const weatherResults = await Promise.all(
+      games.map(async game => {
+        const awayTeam =
+          game?.teams?.away?.team?.name ||
+          "Away Team";
 
-      const stadium = game.venue?.name || "";
-      const weather = await fetchStadiumWeather(stadium);
+        const homeTeam =
+          game?.teams?.home?.team?.name ||
+          "Home Team";
 
-      if (!weather) {
-        html += `
-          <div class="weather-card">
-            <h3>🌦️ ${matchup}</h3>
-            <p>${stadium}</p>
-            <p>Weather not available for this stadium yet.</p>
-          </div>
-        `;
-        continue;
-      }
+        const matchup =
+          `${awayTeam} at ${homeTeam}`;
 
-      html += `
-        <div class="weather-card">
-          <h3>🌦️ ${matchup}</h3>
-          <p>${stadium}</p>
-          <p>🌡️ Temp: <strong>${weather.temp}°F</strong></p>
-          <p>💨 Wind: <strong>${weather.wind} MPH ${weather.arrow}</strong></p>
-          <p>🌧️ Rain Chance: <strong>${weather.rain}%</strong></p>
-          <p>💣 HR Weather Score: <strong>${weather.weatherScore}/15</strong></p>
-        </div>
-      `;
-    }
+        const stadium =
+          game?.venue?.name || "";
 
-    box.innerHTML = html;
+        const gameTime =
+          game?.gameDate || "";
 
-  } catch (err) {
-    console.log("Weather load error:", err);
-    box.innerHTML = "Error loading MLB weather.";
+        let weather = null;
+
+        try {
+          weather = await fetchStadiumWeather(
+            stadium,
+            gameTime
+          );
+        } catch (error) {
+          console.warn(
+            `Weather unavailable for ${stadium}:`,
+            error
+          );
+        }
+
+        return {
+          matchup,
+          stadium,
+          gameTime,
+          weather
+        };
+      })
+    );
+
+    box.innerHTML = weatherResults
+      .map(result => buildWeatherCard(result))
+      .join("");
+
+  } catch (error) {
+    console.error(
+      "POPS Weather load error:",
+      error
+    );
+
+    box.innerHTML = `
+      <p class="weather-error">
+        Error loading MLB weather.
+      </p>
+    `;
   }
 }
