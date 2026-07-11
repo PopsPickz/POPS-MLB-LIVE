@@ -2035,7 +2035,8 @@ HIT PICKS
 function addHitPick(
   game,
   batter,
-  pitcherName
+  pitcherName,
+  teamName = ""
 ) {
   const stats =
     mergeBatterStats(batter);
@@ -2084,7 +2085,10 @@ function addHitPick(
 
   hitPicks.push({
     player: batter.name,
-    team: batter.team,
+    team:
+      teamName ||
+      batter.team ||
+     "Team N/A",
 
     pitcher:
       normalizePitcherName(
@@ -2118,10 +2122,11 @@ async function loadHitPicks() {
       game.awayLineup || []
     ) {
       addHitPick(
-        game,
-        batter,
-        game.homePitcher
-      );
+       game,
+       batter,
+       game.homePitcher,
+       game.awayTeam
+  );
     }
 
     for (
@@ -2129,10 +2134,11 @@ async function loadHitPicks() {
       game.homeLineup || []
     ) {
       addHitPick(
-        game,
-        batter,
-        game.awayPitcher
-      );
+      game,
+      batter,
+      game.awayPitcher,
+      game.homeTeam
+);
     }
   }
 
