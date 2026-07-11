@@ -853,182 +853,134 @@ const Parlays = {
     players =
       this.filterConfirmed(players);
 
-    const usedKeys = new Set();
+    /*
+    Randomize the full player pool once per day.
+
+    Every parlay pulls from this same shuffled pool,
+    but each selected player is permanently marked used.
+    */
+    const randomizedPlayers =
+      this.shuffle(players, 1100);
+
+    const usedPlayerIds =
+      new Set();
+
+    /*
+    Takes only players who have not already appeared
+    in another parlay.
+    */
+    const takeUniquePlayers = (
+      legCount = 2,
+      minimumScore = 0
+    ) => {
+      const eligiblePlayers =
+        randomizedPlayers.filter(
+          player =>
+            player._parlayScore >=
+              minimumScore &&
+            !usedPlayerIds.has(
+              player._parlayId
+            )
+        );
+
+      let selected =
+        this.createCombination(
+          eligiblePlayers,
+          legCount,
+          {
+            minimumScore,
+            uniqueGames: true,
+            uniqueTeams: true,
+            randomize: false
+          }
+        );
+
+      /*
+      If matchup diversity prevents the parlay
+      from filling, relax team restrictions.
+      */
+      if (
+        selected.length <
+        legCount
+      ) {
+        selected =
+          this.createCombination(
+            eligiblePlayers,
+            legCount,
+            {
+              minimumScore,
+              uniqueGames: true,
+              uniqueTeams: false,
+              randomize: false
+            }
+          );
+      }
+
+      /*
+      Final fallback: allow players from the same game,
+      but still never reuse a player already selected
+      in another parlay.
+      */
+      if (
+        selected.length <
+        legCount
+      ) {
+        selected =
+          this.createCombination(
+            eligiblePlayers,
+            legCount,
+            {
+              minimumScore,
+              uniqueGames: false,
+              uniqueTeams: false,
+              randomize: false
+            }
+          );
+      }
+
+      selected.forEach(player => {
+        usedPlayerIds.add(
+          player._parlayId
+        );
+      });
+
+      return selected;
+    };
 
     const safe =
-      this.createCombination(
-        players,
+      takeUniquePlayers(
         this.settings.safeLegs,
-        {
-          minimumScore:
-            this.settings
-              .safeMinimumScore,
-
-          uniqueGames: true,
-          uniqueTeams: true
-        }
+        this.settings.safeMinimumScore
       );
 
-    if (
-      safe.length ===
-      this.settings.safeLegs
-    ) {
-      usedKeys.add(
-        this.combinationKey(safe)
-      );
-    }
-
-    let balanced =
-      this.createCombination(
-        players,
+    const balanced =
+      takeUniquePlayers(
         this.settings.balancedLegs,
-        {
-          minimumScore:
-            this.settings
-              .balancedMinimumScore,
-
-          uniqueGames: true,
-          uniqueTeams: true,
-
-          excludedPlayerIds:
-            safe
-              .slice(0, 1)
-              .map(
-                player =>
-                  player._parlayId
-              )
-        }
+        this.settings.balancedMinimumScore
       );
 
-    if (
-      balanced.length <
-      this.settings.balancedLegs
-    ) {
-      balanced =
-        this.createCombination(
-          players,
-          this.settings.balancedLegs,
-          {
-            minimumScore:
-              this.settings
-                .balancedMinimumScore,
-
-            uniqueGames: true,
-            uniqueTeams: true
-          }
-        );
-    }
-
-    if (
-      balanced.length ===
-      this.settings.balancedLegs
-    ) {
-      usedKeys.add(
-        this.combinationKey(
-          balanced
-        )
-      );
-    }
-
-    const valuePool =
-      [...players].sort(
-        (a, b) =>
-          this.getValueScore(b) -
-          this.getValueScore(a)
-      );
-
-    let value =
-      this.createCombination(
-        valuePool,
+    const value =
+      takeUniquePlayers(
         this.settings.valueLegs,
-        {
-          minimumScore:
-            this.settings
-              .valueMinimumScore,
-
-          uniqueGames: true,
-          uniqueTeams: true
-        }
+        this.settings.valueMinimumScore
       );
 
-    if (
-      usedKeys.has(
-        this.combinationKey(value)
-      )
-    ) {
-      value =
-        this.createCombination(
-          this.shuffle(valuePool),
-          this.settings.valueLegs,
-          {
-            minimumScore:
-              this.settings
-                .valueMinimumScore,
-
-            uniqueGames: true,
-            uniqueTeams: true,
-            randomize: true
-          }
-        );
-    }
-
-    if (
-      value.length ===
-      this.settings.valueLegs
-    ) {
-      usedKeys.add(
-        this.combinationKey(value)
-      );
-    }
-
-    let longshot =
-      this.createCombination(
-        this.shuffle(players),
+    const longshot =
+      takeUniquePlayers(
         this.settings.longshotLegs,
-        {
-          minimumScore:
-            this.settings.minimumScore,
-
-          uniqueGames: true,
-          uniqueTeams: true,
-          randomize: true
-        }
+        this.settings.minimumScore
       );
-
-    let attempts = 0;
-
-    while (
-      usedKeys.has(
-        this.combinationKey(longshot)
-      ) &&
-      attempts < 10
-    ) {
-      longshot =
-        this.createCombination(
-          this.shuffle(players),
-          this.settings.longshotLegs,
-          {
-            minimumScore:
-              this.settings.minimumScore,
-
-            uniqueGames: true,
-            uniqueTeams: true,
-            randomize: true
-          }
-        );
-
-      attempts += 1;
-    }
 
     return {
       safe,
       balanced,
       value,
       longshot,
-      playerCount: players.length
+      playerCount: players.length,
+      usedPlayerCount:
+        usedPlayerIds.size
     };
   },
-
   /*
   =======================================================
   DISPLAY HELPERS
