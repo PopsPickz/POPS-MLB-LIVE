@@ -1754,31 +1754,42 @@ async function loadHRPicks() {
     - Statcast
     - BvP
     */
+    
     for (
-      const batter of
-      game.awayLineup || []
-    ) {
-      addHRPick(
-        game,
-        batter,
-        game.homePitcher,
-        game.homePitcherStats || {},
-        homePitcherInfo.pitchHand || ""
-      );
-    }
+  const batter of
+  game.awayLineup || []
+) {
+  addHRPick(
+    game,
+    {
+      ...batter,
+      team:
+        batter.team ||
+        game.awayTeam
+    },
+    game.homePitcher,
+    game.homePitcherStats || {},
+    homePitcherInfo.pitchHand || ""
+  );
+}
 
     for (
-      const batter of
-      game.homeLineup || []
-    ) {
-      addHRPick(
-        game,
-        batter,
-        game.awayPitcher,
-        game.awayPitcherStats || {},
-        awayPitcherInfo.pitchHand || ""
-      );
-    }
+  const batter of
+  game.homeLineup || []
+) {
+  addHRPick(
+    game,
+    {
+      ...batter,
+      team:
+        batter.team ||
+        game.homeTeam
+    },
+    game.awayPitcher,
+    game.awayPitcherStats || {},
+    awayPitcherInfo.pitchHand || ""
+  );
+}
   }
 
   const uniquePlayers = {};
