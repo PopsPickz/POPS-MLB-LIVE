@@ -106,17 +106,81 @@ const Parlays = {
     });
   },
 
-  shuffle(items = []) {
+  /*
+  Creates one daily seed.
+
+  This keeps the random combinations the same throughout
+  the day, even when the page is refreshed.
+  */
+  getDailySeed() {
+    const now = new Date();
+
+    const year = now.getFullYear();
+
+    const month = String(
+      now.getMonth() + 1
+    ).padStart(2, "0");
+
+    const day = String(
+      now.getDate()
+    ).padStart(2, "0");
+
+    return Number(
+      `${year}${month}${day}`
+    );
+  },
+
+  /*
+  Creates repeatable random numbers using today's date.
+  */
+  createSeededRandom(
+    seed = this.getDailySeed()
+  ) {
+    let value =
+      Number(seed) % 2147483647;
+
+    if (value <= 0) {
+      value += 2147483646;
+    }
+
+    return function seededRandom() {
+      value =
+        value * 16807 %
+        2147483647;
+
+      return (
+        value - 1
+      ) / 2147483646;
+    };
+  },
+
+  /*
+  Randomizes the players while keeping today's
+  combinations stable for the entire day.
+  */
+  
+  shuffle(
+    items = [],
+    extraSeed = 0
+  ) {
     const copy = [...items];
+
+    const random =
+      this.createSeededRandom(
+        this.getDailySeed() +
+        Number(extraSeed || 0)
+      );
 
     for (
       let index = copy.length - 1;
       index > 0;
       index -= 1
     ) {
-      const randomIndex = Math.floor(
-        Math.random() * (index + 1)
-      );
+      const randomIndex =
+        Math.floor(
+          random() *
+          (index + 1)
+        );
 
       [
         copy[index],
@@ -129,7 +193,6 @@ const Parlays = {
 
     return copy;
   },
-
   /*
   =======================================================
   POPS HR PICK FIELD HELPERS
