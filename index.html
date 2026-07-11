@@ -23,13 +23,13 @@
 
     <header class="hero premium-hero">
 
-  <img
-    src="homepage-banner.jpg"
-    alt="POPS PICKZ MLB predictions"
-    class="homepage-banner"
-  />
+      <img
+        src="homepage-banner.jpg"
+        alt="POPS PICKZ MLB predictions"
+        class="homepage-banner"
+      />
 
-</header>
+    </header>
 
     <!-- =====================================================
     NAVIGATION BUTTONS
@@ -37,64 +37,64 @@
 
     <nav class="tabs">
 
-  <button
-    type="button"
-    onclick="showTab('pitchers', this)"
-    class="active-tab"
-  >
-    <span class="tab-icon">🎯</span>
-    <span>Pitchers</span>
-  </button>
+      <button
+        type="button"
+        onclick="showTab('pitchers', this)"
+        class="active-tab"
+      >
+        <span class="tab-icon">🎯</span>
+        <span>Pitchers</span>
+      </button>
 
-  <button
-    type="button"
-    onclick="showTab('homeruns', this)"
-  >
-    <span class="tab-icon">💣</span>
-    <span>HR Pickz</span>
-  </button>
+      <button
+        type="button"
+        onclick="showTab('homeruns', this)"
+      >
+        <span class="tab-icon">💣</span>
+        <span>HR Pickz</span>
+      </button>
 
-  <button
-    type="button"
-    onclick="showTab('parlays', this)"
-  >
-    <span class="tab-icon">🎯</span>
-    <span>HR Parlays</span>
-  </button>
+      <button
+        type="button"
+        onclick="showTab('parlays', this)"
+      >
+        <span class="tab-icon">🎯</span>
+        <span>HR Parlays</span>
+      </button>
 
-  <button
-    type="button"
-    onclick="showTab('nrfi', this)"
-  >
-    <span class="tab-icon">🟢</span>
-    <span>NRFI</span>
-  </button>
+      <button
+        type="button"
+        onclick="showTab('nrfi', this)"
+      >
+        <span class="tab-icon">🟢</span>
+        <span>NRFI</span>
+      </button>
 
-  <button
-    type="button"
-    onclick="showTab('hits', this)"
-  >
-    <span class="tab-icon">🔥</span>
-    <span>Hit Pickz</span>
-  </button>
+      <button
+        type="button"
+        onclick="showTab('hits', this)"
+      >
+        <span class="tab-icon">🔥</span>
+        <span>Hit Pickz</span>
+      </button>
 
-  <button
-    type="button"
-    onclick="showTab('moneyline', this)"
-  >
-    <span class="tab-icon">💰</span>
-    <span>Moneyline</span>
-  </button>
+      <button
+        type="button"
+        onclick="showTab('moneyline', this)"
+      >
+        <span class="tab-icon">💰</span>
+        <span>Moneyline</span>
+      </button>
 
-  <button
-    type="button"
-    onclick="showTab('weather', this); showWeather();"
-  >
-    <span class="tab-icon">🌦️</span>
-    <span>Weather</span>
-  </button>
+      <button
+        type="button"
+        onclick="openWeatherTab(this)"
+      >
+        <span class="tab-icon">🌦️</span>
+        <span>Weather</span>
+      </button>
 
-</nav>
+    </nav>
 
     <!-- Hidden but required by app.js -->
 
@@ -215,6 +215,39 @@
 
     </section>
 
+    <!-- =====================================================
+    WEATHER CENTER
+    DISPLAY ONLY — DOES NOT AFFECT PREDICTIONS
+    ====================================================== -->
+
+    <section
+      class="card tab-section weather-section"
+      id="weather"
+    >
+
+      <div class="weather-section-header">
+
+        <h2>🌦️ Today's Ballpark Weather</h2>
+
+        <p class="weather-section-note">
+          Game-time weather information only. Weather does
+          not affect POPS HR Pickz, Hit Pickz, Moneyline,
+          NRFI, or HR Parlays.
+        </p>
+
+      </div>
+
+      <div id="weatherBox">
+
+        <p class="weather-loading">
+          Select the Weather tab to load today's MLB
+          conditions.
+        </p>
+
+      </div>
+
+    </section>
+
   </div>
 
   <!-- =====================================================
@@ -231,56 +264,98 @@
 
       document
         .querySelectorAll(".tabs button")
-        .forEach(btn => {
-          btn.classList.remove("active-tab");
+        .forEach(tabButton => {
+          tabButton.classList.remove("active-tab");
         });
 
       const selectedSection =
         document.getElementById(id);
 
       if (!selectedSection) {
-        console.warn(`POPS section not found: ${id}`);
+        console.warn(
+          `POPS section not found: ${id}`
+        );
+
         return;
       }
 
       selectedSection.classList.add("active");
-      button.classList.add("active-tab");
+
+      if (button) {
+        button.classList.add("active-tab");
+      }
 
       window.scrollTo({
         top: 0,
         behavior: "smooth"
       });
     }
+
+    async function openWeatherTab(button) {
+      showTab("weather", button);
+
+      if (typeof showWeather !== "function") {
+        const box =
+          document.getElementById("weatherBox");
+
+        if (box) {
+          box.innerHTML = `
+            <p class="weather-error">
+              Weather module did not load. Check that
+              weather.js exists and is spelled correctly.
+            </p>
+          `;
+        }
+
+        console.warn(
+          "POPS Weather: showWeather() was not found."
+        );
+
+        return;
+      }
+
+      await showWeather();
+    }
   </script>
 
-  <!-- MLB API -->
+  <!-- =====================================================
+  MLB API
+  ====================================================== -->
 
-<script src="api.js"></script>
+  <script src="api.js"></script>
 
-<!-- Statcast -->
+  <!-- =====================================================
+  STATCAST
+  ====================================================== -->
 
-<script src="statcast.api.js"></script>
-<script src="statcast.js"></script>
+  <script src="statcast.api.js"></script>
+  <script src="statcast.js"></script>
 
-<!-- Formula -->
+  <!-- =====================================================
+  FORMULA
+  ====================================================== -->
 
-<script src="formula.js"></script>
+  <script src="formula.js"></script>
 
-<!-- Modules -->
+  <!-- =====================================================
+  MODULES
+  ====================================================== -->
 
-<script src="moneyline.js"></script>
+  <script src="moneyline.js"></script>
 
-<!-- homerun.js disabled because app.js builds HR Pickz -->
-<!-- <script src="homerun.js"></script> -->
+  <!-- homerun.js disabled because app.js builds HR Pickz -->
+  <!-- <script src="homerun.js"></script> -->
 
-<script src="pitchers.js"></script>
-<script src="parlays.js?v=2"></script>
-<script src="nrfi.js"></script>
-<script src="weather.js?v=1"></script>
+  <script src="pitchers.js"></script>
+  <script src="parlays.js?v=2"></script>
+  <script src="nrfi.js"></script>
+  <script src="weather.js?v=2"></script>
 
-<!-- Main App -->
+  <!-- =====================================================
+  MAIN APP
+  ====================================================== -->
 
-<script src="app.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 
 </body>
 </html>
