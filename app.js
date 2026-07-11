@@ -1460,7 +1460,8 @@ function addHRPick(
   batter,
   pitcherName,
   pitcherStats,
-  pitcherHand = ""
+  pitcherHand = "",
+  teamName = ""
 ) {
   const batterStats =
     mergeBatterStats(batter);
@@ -1761,15 +1762,11 @@ async function loadHRPicks() {
 ) {
   addHRPick(
     game,
-    {
-      ...batter,
-      team:
-        batter.team ||
-        game.awayTeam
-    },
+    batter,
     game.homePitcher,
     game.homePitcherStats || {},
-    homePitcherInfo.pitchHand || ""
+    homePitcherInfo.pitchHand || "",
+    game.awayTeam
   );
 }
 
@@ -1779,15 +1776,11 @@ async function loadHRPicks() {
 ) {
   addHRPick(
     game,
-    {
-      ...batter,
-      team:
-        batter.team ||
-        game.homeTeam
-    },
+    batter,
     game.awayPitcher,
     game.awayPitcherStats || {},
-    awayPitcherInfo.pitchHand || ""
+    awayPitcherInfo.pitchHand || "",
+    game.homeTeam
   );
 }
   }
