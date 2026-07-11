@@ -1667,7 +1667,12 @@ function addHRPick(
 
   hrPicks.push({
     player: batter.name,
-    team: batter.team,
+    
+    team:
+      teamName ||
+      batter.team ||
+      "Team N/A",
+    
     position: batter.position,
 
     pitcher:
