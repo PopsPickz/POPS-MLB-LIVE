@@ -663,15 +663,6 @@ SHOW WEATHER
 */
 
 async function showWeather() {
-  /*
-  Use this version when your existing showTab function
-  accepts the section ID directly.
-  */
-
-  if (typeof showTab === "function") {
-    showTab("weatherSection");
-  }
-
   const box = document.getElementById("weatherBox");
 
   if (!box) {
@@ -703,11 +694,6 @@ async function showWeather() {
 
       return;
     }
-
-    /*
-    Load every game's weather at the same time instead
-    of waiting for each request one by one.
-    */
 
     const weatherResults = await Promise.all(
       games.map(async game => {
