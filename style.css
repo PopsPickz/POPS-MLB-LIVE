@@ -1058,3 +1058,873 @@ GENERAL MOBILE
     font-size: 0.68rem;
   }
 }
+
+/*
+=========================================================
+POPS NRFI STADIUM DESIGN
+=========================================================
+*/
+
+.nrfi-center {
+  position: relative;
+  width: 100%;
+  margin-top: 24px;
+  padding: 0 12px 24px;
+  overflow: hidden;
+  border: 1px solid rgba(85, 255, 0, 0.2);
+  border-radius: 26px;
+  background:
+    linear-gradient(
+      rgba(0, 0, 0, 0.74),
+      rgba(0, 0, 0, 0.94)
+    ),
+    radial-gradient(
+      circle at center top,
+      rgba(86, 255, 0, 0.14),
+      transparent 45%
+    ),
+    #020504;
+  box-shadow:
+    0 20px 45px rgba(0, 0, 0, 0.55),
+    inset 0 0 45px rgba(0, 0, 0, 0.7);
+}
+
+/*
+=========================================================
+NRFI HEADER
+=========================================================
+*/
+
+.nrfi-hero {
+  position: relative;
+  min-height: 150px;
+  margin: 0 -12px;
+  padding: 27px 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      rgba(0, 0, 0, 0.3),
+      rgba(0, 0, 0, 0.8)
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(164, 91, 24, 0.35),
+      transparent 62%
+    ),
+    #080b09;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nrfi-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42px;
+  opacity: 0.35;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 28px,
+      rgba(255, 255, 255, 0.025) 30px
+    );
+}
+
+.nrfi-hero h2 {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  color: #ffffff;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-size: clamp(38px, 9vw, 70px);
+  line-height: 0.82;
+  letter-spacing: 1px;
+  font-style: italic;
+  text-transform: uppercase;
+  text-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.9),
+    0 8px 20px rgba(0, 0, 0, 0.85);
+  transform: rotate(-2deg);
+}
+
+.nrfi-hero h2 span {
+  display: block;
+  margin-top: 12px;
+  color: #62e900;
+  font-size: 0.72em;
+  letter-spacing: -1px;
+  text-shadow:
+    0 3px 0 #174700,
+    0 0 20px rgba(98, 233, 0, 0.28);
+}
+
+.stadium-light {
+  position: absolute;
+  top: 30px;
+  width: 82px;
+  height: 42px;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 12px white);
+  background:
+    radial-gradient(circle, white 0 3px, transparent 4px)
+    0 0 / 14px 14px;
+}
+
+.stadium-light-left {
+  left: 10px;
+  transform: rotate(-19deg);
+}
+
+.stadium-light-right {
+  right: 10px;
+  transform: rotate(19deg);
+}
+
+/*
+=========================================================
+SUMMARY NUMBERS
+=========================================================
+*/
+
+.nrfi-summary-grid {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: -8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.88);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.nrfi-summary-box {
+  min-width: 0;
+  padding: 17px 7px;
+  text-align: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.nrfi-summary-box:last-child {
+  border-right: none;
+}
+
+.nrfi-summary-box span {
+  display: block;
+  min-height: 28px;
+  color: #d7d7d7;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.nrfi-summary-box strong {
+  display: block;
+  margin-top: 6px;
+  color: white;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.nrfi-summary-box.elite span,
+.nrfi-summary-box.elite strong {
+  color: #55e600;
+}
+
+.nrfi-summary-box.strong span,
+.nrfi-summary-box.strong strong {
+  color: #ffd21c;
+}
+
+.nrfi-summary-box.alert span,
+.nrfi-summary-box.alert strong {
+  color: #ff3434;
+}
+
+/*
+=========================================================
+MODEL DESCRIPTION
+=========================================================
+*/
+
+.nrfi-model-info {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 19px 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.012)
+    ),
+    #050706;
+  box-shadow:
+    inset 0 0 20px rgba(255, 255, 255, 0.025),
+    0 9px 20px rgba(0, 0, 0, 0.35);
+}
+
+.nrfi-model-info::before,
+.nrfi-model-info::after {
+  content: "";
+  position: absolute;
+  width: 80px;
+  height: 3px;
+  background: #58df00;
+  transform: rotate(-2deg);
+}
+
+.nrfi-model-info::before {
+  left: -10px;
+  top: 4px;
+}
+
+.nrfi-model-info::after {
+  right: -10px;
+  bottom: 4px;
+}
+
+.nrfi-target-icon {
+  flex: 0 0 auto;
+  color: #61ec00;
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 15px rgba(97, 236, 0, 0.45);
+}
+
+.nrfi-model-info h3 {
+  margin: 0 0 6px;
+  color: #63eb00;
+  font-size: 17px;
+  font-style: italic;
+  letter-spacing: 0.3px;
+}
+
+.nrfi-model-info p {
+  margin: 0;
+  color: #e7e7e7;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/*
+=========================================================
+GAME CARD
+=========================================================
+*/
+
+.nrfi-games-list {
+  display: grid;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.nrfi-game-card {
+  position: relative;
+  overflow: hidden;
+  padding: 25px 14px 15px;
+  border: 2px solid rgba(255, 255, 255, 0.19);
+  border-radius: 17px;
+  background:
+    linear-gradient(
+      rgba(1, 5, 4, 0.88),
+      rgba(1, 7, 6, 0.96)
+    ),
+    radial-gradient(
+      circle at center,
+      rgba(0, 255, 157, 0.07),
+      transparent 55%
+    );
+  box-shadow:
+    inset 0 0 24px rgba(255, 255, 255, 0.025),
+    0 15px 30px rgba(0, 0, 0, 0.52);
+}
+
+.nrfi-game-card::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  pointer-events: none;
+  border: 1px solid rgba(97, 236, 0, 0.09);
+  border-radius: 12px;
+}
+
+.nrfi-rank {
+  position: absolute;
+  top: 11px;
+  left: 0;
+  z-index: 4;
+  min-width: 72px;
+  padding: 6px 17px 6px 13px;
+  color: #040900;
+  font-size: 19px;
+  font-weight: 950;
+  font-style: italic;
+  text-align: center;
+  background: #61ec00;
+  clip-path: polygon(
+    0 10%,
+    83% 0,
+    100% 50%,
+    82% 100%,
+    0 88%,
+    8% 50%
+  );
+  transform: rotate(-3deg);
+  box-shadow: 0 0 20px rgba(97, 236, 0, 0.35);
+}
+
+.nrfi-matchup {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 62px 1fr 62px;
+  align-items: center;
+  gap: 9px;
+  margin-top: 22px;
+  text-align: center;
+}
+
+.nrfi-team-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 65px;
+  color: white;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-size: 42px;
+  line-height: 1;
+  text-shadow:
+    2px 2px 0 #7c0000,
+    -1px -1px 0 white;
+}
+
+.nrfi-team-logo.away {
+  color: #f3f3f3;
+}
+
+.nrfi-team-logo.home {
+  color: #ff721d;
+  text-shadow:
+    2px 2px 0 #642000,
+    -1px -1px 0 #ffb080;
+}
+
+.nrfi-game-title {
+  margin: 0;
+  color: white;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-size: clamp(22px, 5vw, 33px);
+  font-style: italic;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.nrfi-game-title small {
+  font-size: 0.5em;
+  color: #cfcfcf;
+}
+
+.nrfi-game-details {
+  position: relative;
+  z-index: 2;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.nrfi-game-details p {
+  margin: 7px 0;
+  color: #dedede;
+  font-size: 15px;
+}
+
+.nrfi-detail-icon {
+  margin-right: 6px;
+  color: #61ec00;
+}
+
+/*
+=========================================================
+SCORE DISPLAY
+=========================================================
+*/
+
+.nrfi-score-panel {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-top: 17px;
+  padding: 15px 10px;
+  border: 1px solid rgba(143, 220, 255, 0.25);
+  border-radius: 13px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0, 255, 154, 0.04),
+      rgba(0, 125, 255, 0.04)
+    ),
+    rgba(0, 5, 8, 0.78);
+}
+
+.nrfi-score-ring {
+  --nrfi-score: 74;
+
+  position: relative;
+  width: 125px;
+  height: 125px;
+  margin: auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      #020606 0 51%,
+      transparent 52%
+    ),
+    conic-gradient(
+      #65ef00 calc(var(--nrfi-score) * 1%),
+      rgba(70, 120, 70, 0.25) 0
+    );
+  box-shadow:
+    0 0 0 8px rgba(101, 239, 0, 0.07),
+    0 0 22px rgba(101, 239, 0, 0.18),
+    inset 0 0 18px black;
+}
+
+.nrfi-score-ring::before {
+  content: "";
+  position: absolute;
+  inset: 11px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.09);
+}
+
+.nrfi-score-number {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.nrfi-score-number strong {
+  display: block;
+  color: white;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-size: 52px;
+  line-height: 0.9;
+  font-style: italic;
+  text-shadow: 0 5px 8px black;
+}
+
+.nrfi-score-number span {
+  display: block;
+  margin-top: 7px;
+  color: white;
+  font-size: 14px;
+}
+
+.nrfi-score-copy span {
+  display: block;
+  margin-bottom: 5px;
+  color: #67e900;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+.nrfi-score-copy h4 {
+  margin: 0;
+  color: #6af000;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-size: 31px;
+  font-style: italic;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.nrfi-score-copy p {
+  margin: 8px 0 0;
+  color: white;
+  font-size: 14px;
+}
+
+.nrfi-rating-dot {
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+  margin-right: 7px;
+  vertical-align: -3px;
+  border-radius: 50%;
+  background: #ffd000;
+  box-shadow: 0 0 10px rgba(255, 208, 0, 0.7);
+}
+
+.nrfi-game-card.elite-card .nrfi-score-ring {
+  background:
+    radial-gradient(
+      circle,
+      #020606 0 51%,
+      transparent 52%
+    ),
+    conic-gradient(
+      #5eff00 calc(var(--nrfi-score) * 1%),
+      rgba(70, 120, 70, 0.25) 0
+    );
+}
+
+.nrfi-game-card.yrfi-card .nrfi-score-ring {
+  background:
+    radial-gradient(
+      circle,
+      #020606 0 51%,
+      transparent 52%
+    ),
+    conic-gradient(
+      #ff3434 calc(var(--nrfi-score) * 1%),
+      rgba(120, 45, 45, 0.24) 0
+    );
+}
+
+/*
+=========================================================
+PITCHER CARDS
+=========================================================
+*/
+
+.nrfi-pitcher-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.nrfi-pitcher-card {
+  padding: 13px 11px;
+  border: 1px solid rgba(100, 235, 0, 0.55);
+  border-radius: 9px;
+  background:
+    linear-gradient(
+      150deg,
+      rgba(12, 26, 22, 0.88),
+      rgba(2, 8, 7, 0.94)
+    );
+  box-shadow:
+    inset 0 0 14px rgba(98, 235, 0, 0.035),
+    0 7px 15px rgba(0, 0, 0, 0.35);
+}
+
+.nrfi-pitcher-card h4 {
+  margin: 0 0 11px;
+  color: white;
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.nrfi-stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 6px 0;
+  color: #efefef;
+  font-size: 13px;
+}
+
+.nrfi-stat-row strong {
+  color: white;
+}
+
+.nrfi-pitcher-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.nrfi-pitcher-total span {
+  color: #5fe600;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.nrfi-pitcher-total strong {
+  color: #62ec00;
+  font-size: 22px;
+}
+
+.nrfi-pitcher-total small {
+  color: white;
+  font-size: 14px;
+}
+
+/*
+=========================================================
+LINEUP STATUS
+=========================================================
+*/
+
+.nrfi-lineup-status {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 13px;
+  padding: 0 5px;
+}
+
+.nrfi-lineup-item {
+  color: #eaeaea;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.nrfi-confirmed {
+  color: #ffffff;
+}
+
+.nrfi-check {
+  display: inline-grid;
+  width: 19px;
+  height: 19px;
+  margin: 0 4px;
+  place-items: center;
+  color: white;
+  font-size: 13px;
+  border-radius: 5px;
+  background: #18ad3c;
+  box-shadow: 0 0 9px rgba(24, 173, 60, 0.32);
+}
+
+/*
+=========================================================
+BREAKDOWN BUTTON
+=========================================================
+*/
+
+.nrfi-breakdown-button {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 50px;
+  margin-top: 15px;
+  padding: 12px 45px 12px 20px;
+  color: #061000;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-size: 17px;
+  font-style: italic;
+  letter-spacing: 0.4px;
+  text-align: center;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  background: #61ec00;
+  clip-path: polygon(
+    2% 11%,
+    93% 0,
+    100% 48%,
+    95% 91%,
+    3% 100%,
+    0 53%
+  );
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.nrfi-breakdown-button::after {
+  content: "›";
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  font-size: 38px;
+  line-height: 1;
+  transform: translateY(-53%);
+}
+
+.nrfi-breakdown-button:hover {
+  filter: brightness(1.12);
+}
+
+.nrfi-breakdown-button:active {
+  transform: scale(0.98);
+}
+
+/*
+=========================================================
+EXPANDED BREAKDOWN
+=========================================================
+*/
+
+.nrfi-breakdown {
+  position: relative;
+  z-index: 2;
+  display: none;
+  margin-top: 12px;
+  padding: 14px;
+  border-left: 3px solid #61ec00;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.nrfi-breakdown.open {
+  display: block;
+}
+
+.nrfi-breakdown p {
+  margin: 7px 0;
+  color: #e7e7e7;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.nrfi-loading {
+  padding: 25px;
+  color: #bdbdbd;
+  text-align: center;
+}
+
+/*
+=========================================================
+MOBILE ADJUSTMENTS
+=========================================================
+*/
+
+@media (max-width: 520px) {
+  .nrfi-center {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .nrfi-hero {
+    margin-left: -8px;
+    margin-right: -8px;
+  }
+
+  .nrfi-summary-box {
+    padding: 14px 3px;
+  }
+
+  .nrfi-summary-box span {
+    font-size: 8px;
+  }
+
+  .nrfi-summary-box strong {
+    font-size: 25px;
+  }
+
+  .nrfi-model-info {
+    padding: 15px 11px;
+  }
+
+  .nrfi-target-icon {
+    font-size: 36px;
+  }
+
+  .nrfi-model-info h3 {
+    font-size: 15px;
+  }
+
+  .nrfi-model-info p {
+    font-size: 12px;
+  }
+
+  .nrfi-game-card {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .nrfi-matchup {
+    grid-template-columns: 50px 1fr 50px;
+  }
+
+  .nrfi-team-logo {
+    font-size: 36px;
+  }
+
+  .nrfi-score-panel {
+    grid-template-columns: 125px 1fr;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  .nrfi-score-ring {
+    width: 112px;
+    height: 112px;
+  }
+
+  .nrfi-score-number strong {
+    font-size: 45px;
+  }
+
+  .nrfi-score-copy h4 {
+    font-size: 25px;
+  }
+
+  .nrfi-pitcher-card {
+    padding: 12px 8px;
+  }
+
+  .nrfi-pitcher-card h4 {
+    font-size: 14px;
+  }
+
+  .nrfi-stat-row {
+    font-size: 12px;
+  }
+
+  .nrfi-pitcher-total {
+    display: block;
+  }
+
+  .nrfi-pitcher-total strong {
+    display: inline-block;
+    margin-top: 5px;
+  }
+
+  .nrfi-lineup-item {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 370px) {
+  .nrfi-score-panel {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .nrfi-pitcher-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nrfi-lineup-status {
+    grid-template-columns: 1fr;
+  }
+}
