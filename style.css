@@ -2248,3 +2248,32 @@ font-size:30px;
 }
 
 }
+
+/*
+=========================================================
+WEATHER TAB VISIBILITY
+=========================================================
+*/
+
+.tab-section {
+  display: none;
+}
+
+.tab-section.active {
+  display: block !important;
+}
+
+#weather.active {
+  display: block !important;
+}
+
+.weather-section {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#weatherBox {
+  display: block;
+  width: 100%;
+  min-height: 100px;
+}
