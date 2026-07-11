@@ -160,39 +160,74 @@ const Parlays = {
   */
   
   shuffle(
-    items = [],
-    extraSeed = 0
-  ) {
-    const copy = [...items];
+  items = [],
+  extraSeed = 0
+) {
+  /*
+  Put players into the exact same starting order
+  on every phone, computer and browser.
+  */
+  const copy = [...items].sort((a, b) => {
+    const scoreDifference =
+      this.getScore(b) -
+      this.getScore(a);
 
-    const random =
-      this.createSeededRandom(
-        this.getDailySeed() +
-        Number(extraSeed || 0)
-      );
-
-    for (
-      let index = copy.length - 1;
-      index > 0;
-      index -= 1
-    ) {
-      const randomIndex =
-        Math.floor(
-          random() *
-          (index + 1)
-        );
-
-      [
-        copy[index],
-        copy[randomIndex]
-      ] = [
-        copy[randomIndex],
-        copy[index]
-      ];
+    if (scoreDifference !== 0) {
+      return scoreDifference;
     }
 
-    return copy;
-  },
+    const nameA =
+      this.getPlayerName(a)
+        .toLowerCase();
+
+    const nameB =
+      this.getPlayerName(b)
+        .toLowerCase();
+
+    const nameDifference =
+      nameA.localeCompare(nameB);
+
+    if (nameDifference !== 0) {
+      return nameDifference;
+    }
+
+    return this.getTeam(a)
+      .toLowerCase()
+      .localeCompare(
+        this.getTeam(b)
+          .toLowerCase()
+      );
+  });
+
+  const random =
+    this.createSeededRandom(
+      this.getDailySeed() +
+      Number(extraSeed || 0)
+    );
+
+  for (
+    let index = copy.length - 1;
+    index > 0;
+    index -= 1
+  ) {
+    const randomIndex =
+      Math.floor(
+        random() *
+        (index + 1)
+      );
+
+    [
+      copy[index],
+      copy[randomIndex]
+    ] = [
+      copy[randomIndex],
+      copy[index]
+    ];
+  }
+
+  return copy;
+},
+  
   /*
   =======================================================
   POPS HR PICK FIELD HELPERS
