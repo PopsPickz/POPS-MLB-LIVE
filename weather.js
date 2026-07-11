@@ -2,6 +2,7 @@
 =========================================================
 POPS PICKZ WEATHER CENTER
 File: weather.js
+Version: 2.0
 =========================================================
 
 DISPLAY ONLY
@@ -15,7 +16,7 @@ This file does NOT affect:
 - HR Parlays
 - Any POPS prediction formula
 
-Weather is loaded for each game's scheduled start time.
+Weather is displayed for each game's scheduled start time.
 =========================================================
 */
 
@@ -216,16 +217,37 @@ function normalizeDegrees(degrees) {
   return ((number % 360) + 360) % 360;
 }
 
+function parseWeatherDate(dateString) {
+  if (!dateString) {
+    return null;
+  }
+
+  /*
+  Open-Meteo UTC hourly times may not include a trailing Z.
+  Add it so the browser treats the time as UTC.
+  */
+
+  const normalized =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateString)
+      ? `${dateString}:00Z`
+      : dateString;
+
+  const date = new Date(normalized);
+
+  return Number.isNaN(date.getTime())
+    ? null
+    : date;
+}
+
 /*
-Open-Meteo wind direction tells us where the wind
-is coming FROM.
+=========================================================
+WIND DIRECTION
 
-Example:
+Open-Meteo reports the direction the wind comes FROM.
 
-0 degrees = wind coming from north
-
-To display where the wind is blowing TOWARD,
-we add 180 degrees.
+We add 180 degrees so the arrow points in the direction
+the wind is blowing TOWARD.
+=========================================================
 */
 
 function windTowardDegrees(directionFrom) {
@@ -233,10 +255,6 @@ function windTowardDegrees(directionFrom) {
     weatherNumber(directionFrom, 0) + 180
   );
 }
-
-/*
-Arrow points toward the direction the wind is traveling.
-*/
 
 function windArrow(directionFrom) {
   const toward = windTowardDegrees(directionFrom);
@@ -308,6 +326,7 @@ function windCompassDirection(directionFrom) {
 
 function getWindDisplay(weather = {}) {
   const speed = weatherNumber(weather.wind, 0);
+
   const direction = weatherNumber(
     weather.direction,
     0
@@ -316,20 +335,24 @@ function getWindDisplay(weather = {}) {
   if (speed <= 3) {
     return {
       arrow: "➖",
-      label: "Calm",
+      label: "Calm wind",
       text: `${Math.round(speed)} mph`
     };
   }
 
-  const arrow = windArrow(direction);
-  const compass = windCompassDirection(direction);
-
   return {
-    arrow,
-    label: `Toward ${compass}`,
+    arrow: windArrow(direction),
+    label:
+      `Blowing toward ${windCompassDirection(direction)}`,
     text: `${Math.round(speed)} mph`
   };
 }
+
+/*
+=========================================================
+DISPLAY HELPERS
+=========================================================
+*/
 
 function formatWeatherGameTime(dateString) {
   if (!dateString) {
@@ -375,9 +398,133 @@ function weatherConditionIcon(
 
 /*
 =========================================================
-HOURLY FORECAST MATCHING
+GAME DATA HELPERS
 
-Finds the forecast hour closest to the game's start time.
+Supports both raw MLB schedule objects and normalized
+game objects created by app.js.
+=========================================================
+*/
+
+function getWeatherAwayTeam(game = {}) {
+  return (
+    game?.teams?.away?.team?.name ||
+    game?.awayTeam?.name ||
+    game?.awayTeamName ||
+    game?.away?.name ||
+    game?.away ||
+    "Away Team"
+  );
+}
+
+function getWeatherHomeTeam(game = {}) {
+  return (
+    game?.teams?.home?.team?.name ||
+    game?.homeTeam?.name ||
+    game?.homeTeamName ||
+    game?.home?.name ||
+    game?.home ||
+    "Home Team"
+  );
+}
+
+function getWeatherStadium(game = {}) {
+  return (
+    game?.venue?.name ||
+    game?.venueName ||
+    game?.stadium?.name ||
+    game?.stadium ||
+    game?.ballpark ||
+    ""
+  );
+}
+
+function getWeatherGameTime(game = {}) {
+  return (
+    game?.gameDate ||
+    game?.dateTime ||
+    game?.startTime ||
+    game?.gameTime ||
+    game?.date ||
+    ""
+  );
+}
+
+/*
+=========================================================
+FIND TODAY'S GAMES
+
+Priority:
+
+1. games from app.js
+2. todayData.games from app.js
+3. API.getSchedule() fallback
+=========================================================
+*/
+
+async function getWeatherGames() {
+  if (
+    typeof games !== "undefined" &&
+    Array.isArray(games) &&
+    games.length
+  ) {
+    return games;
+  }
+
+  if (
+    typeof todayData !== "undefined" &&
+    Array.isArray(todayData?.games) &&
+    todayData.games.length
+  ) {
+    return todayData.games;
+  }
+
+  if (
+    typeof API !== "undefined" &&
+    typeof API.getSchedule === "function"
+  ) {
+    try {
+      const scheduleData =
+        await API.getSchedule();
+
+      if (Array.isArray(scheduleData)) {
+        return scheduleData;
+      }
+
+      if (
+        Array.isArray(scheduleData?.games) &&
+        scheduleData.games.length
+      ) {
+        return scheduleData.games;
+      }
+
+      if (
+        Array.isArray(scheduleData?.dates?.[0]?.games)
+      ) {
+        return scheduleData.dates[0].games;
+      }
+
+      if (Array.isArray(scheduleData?.dates)) {
+        return scheduleData.dates.flatMap(
+          dateEntry =>
+            Array.isArray(dateEntry?.games)
+              ? dateEntry.games
+              : []
+        );
+      }
+    } catch (error) {
+      console.warn(
+        "POPS Weather schedule fallback failed:",
+        error
+      );
+    }
+  }
+
+  return [];
+}
+
+/*
+=========================================================
+HOURLY FORECAST MATCHING
 =========================================================
 */
 
@@ -385,11 +532,10 @@ function getClosestForecastIndex(
   hourlyTimes = [],
   gameDateString = ""
 ) {
-  if (!Array.isArray(hourlyTimes)) {
-    return 0;
-  }
-
-  if (!hourlyTimes.length) {
+  if (
+    !Array.isArray(hourlyTimes) ||
+    !hourlyTimes.length
+  ) {
     return 0;
   }
 
@@ -403,9 +549,10 @@ function getClosestForecastIndex(
   let closestDifference = Infinity;
 
   hourlyTimes.forEach((timeString, index) => {
-    const forecastDate = new Date(timeString);
+    const forecastDate =
+      parseWeatherDate(timeString);
 
-    if (Number.isNaN(forecastDate.getTime())) {
+    if (!forecastDate) {
       return;
     }
 
@@ -436,25 +583,30 @@ async function fetchStadiumWeather(
   const location = stadiumWeather[stadium];
 
   if (!location) {
+    console.warn(
+      `POPS Weather: Stadium not found: ${stadium}`
+    );
+
     return null;
   }
+
+  const hourlyFields = [
+    "temperature_2m",
+    "relative_humidity_2m",
+    "precipitation_probability",
+    "wind_speed_10m",
+    "wind_direction_10m"
+  ].join(",");
 
   const url =
     "https://api.open-meteo.com/v1/forecast" +
     `?latitude=${location.lat}` +
     `&longitude=${location.lon}` +
-    "&hourly=" +
-    [
-      "temperature_2m",
-      "relative_humidity_2m",
-      "precipitation_probability",
-      "wind_speed_10m",
-      "wind_direction_10m"
-    ].join(",") +
+    `&hourly=${hourlyFields}` +
     "&temperature_unit=fahrenheit" +
     "&wind_speed_unit=mph" +
-    "&timezone=auto" +
-    "&forecast_days=2";
+    "&timezone=UTC" +
+    "&forecast_days=3";
 
   const response = await fetch(url);
 
@@ -518,15 +670,23 @@ async function fetchStadiumWeather(
     forecastTime: hourly.time[index]
   };
 
-  const windDisplay = getWindDisplay(weather);
+  const windDisplay =
+    getWindDisplay(weather);
 
-  weather.arrow = windDisplay.arrow;
-  weather.windLabel = windDisplay.label;
-  weather.windText = windDisplay.text;
-  weather.icon = weatherConditionIcon(
-    rain,
-    temperature
-  );
+  weather.arrow =
+    windDisplay.arrow;
+
+  weather.windLabel =
+    windDisplay.label;
+
+  weather.windText =
+    windDisplay.text;
+
+  weather.icon =
+    weatherConditionIcon(
+      rain,
+      temperature
+    );
 
   return weather;
 }
@@ -548,6 +708,7 @@ function buildWeatherCard({
       <article class="weather-card">
 
         <div class="weather-card-header">
+
           <div>
             <h3>🌦️ ${matchup}</h3>
 
@@ -555,6 +716,7 @@ function buildWeatherCard({
               ${formatWeatherGameTime(gameTime)}
             </p>
           </div>
+
         </div>
 
         <p class="weather-stadium">
@@ -576,6 +738,7 @@ function buildWeatherCard({
       <div class="weather-card-header">
 
         <div>
+
           <h3>
             ${weather.icon} ${matchup}
           </h3>
@@ -583,6 +746,7 @@ function buildWeatherCard({
           <p class="weather-game-time">
             ${formatWeatherGameTime(gameTime)}
           </p>
+
         </div>
 
         <div class="weather-temperature">
@@ -598,6 +762,7 @@ function buildWeatherCard({
       <div class="weather-details">
 
         <div class="weather-detail">
+
           <span class="weather-detail-label">
             Temperature
           </span>
@@ -605,27 +770,33 @@ function buildWeatherCard({
           <strong>
             🌡️ ${weather.temp}°F
           </strong>
+
         </div>
 
         <div class="weather-detail">
+
           <span class="weather-detail-label">
             Wind
           </span>
 
           <strong class="weather-wind-value">
+
             <span class="weather-wind-arrow">
               ${weather.arrow}
             </span>
 
             ${weather.windText}
+
           </strong>
 
           <small class="weather-wind-direction">
             ${weather.windLabel}
           </small>
+
         </div>
 
         <div class="weather-detail">
+
           <span class="weather-detail-label">
             Rain chance
           </span>
@@ -633,9 +804,11 @@ function buildWeatherCard({
           <strong>
             🌧️ ${weather.rain}%
           </strong>
+
         </div>
 
         <div class="weather-detail">
+
           <span class="weather-detail-label">
             Humidity
           </span>
@@ -643,6 +816,7 @@ function buildWeatherCard({
           <strong>
             💧 ${weather.humidity}%
           </strong>
+
         </div>
 
       </div>
@@ -663,7 +837,8 @@ SHOW WEATHER
 */
 
 async function showWeather() {
-  const box = document.getElementById("weatherBox");
+  const box =
+    document.getElementById("weatherBox");
 
   if (!box) {
     console.warn(
@@ -680,65 +855,66 @@ async function showWeather() {
   `;
 
   try {
-    const data = await API.getSchedule();
+    const scheduleGames =
+      await getWeatherGames();
 
-    const games =
-      data?.dates?.[0]?.games || [];
-
-    if (!games.length) {
+    if (!scheduleGames.length) {
       box.innerHTML = `
         <p class="weather-empty">
-          No MLB games today.
+          Today's games are still loading.
+          Please wait a moment and tap Weather again.
         </p>
       `;
 
       return;
     }
 
-    const weatherResults = await Promise.all(
-      games.map(async game => {
-        const awayTeam =
-          game?.teams?.away?.team?.name ||
-          "Away Team";
+    const weatherResults =
+      await Promise.all(
+        scheduleGames.map(async game => {
+          const awayTeam =
+            getWeatherAwayTeam(game);
 
-        const homeTeam =
-          game?.teams?.home?.team?.name ||
-          "Home Team";
+          const homeTeam =
+            getWeatherHomeTeam(game);
 
-        const matchup =
-          `${awayTeam} at ${homeTeam}`;
+          const matchup =
+            `${awayTeam} at ${homeTeam}`;
 
-        const stadium =
-          game?.venue?.name || "";
+          const stadium =
+            getWeatherStadium(game);
 
-        const gameTime =
-          game?.gameDate || "";
+          const gameTime =
+            getWeatherGameTime(game);
 
-        let weather = null;
+          let weather = null;
 
-        try {
-          weather = await fetchStadiumWeather(
+          try {
+            weather =
+              await fetchStadiumWeather(
+                stadium,
+                gameTime
+              );
+          } catch (error) {
+            console.warn(
+              `Weather unavailable for ${stadium}:`,
+              error
+            );
+          }
+
+          return {
+            matchup,
             stadium,
-            gameTime
-          );
-        } catch (error) {
-          console.warn(
-            `Weather unavailable for ${stadium}:`,
-            error
-          );
-        }
-
-        return {
-          matchup,
-          stadium,
-          gameTime,
-          weather
-        };
-      })
-    );
+            gameTime,
+            weather
+          };
+        })
+      );
 
     box.innerHTML = weatherResults
-      .map(result => buildWeatherCard(result))
+      .map(result =>
+        buildWeatherCard(result)
+      )
       .join("");
 
   } catch (error) {
