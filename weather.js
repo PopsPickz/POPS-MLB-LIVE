@@ -2,7 +2,7 @@
 =========================================================
 POPS PICKZ WEATHER CENTER
 File: weather.js
-Version: 2.0
+Version: 3.0
 =========================================================
 
 DISPLAY ONLY
@@ -222,13 +222,10 @@ function parseWeatherDate(dateString) {
     return null;
   }
 
-  /*
-  Open-Meteo UTC hourly times may not include a trailing Z.
-  Add it so the browser treats the time as UTC.
-  */
-
   const normalized =
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateString)
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(
+      dateString
+    )
       ? `${dateString}:00Z`
       : dateString;
 
@@ -243,10 +240,10 @@ function parseWeatherDate(dateString) {
 =========================================================
 WIND DIRECTION
 
-Open-Meteo reports the direction the wind comes FROM.
+Open-Meteo gives the direction wind comes FROM.
 
-We add 180 degrees so the arrow points in the direction
-the wind is blowing TOWARD.
+The arrow below points toward the direction the wind
+is moving.
 =========================================================
 */
 
@@ -257,9 +254,13 @@ function windTowardDegrees(directionFrom) {
 }
 
 function windArrow(directionFrom) {
-  const toward = windTowardDegrees(directionFrom);
+  const toward =
+    windTowardDegrees(directionFrom);
 
-  if (toward >= 337.5 || toward < 22.5) {
+  if (
+    toward >= 337.5 ||
+    toward < 22.5
+  ) {
     return "⬆️";
   }
 
@@ -291,9 +292,13 @@ function windArrow(directionFrom) {
 }
 
 function windCompassDirection(directionFrom) {
-  const toward = windTowardDegrees(directionFrom);
+  const toward =
+    windTowardDegrees(directionFrom);
 
-  if (toward >= 337.5 || toward < 22.5) {
+  if (
+    toward >= 337.5 ||
+    toward < 22.5
+  ) {
     return "North";
   }
 
@@ -325,12 +330,14 @@ function windCompassDirection(directionFrom) {
 }
 
 function getWindDisplay(weather = {}) {
-  const speed = weatherNumber(weather.wind, 0);
+  const speed =
+    weatherNumber(weather.wind, 0);
 
-  const direction = weatherNumber(
-    weather.direction,
-    0
-  );
+  const direction =
+    weatherNumber(
+      weather.direction,
+      0
+    );
 
   if (speed <= 3) {
     return {
@@ -342,8 +349,12 @@ function getWindDisplay(weather = {}) {
 
   return {
     arrow: windArrow(direction),
+
     label:
-      `Blowing toward ${windCompassDirection(direction)}`,
+      `Blowing toward ${
+        windCompassDirection(direction)
+      }`,
+
     text: `${Math.round(speed)} mph`
   };
 }
@@ -378,8 +389,11 @@ function weatherConditionIcon(
   rainChance = 0,
   temperature = 70
 ) {
-  const rain = weatherNumber(rainChance, 0);
-  const temp = weatherNumber(temperature, 70);
+  const rain =
+    weatherNumber(rainChance, 0);
+
+  const temp =
+    weatherNumber(temperature, 70);
 
   if (rain >= 70) {
     return "🌧️";
@@ -400,51 +414,120 @@ function weatherConditionIcon(
 =========================================================
 GAME DATA HELPERS
 
-Supports both raw MLB schedule objects and normalized
-game objects created by app.js.
+app.js stores:
+
+game.awayTeam as a string
+game.homeTeam as a string
+game.venue as a string
+game.date as the scheduled start time
 =========================================================
 */
 
 function getWeatherAwayTeam(game = {}) {
+  if (
+    typeof game.awayTeam === "string" &&
+    game.awayTeam.trim()
+  ) {
+    return game.awayTeam.trim();
+  }
+
+  if (
+    game.awayTeam &&
+    typeof game.awayTeam === "object"
+  ) {
+    return (
+      game.awayTeam.name ||
+      game.awayTeam.teamName ||
+      "Away Team"
+    );
+  }
+
   return (
     game?.teams?.away?.team?.name ||
-    game?.awayTeam?.name ||
     game?.awayTeamName ||
     game?.away?.name ||
-    game?.away ||
+    (
+      typeof game?.away === "string"
+        ? game.away
+        : ""
+    ) ||
     "Away Team"
   );
 }
 
 function getWeatherHomeTeam(game = {}) {
+  if (
+    typeof game.homeTeam === "string" &&
+    game.homeTeam.trim()
+  ) {
+    return game.homeTeam.trim();
+  }
+
+  if (
+    game.homeTeam &&
+    typeof game.homeTeam === "object"
+  ) {
+    return (
+      game.homeTeam.name ||
+      game.homeTeam.teamName ||
+      "Home Team"
+    );
+  }
+
   return (
     game?.teams?.home?.team?.name ||
-    game?.homeTeam?.name ||
     game?.homeTeamName ||
     game?.home?.name ||
-    game?.home ||
+    (
+      typeof game?.home === "string"
+        ? game.home
+        : ""
+    ) ||
     "Home Team"
   );
 }
 
 function getWeatherStadium(game = {}) {
+  if (
+    typeof game.venue === "string" &&
+    game.venue.trim()
+  ) {
+    return game.venue.trim();
+  }
+
+  if (
+    game.venue &&
+    typeof game.venue === "object"
+  ) {
+    return (
+      game.venue.name ||
+      game.venue.venueName ||
+      "Stadium TBD"
+    );
+  }
+
+  if (
+    typeof game.stadium === "string" &&
+    game.stadium.trim()
+  ) {
+    return game.stadium.trim();
+  }
+
   return (
-    game?.venue?.name ||
-    game?.venueName ||
     game?.stadium?.name ||
-    game?.stadium ||
+    game?.venueName ||
     game?.ballpark ||
-    ""
+    "Stadium TBD"
   );
 }
 
 function getWeatherGameTime(game = {}) {
   return (
+    game?.date ||
     game?.gameDate ||
     game?.dateTime ||
     game?.startTime ||
     game?.gameTime ||
-    game?.date ||
     ""
   );
 }
@@ -455,13 +538,30 @@ FIND TODAY'S GAMES
 
 Priority:
 
-1. games from app.js
-2. todayData.games from app.js
-3. API.getSchedule() fallback
+1. window.games from app.js
+2. window.todayData.games from app.js
+3. direct variables from app.js
+4. API.getSchedule() fallback
 =========================================================
 */
 
 async function getWeatherGames() {
+  if (
+    Array.isArray(window.games) &&
+    window.games.length
+  ) {
+    return window.games;
+  }
+
+  if (
+    Array.isArray(
+      window.todayData?.games
+    ) &&
+    window.todayData.games.length
+  ) {
+    return window.todayData.games;
+  }
+
   if (
     typeof games !== "undefined" &&
     Array.isArray(games) &&
@@ -484,26 +584,35 @@ async function getWeatherGames() {
   ) {
     try {
       const scheduleData =
-        await API.getSchedule();
+        await API.getSchedule(true);
 
       if (Array.isArray(scheduleData)) {
         return scheduleData;
       }
 
       if (
-        Array.isArray(scheduleData?.games) &&
-        scheduleData.games.length
+        Array.isArray(
+          scheduleData?.games
+        )
       ) {
         return scheduleData.games;
       }
 
       if (
-        Array.isArray(scheduleData?.dates?.[0]?.games)
+        Array.isArray(
+          scheduleData?.dates?.[0]?.games
+        )
       ) {
-        return scheduleData.dates[0].games;
+        return scheduleData
+          .dates[0]
+          .games;
       }
 
-      if (Array.isArray(scheduleData?.dates)) {
+      if (
+        Array.isArray(
+          scheduleData?.dates
+        )
+      ) {
         return scheduleData.dates.flatMap(
           dateEntry =>
             Array.isArray(dateEntry?.games)
@@ -539,33 +648,46 @@ function getClosestForecastIndex(
     return 0;
   }
 
-  const gameDate = new Date(gameDateString);
+  const gameDate =
+    new Date(gameDateString);
 
-  if (Number.isNaN(gameDate.getTime())) {
+  if (
+    Number.isNaN(
+      gameDate.getTime()
+    )
+  ) {
     return 0;
   }
 
   let closestIndex = 0;
   let closestDifference = Infinity;
 
-  hourlyTimes.forEach((timeString, index) => {
-    const forecastDate =
-      parseWeatherDate(timeString);
+  hourlyTimes.forEach(
+    (timeString, index) => {
+      const forecastDate =
+        parseWeatherDate(timeString);
 
-    if (!forecastDate) {
-      return;
+      if (!forecastDate) {
+        return;
+      }
+
+      const difference = Math.abs(
+        forecastDate.getTime() -
+        gameDate.getTime()
+      );
+
+      if (
+        difference <
+        closestDifference
+      ) {
+        closestDifference =
+          difference;
+
+        closestIndex =
+          index;
+      }
     }
-
-    const difference = Math.abs(
-      forecastDate.getTime() -
-      gameDate.getTime()
-    );
-
-    if (difference < closestDifference) {
-      closestDifference = difference;
-      closestIndex = index;
-    }
-  });
+  );
 
   return closestIndex;
 }
@@ -580,7 +702,8 @@ async function fetchStadiumWeather(
   stadium,
   gameDateString
 ) {
-  const location = stadiumWeather[stadium];
+  const location =
+    stadiumWeather[stadium];
 
   if (!location) {
     console.warn(
@@ -608,7 +731,8 @@ async function fetchStadiumWeather(
     "&timezone=UTC" +
     "&forecast_days=3";
 
-  const response = await fetch(url);
+  const response =
+    await fetch(url);
 
   if (!response.ok) {
     throw new Error(
@@ -616,50 +740,60 @@ async function fetchStadiumWeather(
     );
   }
 
-  const data = await response.json();
-  const hourly = data?.hourly;
+  const data =
+    await response.json();
+
+  const hourly =
+    data?.hourly;
 
   if (!hourly?.time?.length) {
     return null;
   }
 
-  const index = getClosestForecastIndex(
-    hourly.time,
-    gameDateString
-  );
+  const index =
+    getClosestForecastIndex(
+      hourly.time,
+      gameDateString
+    );
 
-  const temperature = Math.round(
+  const temperature =
+    Math.round(
+      weatherNumber(
+        hourly.temperature_2m?.[index],
+        0
+      )
+    );
+
+  const humidity =
+    Math.round(
+      weatherNumber(
+        hourly.relative_humidity_2m?.[index],
+        0
+      )
+    );
+
+  const rain =
+    Math.round(
+      weatherNumber(
+        hourly
+          .precipitation_probability?.[index],
+        0
+      )
+    );
+
+  const wind =
+    Math.round(
+      weatherNumber(
+        hourly.wind_speed_10m?.[index],
+        0
+      )
+    );
+
+  const direction =
     weatherNumber(
-      hourly.temperature_2m?.[index],
+      hourly.wind_direction_10m?.[index],
       0
-    )
-  );
-
-  const humidity = Math.round(
-    weatherNumber(
-      hourly.relative_humidity_2m?.[index],
-      0
-    )
-  );
-
-  const rain = Math.round(
-    weatherNumber(
-      hourly.precipitation_probability?.[index],
-      0
-    )
-  );
-
-  const wind = Math.round(
-    weatherNumber(
-      hourly.wind_speed_10m?.[index],
-      0
-    )
-  );
-
-  const direction = weatherNumber(
-    hourly.wind_direction_10m?.[index],
-    0
-  );
+    );
 
   const weather = {
     temp: temperature,
@@ -667,7 +801,9 @@ async function fetchStadiumWeather(
     rain,
     wind,
     direction,
-    forecastTime: hourly.time[index]
+
+    forecastTime:
+      hourly.time[index]
   };
 
   const windDisplay =
@@ -710,17 +846,24 @@ function buildWeatherCard({
         <div class="weather-card-header">
 
           <div>
-            <h3>🌦️ ${matchup}</h3>
+            <h3>
+              🌦️ ${matchup}
+            </h3>
 
             <p class="weather-game-time">
-              ${formatWeatherGameTime(gameTime)}
+              ${formatWeatherGameTime(
+                gameTime
+              )}
             </p>
           </div>
 
         </div>
 
         <p class="weather-stadium">
-          🏟️ ${stadium || "Stadium TBD"}
+          🏟️ ${
+            stadium ||
+            "Stadium TBD"
+          }
         </p>
 
         <p class="weather-unavailable">
@@ -740,11 +883,14 @@ function buildWeatherCard({
         <div>
 
           <h3>
-            ${weather.icon} ${matchup}
+            ${weather.icon}
+            ${matchup}
           </h3>
 
           <p class="weather-game-time">
-            ${formatWeatherGameTime(gameTime)}
+            ${formatWeatherGameTime(
+              gameTime
+            )}
           </p>
 
         </div>
@@ -838,7 +984,9 @@ SHOW WEATHER
 
 async function showWeather() {
   const box =
-    document.getElementById("weatherBox");
+    document.getElementById(
+      "weatherBox"
+    );
 
   if (!box) {
     console.warn(
@@ -871,51 +1019,54 @@ async function showWeather() {
 
     const weatherResults =
       await Promise.all(
-        scheduleGames.map(async game => {
-          const awayTeam =
-            getWeatherAwayTeam(game);
+        scheduleGames.map(
+          async game => {
+            const awayTeam =
+              getWeatherAwayTeam(game);
 
-          const homeTeam =
-            getWeatherHomeTeam(game);
+            const homeTeam =
+              getWeatherHomeTeam(game);
 
-          const matchup =
-            `${awayTeam} at ${homeTeam}`;
+            const matchup =
+              `${awayTeam} at ${homeTeam}`;
 
-          const stadium =
-            getWeatherStadium(game);
+            const stadium =
+              getWeatherStadium(game);
 
-          const gameTime =
-            getWeatherGameTime(game);
+            const gameTime =
+              getWeatherGameTime(game);
 
-          let weather = null;
+            let weather = null;
 
-          try {
-            weather =
-              await fetchStadiumWeather(
-                stadium,
-                gameTime
+            try {
+              weather =
+                await fetchStadiumWeather(
+                  stadium,
+                  gameTime
+                );
+            } catch (error) {
+              console.warn(
+                `Weather unavailable for ${stadium}:`,
+                error
               );
-          } catch (error) {
-            console.warn(
-              `Weather unavailable for ${stadium}:`,
-              error
-            );
-          }
+            }
 
-          return {
-            matchup,
-            stadium,
-            gameTime,
-            weather
-          };
-        })
+            return {
+              matchup,
+              stadium,
+              gameTime,
+              weather
+            };
+          }
+        )
       );
 
-    box.innerHTML = weatherResults
-      .map(result =>
-        buildWeatherCard(result)
-      )
-      .join("");
+    box.innerHTML =
+      weatherResults
+        .map(result =>
+          buildWeatherCard(result)
+        )
+        .join("");
 
   } catch (error) {
     console.error(
