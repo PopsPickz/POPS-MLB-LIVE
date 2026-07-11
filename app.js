@@ -318,6 +318,13 @@ function rebuildGamesArray() {
     homePitcherId:
       Number(game.homePitcherId || 0),
 
+    awayPitcherHand:
+       game.awayPitcherHand || "",
+
+    homePitcherHand:
+       game.homePitcherHand || "",
+
+    
     awayPitcherStats:
       game.awayPitcherStats || {},
 
@@ -1728,30 +1735,16 @@ async function loadHRPicks() {
   hrPicks = [];
 
   for (const game of todayData.games) {
-    const [
-      awayPitcherInfo,
-      homePitcherInfo
-    ] = await Promise.all([
-      game.awayPitcherId
-        ? safe(
-            () =>
-              API.getPlayerInfo(
-                game.awayPitcherId
-              ),
-            {}
-          )
-        : Promise.resolve({}),
+    
+    const awayPitcherInfo = {
+      pitchHand:
+        game.awayPitcherHand || ""
+   };
 
-      game.homePitcherId
-        ? safe(
-            () =>
-              API.getPlayerInfo(
-                game.homePitcherId
-              ),
-            {}
-          )
-        : Promise.resolve({})
-    ]);
+     const homePitcherInfo = {
+       pitchHand:
+         game.homePitcherHand || ""
+   };
 
     /*
     Batter enrichment already loaded:
