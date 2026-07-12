@@ -38,6 +38,25 @@ if (
 */
 
 const Parlays = {
+  /*
+  =======================================================
+  CURRENT GENERATED PARLAYS
+  =======================================================
+  */
+
+  currentParlays: {
+    safe: [],
+    balanced: [],
+    value: [],
+    longshot: []
+  },
+
+  /*
+  =======================================================
+  SETTINGS
+  =======================================================
+  */
+
   settings: {
     maximumPlayerPool: 20,
 
@@ -112,6 +131,7 @@ const Parlays = {
   This keeps the random combinations the same throughout
   the day, even when the page is refreshed.
   */
+
   getDailySeed() {
     const now = new Date();
 
@@ -133,6 +153,7 @@ const Parlays = {
   /*
   Creates repeatable random numbers using today's date.
   */
+
   createSeededRandom(
     seed = this.getDailySeed()
   ) {
@@ -158,76 +179,77 @@ const Parlays = {
   Randomizes the players while keeping today's
   combinations stable for the entire day.
   */
-  
+
   shuffle(
-  items = [],
-  extraSeed = 0
-) {
-  /*
-  Put players into the exact same starting order
-  on every phone, computer and browser.
-  */
-  const copy = [...items].sort((a, b) => {
-    const scoreDifference =
-      this.getScore(b) -
-      this.getScore(a);
-
-    if (scoreDifference !== 0) {
-      return scoreDifference;
-    }
-
-    const nameA =
-      this.getPlayerName(a)
-        .toLowerCase();
-
-    const nameB =
-      this.getPlayerName(b)
-        .toLowerCase();
-
-    const nameDifference =
-      nameA.localeCompare(nameB);
-
-    if (nameDifference !== 0) {
-      return nameDifference;
-    }
-
-    return this.getTeam(a)
-      .toLowerCase()
-      .localeCompare(
-        this.getTeam(b)
-          .toLowerCase()
-      );
-  });
-
-  const random =
-    this.createSeededRandom(
-      this.getDailySeed() +
-      Number(extraSeed || 0)
-    );
-
-  for (
-    let index = copy.length - 1;
-    index > 0;
-    index -= 1
+    items = [],
+    extraSeed = 0
   ) {
-    const randomIndex =
-      Math.floor(
-        random() *
-        (index + 1)
+    /*
+    Put players into the exact same starting order
+    on every phone, computer and browser.
+    */
+
+    const copy = [...items].sort((a, b) => {
+      const scoreDifference =
+        this.getScore(b) -
+        this.getScore(a);
+
+      if (scoreDifference !== 0) {
+        return scoreDifference;
+      }
+
+      const nameA =
+        this.getPlayerName(a)
+          .toLowerCase();
+
+      const nameB =
+        this.getPlayerName(b)
+          .toLowerCase();
+
+      const nameDifference =
+        nameA.localeCompare(nameB);
+
+      if (nameDifference !== 0) {
+        return nameDifference;
+      }
+
+      return this.getTeam(a)
+        .toLowerCase()
+        .localeCompare(
+          this.getTeam(b)
+            .toLowerCase()
+        );
+    });
+
+    const random =
+      this.createSeededRandom(
+        this.getDailySeed() +
+        Number(extraSeed || 0)
       );
 
-    [
-      copy[index],
-      copy[randomIndex]
-    ] = [
-      copy[randomIndex],
-      copy[index]
-    ];
-  }
+    for (
+      let index = copy.length - 1;
+      index > 0;
+      index -= 1
+    ) {
+      const randomIndex =
+        Math.floor(
+          random() *
+          (index + 1)
+        );
 
-  return copy;
-},
-  
+      [
+        copy[index],
+        copy[randomIndex]
+      ] = [
+        copy[randomIndex],
+        copy[index]
+      ];
+    }
+
+    return copy;
+  },
+
   /*
   =======================================================
   POPS HR PICK FIELD HELPERS
@@ -334,7 +356,8 @@ const Parlays = {
       return gameId;
     }
 
-    const game = this.getGame(player);
+    const game =
+      this.getGame(player);
 
     if (game !== "Game TBD") {
       return game.toLowerCase();
@@ -367,7 +390,8 @@ const Parlays = {
   },
 
   getISO(player = {}) {
-    const iso = this.getISOValue(player);
+    const iso =
+      this.getISOValue(player);
 
     return iso > 0
       ? iso.toFixed(3)
@@ -438,7 +462,9 @@ const Parlays = {
       return false;
     }
 
-    return this.getLineupSpot(player) > 0;
+    return (
+      this.getLineupSpot(player) > 0
+    );
   },
 
   /*
@@ -468,7 +494,8 @@ const Parlays = {
   },
 
   ordinalSuffix(number) {
-    const value = Number(number);
+    const value =
+      Number(number);
 
     if (
       value % 100 >= 11 &&
@@ -610,17 +637,18 @@ const Parlays = {
       return [];
     }
 
-    const rankedPicks = [...hrPicks]
-      .filter(Boolean)
-      .sort(
-        (a, b) =>
-          this.getScore(b) -
-          this.getScore(a)
-      )
-      .slice(
-        0,
-        this.settings.maximumPlayerPool
-      );
+    const rankedPicks =
+      [...hrPicks]
+        .filter(Boolean)
+        .sort(
+          (a, b) =>
+            this.getScore(b) -
+            this.getScore(a)
+        )
+        .slice(
+          0,
+          this.settings.maximumPlayerPool
+        );
 
     const normalized =
       rankedPicks.map(player => ({
@@ -747,14 +775,15 @@ const Parlays = {
       excludedPlayerIds = []
     } = options;
 
-    let pool = players.filter(
-      player =>
-        player._parlayScore >=
-          minimumScore &&
-        !excludedPlayerIds.includes(
-          player._parlayId
-        )
-    );
+    let pool =
+      players.filter(
+        player =>
+          player._parlayScore >=
+            minimumScore &&
+          !excludedPlayerIds.includes(
+            player._parlayId
+          )
+      );
 
     if (randomize) {
       pool = this.shuffle(pool);
@@ -776,7 +805,10 @@ const Parlays = {
         selected.push(player);
       }
 
-      if (selected.length === legCount) {
+      if (
+        selected.length ===
+        legCount
+      ) {
         return selected;
       }
     }
@@ -795,7 +827,10 @@ const Parlays = {
         selected.push(player);
       }
 
-      if (selected.length === legCount) {
+      if (
+        selected.length ===
+        legCount
+      ) {
         return selected;
       }
     }
@@ -814,7 +849,10 @@ const Parlays = {
         selected.push(player);
       }
 
-      if (selected.length === legCount) {
+      if (
+        selected.length ===
+        legCount
+      ) {
         return selected;
       }
     }
@@ -868,7 +906,8 @@ const Parlays = {
   */
 
   build(hrPicks = []) {
-    let sourcePicks = hrPicks;
+    let sourcePicks =
+      hrPicks;
 
     if (
       !Array.isArray(sourcePicks) ||
@@ -894,6 +933,7 @@ const Parlays = {
     Every parlay pulls from this same shuffled pool,
     but each selected player is permanently marked used.
     */
+
     const randomizedPlayers =
       this.shuffle(players, 1100);
 
@@ -904,6 +944,7 @@ const Parlays = {
     Takes only players who have not already appeared
     in another parlay.
     */
+
     const takeUniquePlayers = (
       legCount = 2,
       minimumScore = 0
@@ -934,6 +975,7 @@ const Parlays = {
       If matchup diversity prevents the parlay
       from filling, relax team restrictions.
       */
+
       if (
         selected.length <
         legCount
@@ -956,6 +998,7 @@ const Parlays = {
       but still never reuse a player already selected
       in another parlay.
       */
+
       if (
         selected.length <
         legCount
@@ -1011,11 +1054,166 @@ const Parlays = {
       balanced,
       value,
       longshot,
-      playerCount: players.length,
+
+      playerCount:
+        players.length,
+
       usedPlayerCount:
         usedPlayerIds.size
     };
   },
+
+  /*
+  =======================================================
+  ADD COMPLETE PARLAY TO GAMBLY
+  =======================================================
+  */
+
+  addParlayToGambly(
+    parlayKey,
+    button = null
+  ) {
+    const players =
+      this.currentParlays?.[parlayKey];
+
+    if (
+      !Array.isArray(players) ||
+      !players.length
+    ) {
+      console.warn(
+        `POPS could not find the ${parlayKey} parlay.`
+      );
+
+      if (button) {
+        button.textContent =
+          "⚠️ Parlay unavailable";
+      }
+
+      return;
+    }
+
+    if (
+      typeof Gambly === "undefined" ||
+      typeof Gambly.addPick !== "function"
+    ) {
+      console.warn(
+        "The Gambly module is unavailable."
+      );
+
+      if (button) {
+        button.textContent =
+          "⚠️ Gambly unavailable";
+      }
+
+      return;
+    }
+
+    let addedCount = 0;
+    let duplicateCount = 0;
+    let failedCount = 0;
+
+    players.forEach(player => {
+      const playerName =
+        this.getPlayerName(player);
+
+      const result =
+        Gambly.addPick({
+          playerId:
+            this.getPlayerId(player),
+
+          playerName,
+
+          team:
+            this.getTeam(player),
+
+          market:
+            "Home Run",
+
+          selection:
+            `${playerName} to hit a home run`,
+
+          game:
+            this.getGame(player),
+
+          gamePk:
+            player.gamePk ||
+            player.gameId ||
+            player.gameID ||
+            "",
+
+          source:
+            `POPS ${parlayKey} HR Parlay`
+        });
+
+      if (result?.success) {
+        addedCount += 1;
+      } else if (
+        result?.reason === "duplicate"
+      ) {
+        duplicateCount += 1;
+      } else {
+        failedCount += 1;
+      }
+    });
+
+    if (!button) {
+      return;
+    }
+
+    if (
+      addedCount > 0 &&
+      failedCount === 0
+    ) {
+      button.textContent =
+        `✅ ${addedCount} Pick${
+          addedCount === 1
+            ? ""
+            : "s"
+        } Added`;
+
+      button.classList.add(
+        "gambly-added"
+      );
+
+      return;
+    }
+
+    if (
+      addedCount === 0 &&
+      duplicateCount ===
+        players.length
+    ) {
+      button.textContent =
+        "✅ Parlay Already Added";
+
+      button.classList.add(
+        "gambly-added"
+      );
+
+      return;
+    }
+
+    if (
+      addedCount > 0 ||
+      duplicateCount > 0
+    ) {
+      button.textContent =
+        `✅ ${
+          addedCount +
+          duplicateCount
+        } of ${players.length} Added`;
+
+      button.classList.add(
+        "gambly-added"
+      );
+
+      return;
+    }
+
+    button.textContent =
+      "⚠️ Could Not Add Parlay";
+  },
+
   /*
   =======================================================
   DISPLAY HELPERS
@@ -1027,12 +1225,13 @@ const Parlays = {
       return 0;
     }
 
-    const total = players.reduce(
-      (sum, player) =>
-        sum +
-        player._parlayScore,
-      0
-    );
+    const total =
+      players.reduce(
+        (sum, player) =>
+          sum +
+          player._parlayScore,
+        0
+      );
 
     return Math.round(
       total / players.length
@@ -1107,12 +1306,15 @@ const Parlays = {
 
     return `
       <article class="parlay-player-row">
+
         <div class="parlay-player-rank">
           ${index + 1}
         </div>
 
         <div class="parlay-player-main">
+
           <div class="parlay-player-top">
+
             <h4>
               ${name}
             </h4>
@@ -1120,12 +1322,15 @@ const Parlays = {
             <span class="parlay-player-score">
               ${score}
             </span>
+
           </div>
 
           <div class="parlay-player-game">
-            ${game !== "Game TBD"
-              ? game
-              : team}
+            ${
+              game !== "Game TBD"
+                ? game
+                : team
+            }
           </div>
 
           ${
@@ -1149,6 +1354,7 @@ const Parlays = {
           }
 
           <div class="parlay-player-badges">
+
             <span class="parlay-badge">
               ${tier}
             </span>
@@ -1187,10 +1393,13 @@ const Parlays = {
                   : "Projected"
               }
             </span>
+
           </div>
 
           ${this.renderReasonTags(player)}
+
         </div>
+
       </article>
     `;
   },
@@ -1223,18 +1432,22 @@ const Parlays = {
         "
         data-parlay-card="${key}"
       >
+
         <button
           type="button"
           class="parlay-card-toggle"
           data-parlay-toggle="${key}"
           aria-expanded="${expanded}"
         >
+
           <div class="parlay-card-title">
+
             <span class="parlay-card-icon">
               ${icon}
             </span>
 
             <div>
+
               <span class="parlay-card-label">
                 ${label}
               </span>
@@ -1242,21 +1455,27 @@ const Parlays = {
               <h3>
                 ${title}
               </h3>
+
             </div>
+
           </div>
 
           <div class="parlay-card-right">
+
             <span class="parlay-card-average">
               AVG ${average}
             </span>
 
             <span class="parlay-chevron">
-             ⌄
+              ⌄
             </span>
+
           </div>
+
         </button>
 
         <div class="parlay-card-content">
+
           <p class="parlay-card-description">
             ${description}
           </p>
@@ -1265,6 +1484,7 @@ const Parlays = {
             available
               ? `
                 <div class="parlay-player-list-v2">
+
                   ${players
                     .map(
                       (player, index) =>
@@ -1274,7 +1494,25 @@ const Parlays = {
                         )
                     )
                     .join("")}
+
                 </div>
+
+                <button
+                  type="button"
+                  class="
+                    gambly-add-button
+                    gambly-parlay-button
+                  "
+                  onclick="
+                    event.stopPropagation();
+                    Parlays.addParlayToGambly(
+                      '${key}',
+                      this
+                    );
+                  "
+                >
+                  🤖 Add Entire Parlay to Gambly
+                </button>
               `
               : `
                 <div class="parlay-empty-v2">
@@ -1283,7 +1521,9 @@ const Parlays = {
                 </div>
               `
           }
+
         </div>
+
       </article>
     `;
   },
@@ -1344,7 +1584,9 @@ const Parlays = {
               });
 
             if (!isOpen) {
-              card.classList.add("open");
+              card.classList.add(
+                "open"
+              );
 
               button.setAttribute(
                 "aria-expanded",
@@ -1382,9 +1624,31 @@ const Parlays = {
     const results =
       this.build(hrPicks);
 
-    if (results.playerCount < 2) {
+    /*
+    Save every generated parlay so the Gambly buttons
+    know which players belong to each card.
+    */
+
+    this.currentParlays = {
+      safe:
+        results.safe || [],
+
+      balanced:
+        results.balanced || [],
+
+      value:
+        results.value || [],
+
+      longshot:
+        results.longshot || []
+    };
+
+    if (
+      results.playerCount < 2
+    ) {
       box.innerHTML = `
         <div class="parlay-waiting-v2">
+
           <div class="parlay-waiting-icon">
             🔥
           </div>
@@ -1397,6 +1661,7 @@ const Parlays = {
             Waiting for the POPS Home Run
             Pickz rankings to finish loading.
           </p>
+
         </div>
       `;
 
@@ -1405,7 +1670,9 @@ const Parlays = {
 
     box.innerHTML = `
       <div class="parlay-hero-v2">
+
         <div class="parlay-hero-copy">
+
           <span class="parlay-kicker-v2">
             Built From POPS HR Pickz
           </span>
@@ -1414,21 +1681,22 @@ const Parlays = {
             🔥 POPS HR Parlay Builder
           </h2>
 
-
-       <p>
+          <p>
             Automatically generated daily
             from today's POPS Home Run Pickz.
             Every hitter is used only once.
-          </p>   
-          
+          </p>
+
         </div>
 
         <div class="parlay-hero-ball">
           ⚾
         </div>
+
       </div>
 
       <div class="parlay-stack-v2">
+
         ${this.renderParlayCard({
           key: "safe",
           title: "Safer 2-Leg",
@@ -1436,7 +1704,8 @@ const Parlays = {
           label: "Top POPS Picks",
           description:
             "Two of the strongest ranked hitters from different matchups.",
-          players: results.safe,
+          players:
+            results.safe,
           requiredLegs:
             this.settings.safeLegs,
           className:
@@ -1451,7 +1720,8 @@ const Parlays = {
           label: "Balanced Card",
           description:
             "Three ranked POPS HR picks with matchup diversity.",
-          players: results.balanced,
+          players:
+            results.balanced,
           requiredLegs:
             this.settings.balancedLegs,
           className:
@@ -1465,7 +1735,8 @@ const Parlays = {
           label: "Power Upside",
           description:
             "Three hitters ranked using POPS score, power and recent production.",
-          players: results.value,
+          players:
+            results.value,
           requiredLegs:
             this.settings.valueLegs,
           className:
@@ -1479,15 +1750,18 @@ const Parlays = {
           label: "High Risk",
           description:
             "Four ranked hitters combined for maximum upside.",
-          players: results.longshot,
+          players:
+            results.longshot,
           requiredLegs:
             this.settings.longshotLegs,
           className:
             "parlay-longshot-v2"
         })}
+
       </div>
 
       <div class="parlay-note-v2">
+
         <span>⭐</span>
 
         <p>
@@ -1497,34 +1771,11 @@ const Parlays = {
           guaranteed outcomes. Confirm
           lineups before using any pick.
         </p>
+
       </div>
     `;
 
     this.bindAccordionEvents();
-
-    const refreshButton =
-      document.getElementById(
-        "refreshParlaysButton"
-      );
-
-    if (refreshButton) {
-      refreshButton.addEventListener(
-        "click",
-        () => {
-          const latestPicks =
-            Array.isArray(
-              window.hrPicks
-            )
-              ? window.hrPicks
-              : hrPicks;
-
-          this.render(
-            latestPicks,
-            elementId
-          );
-        }
-      );
-    }
   }
 };
 
@@ -1568,6 +1819,8 @@ MAKE GLOBAL
 =========================================================
 */
 
-window.Parlays = Parlays;
+window.Parlays =
+  Parlays;
+
 window.buildHrParlays =
   buildHrParlays;
