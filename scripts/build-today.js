@@ -2028,7 +2028,7 @@ async function buildTodayData() {
     date,
 
     version:
-      "POPS Pickz Batter Data 3.1",
+      "POPS Pickz Batter Data 4.0",
 
     games
   };
