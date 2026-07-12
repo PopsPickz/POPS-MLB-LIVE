@@ -3260,3 +3260,682 @@ REDUCED MOTION
     animation: none !important;
   }
 }
+
+/*
+=========================================================
+POPS LIVE PLAYS
+DESIGN 1 — MODERN CARD LAYOUT
+=========================================================
+*/
+
+#liveplays {
+  padding: 18px;
+  overflow: hidden;
+}
+
+#livePlaysBox {
+  width: 100%;
+}
+
+.live-plays-dashboard {
+  overflow: hidden;
+  border: 2px solid #ff3038;
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255, 35, 48, 0.1),
+      transparent 35%
+    ),
+    linear-gradient(
+      155deg,
+      rgba(18, 22, 29, 0.99),
+      rgba(4, 6, 9, 0.99)
+    );
+  box-shadow:
+    0 0 24px rgba(255, 35, 48, 0.19),
+    inset 0 0 30px rgba(255, 255, 255, 0.02);
+}
+
+/*
+=========================================================
+LIVE HEADER
+=========================================================
+*/
+
+.live-plays-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px;
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.09);
+}
+
+.live-plays-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+
+.live-main-dot {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 27px;
+  height: 27px;
+  margin-top: 3px;
+  border-radius: 50%;
+  background: #ef3340;
+  box-shadow:
+    0 0 0 6px rgba(239, 51, 64, 0.1),
+    0 0 20px rgba(239, 51, 64, 0.7);
+  animation:
+    popsLivePulse 1.4s ease-in-out infinite;
+}
+
+.live-plays-title h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(27px, 6vw, 40px);
+  line-height: 1.05;
+}
+
+.live-plays-title p {
+  max-width: 650px;
+  margin: 9px 0 0;
+  color: rgba(255, 255, 255, 0.69);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.live-now-badge {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border:
+    1px solid rgba(255, 69, 79, 0.55);
+  border-radius: 999px;
+  color: #ff747c;
+  font-size: 0.73rem;
+  font-weight: 900;
+  background:
+    rgba(255, 39, 51, 0.1);
+}
+
+.live-now-badge span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff3038;
+  box-shadow:
+    0 0 8px #ff3038;
+}
+
+/*
+=========================================================
+SUMMARY CARDS
+=========================================================
+*/
+
+.live-plays-summary-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(180px, 0.5fr);
+  gap: 13px;
+  padding: 16px 22px 18px;
+}
+
+.live-summary-card {
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 16px;
+  border:
+    1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.012)
+    );
+}
+
+.live-status-dot {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #656565;
+}
+
+.live-status-dot.active {
+  background: #2be56f;
+  box-shadow:
+    0 0 12px rgba(43, 229, 111, 0.8);
+  animation:
+    popsStatusPulse 1.5s ease-in-out infinite;
+}
+
+.live-summary-card strong {
+  display: block;
+  color: #ffffff;
+  font-size: 0.94rem;
+}
+
+.live-summary-card small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.57);
+  font-size: 0.75rem;
+}
+
+.live-summary-card.total {
+  justify-content: center;
+}
+
+.live-total-number {
+  color: #ff3a42 !important;
+  font-size: 2.3rem !important;
+  font-weight: 950;
+  line-height: 1;
+  text-shadow:
+    0 0 13px rgba(255, 58, 66, 0.4);
+}
+
+.live-summary-card.total span {
+  display: block;
+  color: #ffffff;
+  font-size: 0.86rem;
+}
+
+/*
+=========================================================
+TWO RESULTS COLUMNS
+=========================================================
+*/
+
+.live-results-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 0 14px 16px;
+}
+
+.live-results-column {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 17px;
+  background:
+    rgba(0, 0, 0, 0.32);
+}
+
+.live-hr-column {
+  border:
+    1px solid rgba(255, 49, 58, 0.8);
+}
+
+.live-hit-column {
+  border:
+    1px solid rgba(255, 145, 23, 0.75);
+}
+
+.live-column-header {
+  display: flex;
+  min-height: 104px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px;
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.1);
+}
+
+.live-hr-column .live-column-header {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 37, 48, 0.2),
+      rgba(24, 7, 9, 0.9)
+    );
+}
+
+.live-hit-column .live-column-header {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 132, 0, 0.19),
+      rgba(24, 13, 2, 0.9)
+    );
+}
+
+.live-column-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.18rem;
+}
+
+.live-column-header p {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.61);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.live-column-count {
+  display: grid;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.live-hr-column .live-column-count {
+  background:
+    linear-gradient(
+      145deg,
+      #ff3b45,
+      #a60e18
+    );
+  box-shadow:
+    0 0 13px rgba(255, 45, 57, 0.32);
+}
+
+.live-hit-column .live-column-count {
+  background:
+    linear-gradient(
+      145deg,
+      #ff9b20,
+      #a94700
+    );
+  box-shadow:
+    0 0 13px rgba(255, 141, 21, 0.3);
+}
+
+.live-column-list {
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+}
+
+/*
+=========================================================
+RESULT CARDS
+=========================================================
+*/
+
+.live-result-card {
+  position: relative;
+  padding: 14px;
+  overflow: hidden;
+  border-radius: 13px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(27, 32, 40, 0.99),
+      rgba(9, 12, 16, 0.99)
+    );
+  box-shadow:
+    0 8px 21px rgba(0, 0, 0, 0.32);
+}
+
+.live-result-hr {
+  border:
+    1px solid rgba(255, 48, 58, 0.42);
+  border-left:
+    4px solid #ff303a;
+}
+
+.live-result-hit {
+  border:
+    1px solid rgba(255, 145, 19, 0.42);
+  border-left:
+    4px solid #ff9419;
+}
+
+.live-result-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.live-result-player {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.live-result-icon {
+  flex: 0 0 auto;
+  font-size: 1.25rem;
+}
+
+.live-result-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.live-result-name-row h4 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.live-result-rank {
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.live-result-event-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 7px;
+  border-radius: 5px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.live-result-event-badge.home-run {
+  color: #ffffff;
+  background: #d6232e;
+}
+
+.live-result-event-badge.regular-hit {
+  color: #ffffff;
+  background: #bf5f00;
+}
+
+.live-result-card time {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.68rem;
+}
+
+.live-result-game {
+  margin-top: 11px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.live-result-game span {
+  margin: 0 4px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.live-result-description {
+  margin: 8px 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.76rem;
+  line-height: 1.42;
+}
+
+.live-result-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top:
+    1px solid rgba(255, 255, 255, 0.08);
+}
+
+.live-result-score-row span {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.7rem;
+}
+
+.live-result-score-row strong {
+  color: #43e97b;
+  font-size: 0.93rem;
+}
+
+.live-result-stat-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.live-result-stat-grid div {
+  padding: 7px 5px;
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  text-align: center;
+  background:
+    rgba(255, 255, 255, 0.025);
+}
+
+.live-result-stat-grid span {
+  display: block;
+  color: rgba(255, 255, 255, 0.49);
+  font-size: 0.56rem;
+  text-transform: uppercase;
+}
+
+.live-result-stat-grid strong {
+  display: block;
+  margin-top: 4px;
+  color: #ffffff;
+  font-size: 0.7rem;
+}
+
+/*
+=========================================================
+EMPTY COLUMN
+=========================================================
+*/
+
+.live-column-empty {
+  padding: 35px 16px;
+  color: rgba(255, 255, 255, 0.66);
+  text-align: center;
+}
+
+.live-column-empty > span {
+  display: block;
+  font-size: 2rem;
+}
+
+.live-column-empty h4 {
+  margin: 10px 0 7px;
+  color: #ffffff;
+}
+
+.live-column-empty p {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+/*
+=========================================================
+FOOTER
+=========================================================
+*/
+
+.live-monitor-footer {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  border-top:
+    1px solid rgba(255, 255, 255, 0.1);
+}
+
+.live-monitor-footer span {
+  padding: 14px 12px;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.live-monitor-footer span:first-child {
+  border-right:
+    1px solid rgba(255, 255, 255, 0.1);
+}
+
+/*
+=========================================================
+LOADING
+=========================================================
+*/
+
+.live-plays-loading {
+  display: flex;
+  min-height: 160px;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/*
+=========================================================
+ANIMATIONS
+=========================================================
+*/
+
+@keyframes popsLivePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(0.82);
+    opacity: 0.62;
+  }
+}
+
+@keyframes popsStatusPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 8px rgba(43, 229, 111, 0.45);
+  }
+
+  50% {
+    box-shadow:
+      0 0 17px rgba(43, 229, 111, 0.95);
+  }
+}
+
+/*
+=========================================================
+LIVE PLAYS MOBILE
+=========================================================
+*/
+
+@media (max-width: 720px) {
+  #liveplays {
+    padding: 12px;
+  }
+
+  .live-plays-hero {
+    padding: 17px 14px;
+  }
+
+  .live-plays-summary-grid {
+    padding:
+      13px
+      13px
+      15px;
+  }
+
+  .live-results-grid {
+    padding:
+      0
+      10px
+      12px;
+  }
+}
+
+@media (max-width: 590px) {
+  .live-plays-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .live-results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .live-results-column {
+    width: 100%;
+  }
+
+  .live-monitor-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .live-monitor-footer span:first-child {
+    border-right: none;
+    border-bottom:
+      1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+@media (max-width: 430px) {
+  .live-plays-dashboard {
+    border-radius: 18px;
+  }
+
+  .live-plays-hero {
+    display: block;
+  }
+
+  .live-now-badge {
+    width: fit-content;
+    margin-top: 13px;
+  }
+
+  .live-main-dot {
+    width: 21px;
+    height: 21px;
+  }
+
+  .live-plays-title h2 {
+    font-size: 27px;
+  }
+
+  .live-plays-title p {
+    font-size: 0.82rem;
+  }
+
+  .live-column-header {
+    min-height: 92px;
+  }
+
+  .live-result-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-main-dot,
+  .live-status-dot {
+    animation: none !important;
+  }
+}
