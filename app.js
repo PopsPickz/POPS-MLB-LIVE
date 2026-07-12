@@ -2577,6 +2577,17 @@ window.hrPicks = hrPicks;
 
             <p>${pick.tier || ""}</p>
           </div>
+
+          <button
+            type="button"
+            class="gambly-add-button"
+            onclick="addHRPickToGambly(
+              ${index},
+              this
+            )"
+          >
+            🤖 Add to Gambly
+          </button>
         </div>
       `
     )
