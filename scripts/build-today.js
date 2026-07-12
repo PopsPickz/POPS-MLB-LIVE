@@ -1765,7 +1765,7 @@ getPlayerStatcast(
         ) > 0,
 
       statcast:
-        false,
+        statcast.hasStatcastData === true,
 
       recentForm:
         number(
