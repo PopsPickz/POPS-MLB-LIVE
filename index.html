@@ -87,8 +87,6 @@
         <span>Moneyline</span>
       </button>
 
-      <!-- Gambly Slip tab -->
-
       <button
         type="button"
         onclick="showTab('gambly', this)"
@@ -111,6 +109,14 @@
       >
         <span class="tab-icon">🔴</span>
         <span>Live Plays</span>
+      </button>
+
+      <button
+        type="button"
+        onclick="openRecapTab(this)"
+      >
+        <span class="tab-icon">📊</span>
+        <span>Recap</span>
       </button>
 
     </nav>
@@ -315,6 +321,21 @@
 
     </section>
 
+    <!-- =====================================================
+    PREVIOUS DAY RECAP
+    ====================================================== -->
+
+    <section
+      class="card tab-section recap-section"
+      id="recap"
+    >
+
+      <div id="recapBox">
+        <p>Loading yesterday's POPS recap...</p>
+      </div>
+
+    </section>
+
   </div>
 
   <!-- =====================================================
@@ -410,6 +431,23 @@
         LivePlays.render();
       }
     }
+
+    /*
+    =======================================================
+    OPEN RECAP TAB
+    =======================================================
+    */
+
+    function openRecapTab(button) {
+      showTab("recap", button);
+
+      if (
+        typeof Recap !== "undefined" &&
+        typeof Recap.load === "function"
+      ) {
+        Recap.load();
+      }
+    }
   </script>
 
   <!-- =====================================================
@@ -453,7 +491,7 @@
   MAIN APP
   ====================================================== -->
 
- <script src="app.js?v=11"></script>
+  <script src="app.js?v=11"></script>
 
   <!-- =====================================================
   LIVE PLAYS
@@ -461,6 +499,13 @@
   ====================================================== -->
 
   <script src="liveplays.js?v=3"></script>
+
+  <!-- =====================================================
+  PREVIOUS DAY RECAP
+  Loads saved results from the previous day
+  ====================================================== -->
+
+  <script src="recap.js?v=1"></script>
 
 </body>
 </html>
