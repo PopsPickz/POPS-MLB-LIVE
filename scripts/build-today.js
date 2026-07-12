@@ -1079,10 +1079,14 @@ async function getPlayerStatcast(
     const rows =
       parseCSV(csv);
 
-    const stats =
-      calculateStatcast(
-        rows
-      );
+    console.log(
+  `    Statcast CSV ${playerId}: ${csv.length} characters, ${rows.length} rows`
+);
+
+const stats =
+  calculateStatcast(
+    rows
+  );
 
     cache.statcast.set(
       playerId,
