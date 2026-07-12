@@ -777,9 +777,9 @@ function buildStatcastUrl(
   );
 
   params.append(
-    "player_lookup[]",
-    String(playerId)
-  );
+  "batters_lookup[]",
+  String(playerId)
+);
 
   params.set("min_pitches", "0");
   params.set("min_results", "0");
