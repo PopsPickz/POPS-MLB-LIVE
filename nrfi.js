@@ -6,7 +6,7 @@ POPS PICKZ NRFI MODEL
 
 File: nrfi.js
 
-Version: 2.0
+Version: 3.0
 
 =========================================================
 
@@ -26,53 +26,43 @@ and predicts:
 
 - YRFI Alert
 
-MODEL INPUTS
+MODEL WEIGHTS
 
-The model uses data already available on the site and
+Starting pitchers:
 
-automatically uses enhanced data when those fields exist:
+- 30 points each
 
-PITCHING
+- 60 total points
 
-- First-inning ERA when available
+Team offense safety:
 
-- First-inning WHIP when available
+- 10 points each
 
-- Season ERA
+- 20 total points
 
-- Season WHIP
+Top-four lineup safety:
 
-- HR/9
+- 5 points each
 
-- Strikeout-to-walk ratio
+- 10 total points
 
-- Starting-pitcher confirmation
+Lineup and data context:
 
-OFFENSE
+- 10 total points
 
-- Team first-inning scoring rate when available
+Maximum base score:
 
-- Team first-inning runs per game when available
-
-- Team OPS
-
-- Team batting average
-
-- Team runs per game
-
-- Top-four lineup danger
-
-- Recent top-order form
-
-- Confirmed or projected lineup
+- 100 points
 
 IMPORTANT
 
 Weather is NOT included in this model.
 
-This file does not read from weather.js and does not
+Missing first-inning data lowers data confidence, but
 
-use temperature, wind, rain, humidity, or weather ratings.
+season pitching is used as a fallback so strong pitchers
+
+are not automatically graded unfairly.
 
 REQUIRED HTML
 
@@ -84,7 +74,7 @@ REQUIRED HTML
 
 REQUIRED SCRIPT ORDER
 
-<script src="nrfi.js"></script>
+<script src="nrfi.js?v=3"></script>
 
 <script src="app.js"></script>
 
@@ -102,43 +92,25 @@ const NRFI = {
 
   settings: {
 
-    eliteMinimum: 86,
+    eliteMinimum: 85,
 
-    strongMinimum: 76,
+    strongMinimum: 75,
 
-    leanMinimum: 66,
+    leanMinimum: 65,
 
     tossUpMinimum: 52,
-
-    requireBothStarters: true,
 
     maximumTopOrderBatters: 4,
 
     minimumConfirmedBatters: 7,
 
-    /*
+    maximumPitcherScore: 30,
 
-    Maximum final score is 100.
+    maximumOffenseScore: 10,
 
-    Starting pitchers:
+    maximumTopOrderSafetyScore: 5,
 
-    25 points each = 50
-
-    Team offenses:
-
-    15 points each = 30
-
-    Lineups and data confidence:
-
-    20 points
-
-    */
-
-    maximumPitcherScore: 25,
-
-    maximumOffenseScore: 15,
-
-    maximumContextScore: 20
+    maximumContextScore: 10
 
   },
 
@@ -178,35 +150,19 @@ const NRFI = {
 
     }
 
-    const result =
-
-      String(value).trim();
+    const result = String(value).trim();
 
     return result || fallback;
 
   },
 
-  clamp(
-
-    value,
-
-    minimum,
-
-    maximum
-
-  ) {
+  clamp(value, minimum, maximum) {
 
     return Math.min(
 
       maximum,
 
-      Math.max(
-
-        minimum,
-
-        value
-
-      )
+      Math.max(minimum, value)
 
     );
 
@@ -238,9 +194,7 @@ const NRFI = {
 
   ) {
 
-    const number =
-
-      Number(value);
+    const number = Number(value);
 
     if (
 
@@ -254,11 +208,7 @@ const NRFI = {
 
     }
 
-    return number.toFixed(
-
-      places
-
-    );
+    return number.toFixed(places);
 
   },
 
@@ -272,9 +222,7 @@ const NRFI = {
 
   ) {
 
-    const number =
-
-      Number(value);
+    const number = Number(value);
 
     if (
 
@@ -296,25 +244,19 @@ const NRFI = {
 
         : number;
 
-    return `${normalized.toFixed(
-
-      places
-
-    )}%`;
+    return `${normalized.toFixed(places)}%`;
 
   },
 
   normalizePitcherName(name) {
 
-    const value =
+    const value = this.text(
 
-      this.text(
+      name,
 
-        name,
+      "TBD"
 
-        "TBD"
-
-      );
+    );
 
     const lower =
 
@@ -338,29 +280,15 @@ const NRFI = {
 
   },
 
-  hasStarter(
-
-    name,
-
-    id
-
-  ) {
+  hasStarter(name, id) {
 
     return (
 
-      this.normalizePitcherName(
+      this.normalizePitcherName(name) !==
 
-        name
+        "TBD" &&
 
-      ) !== "TBD" &&
-
-      this.num(
-
-        id,
-
-        0
-
-      ) > 0
+      this.num(id, 0) > 0
 
     );
 
@@ -380,13 +308,9 @@ const NRFI = {
 
         String(path).split(".");
 
-      let current =
+      let current = object;
 
-        object;
-
-      let valid =
-
-        true;
+      let valid = true;
 
       for (const part of parts) {
 
@@ -408,9 +332,7 @@ const NRFI = {
 
         }
 
-        current =
-
-          current[part];
+        current = current[part];
 
       }
 
@@ -446,7 +368,7 @@ const NRFI = {
 
   ) {
 
-    const value =
+    return this.num(
 
       this.getNestedValue(
 
@@ -454,11 +376,7 @@ const NRFI = {
 
         paths
 
-      );
-
-    return this.num(
-
-      value,
+      ),
 
       fallback
 
@@ -616,19 +534,11 @@ const NRFI = {
 
     const innings =
 
-      this.getPitcherInnings(
-
-        stats
-
-      );
+      this.getPitcherInnings(stats);
 
     const homeRuns =
 
-      this.getPitcherHomeRuns(
-
-        stats
-
-      );
+      this.getPitcherHomeRuns(stats);
 
     if (innings <= 0) {
 
@@ -730,19 +640,11 @@ const NRFI = {
 
     const strikeouts =
 
-      this.getPitcherStrikeouts(
-
-        stats
-
-      );
+      this.getPitcherStrikeouts(stats);
 
     const walks =
 
-      this.getPitcherWalks(
-
-        stats
-
-      );
+      this.getPitcherWalks(stats);
 
     if (walks <= 0) {
 
@@ -763,12 +665,6 @@ const NRFI = {
   =======================================================
 
   FIRST-INNING PITCHER HELPERS
-
-  These fields are optional.
-
-  The model automatically uses them when they exist in
-
-  pitcher stats or an attached firstInning object.
 
   =======================================================
 
@@ -829,32 +725,6 @@ const NRFI = {
         "splits.firstInning.whip",
 
         "firstInningSplits.whip"
-
-      ],
-
-      0
-
-    );
-
-  },
-
-  getFirstInningRunsAllowed(stats = {}) {
-
-    return this.getFirstAvailableNumber(
-
-      stats,
-
-      [
-
-        "firstInningRunsAllowed",
-
-        "inning1RunsAllowed",
-
-        "firstInning.runsAllowed",
-
-        "firstInningStats.runsAllowed",
-
-        "splits.firstInning.runsAllowed"
 
       ],
 
@@ -932,13 +802,9 @@ const NRFI = {
 
     const appearances =
 
-      this.getFirstInningAppearances(
+      this.getFirstInningAppearances(stats);
 
-        stats
-
-      );
-
-    const runsAllowedGames =
+    const gamesWithRun =
 
       this.getFirstAvailableNumber(
 
@@ -962,7 +828,7 @@ const NRFI = {
 
       appearances > 0 &&
 
-      runsAllowedGames >= 0
+      gamesWithRun >= 0
 
     ) {
 
@@ -972,7 +838,7 @@ const NRFI = {
 
           appearances -
 
-          runsAllowedGames
+          gamesWithRun
 
         ) / appearances,
 
@@ -1020,11 +886,7 @@ const NRFI = {
 
     const hitting =
 
-      this.getTeamHittingStats(
-
-        stats
-
-      );
+      this.getTeamHittingStats(stats);
 
     return this.getFirstAvailableNumber(
 
@@ -1050,11 +912,7 @@ const NRFI = {
 
     const hitting =
 
-      this.getTeamHittingStats(
-
-        stats
-
-      );
+      this.getTeamHittingStats(stats);
 
     return this.getFirstAvailableNumber(
 
@@ -1078,11 +936,7 @@ const NRFI = {
 
     const hitting =
 
-      this.getTeamHittingStats(
-
-        stats
-
-      );
+      this.getTeamHittingStats(stats);
 
     return this.getFirstAvailableNumber(
 
@@ -1108,11 +962,7 @@ const NRFI = {
 
     const hitting =
 
-      this.getTeamHittingStats(
-
-        stats
-
-      );
+      this.getTeamHittingStats(stats);
 
     return this.getFirstAvailableNumber(
 
@@ -1138,11 +988,7 @@ const NRFI = {
 
     const hitting =
 
-      this.getTeamHittingStats(
-
-        stats
-
-      );
+      this.getTeamHittingStats(stats);
 
     const directValue =
 
@@ -1170,19 +1016,11 @@ const NRFI = {
 
     const gamesPlayed =
 
-      this.getTeamGamesPlayed(
-
-        stats
-
-      );
+      this.getTeamGamesPlayed(stats);
 
     const runs =
 
-      this.getTeamRuns(
-
-        stats
-
-      );
+      this.getTeamRuns(stats);
 
     if (gamesPlayed <= 0) {
 
@@ -1194,31 +1032,15 @@ const NRFI = {
 
   },
 
-  /*
+  getTeamFirstInningScoringRate(
 
-  =======================================================
+    stats = {}
 
-  TEAM FIRST-INNING OFFENSE HELPERS
-
-  These fields are optional.
-
-  The model uses them when available and falls back to
-
-  season offense when unavailable.
-
-  =======================================================
-
-  */
-
-  getTeamFirstInningScoringRate(stats = {}) {
+  ) {
 
     const hitting =
 
-      this.getTeamHittingStats(
-
-        stats
-
-      );
+      this.getTeamHittingStats(stats);
 
     const value =
 
@@ -1262,15 +1084,15 @@ const NRFI = {
 
   },
 
-  getTeamFirstInningRunsPerGame(stats = {}) {
+  getTeamFirstInningRunsPerGame(
+
+    stats = {}
+
+  ) {
 
     const hitting =
 
-      this.getTeamHittingStats(
-
-        stats
-
-      );
+      this.getTeamHittingStats(stats);
 
     const directValue =
 
@@ -1326,11 +1148,7 @@ const NRFI = {
 
     const gamesPlayed =
 
-      this.getTeamGamesPlayed(
-
-        hitting
-
-      );
+      this.getTeamGamesPlayed(hitting);
 
     if (
 
@@ -1410,21 +1228,9 @@ const NRFI = {
 
         (a, b) =>
 
-          this.num(
+          this.num(a.lineupSpot, 99) -
 
-            a.lineupSpot,
-
-            99
-
-          ) -
-
-          this.num(
-
-            b.lineupSpot,
-
-            99
-
-          )
+          this.num(b.lineupSpot, 99)
 
       )
 
@@ -1541,28 +1347,6 @@ const NRFI = {
         )
 
       : 0;
-
-  },
-
-  getBatterHomeRuns(batter = {}) {
-
-    return this.getFirstAvailableNumber(
-
-      batter,
-
-      [
-
-        "hitting.homeRuns",
-
-        "homeRuns",
-
-        "stats.homeRuns"
-
-      ],
-
-      0
-
-    );
 
   },
 
@@ -1704,6 +1488,22 @@ const NRFI = {
 
   },
 
+  /*
+
+  =======================================================
+
+  TOP-ORDER DANGER
+
+  Maximum risk: 30
+
+  The risk score is later converted into a safety score
+
+  from 0 to 5.
+
+  =======================================================
+
+  */
+
   getTopOrderRisk(
 
     game = {},
@@ -1726,7 +1526,9 @@ const NRFI = {
 
       return {
 
-        score: 12,
+        score: 15,
+
+        safetyScore: 2,
 
         batterCount: 0,
 
@@ -1736,13 +1538,11 @@ const NRFI = {
 
         averageRecentOPS: 0,
 
-        totalHomeRuns: 0,
-
-        recentHomeRuns: 0,
-
         dangerousBatters: 0,
 
         hotBatters: 0,
+
+        recentHomeRuns: 0,
 
         dataAvailable: false
 
@@ -1756,10 +1556,6 @@ const NRFI = {
 
     let totalRecentOPS = 0;
 
-    let totalHomeRuns = 0;
-
-    let recentHomeRuns = 0;
-
     let opsCount = 0;
 
     let isoCount = 0;
@@ -1770,31 +1566,17 @@ const NRFI = {
 
     let hotBatters = 0;
 
+    let recentHomeRuns = 0;
+
     for (const batter of batters) {
 
       const ops =
 
-        this.getBatterOPS(
-
-          batter
-
-        );
+        this.getBatterOPS(batter);
 
       const iso =
 
-        this.getBatterISO(
-
-          batter
-
-        );
-
-      const homeRuns =
-
-        this.getBatterHomeRuns(
-
-          batter
-
-        );
+        this.getBatterISO(batter);
 
       const barrelRate =
 
@@ -1854,27 +1636,19 @@ const NRFI = {
 
       if (recentOPS > 0) {
 
-        totalRecentOPS +=
-
-          recentOPS;
+        totalRecentOPS += recentOPS;
 
         recentOPSCount += 1;
 
       }
 
-      totalHomeRuns +=
-
-        homeRuns;
-
-      recentHomeRuns +=
-
-        recentHR;
+      recentHomeRuns += recentHR;
 
       if (
 
-        ops >= 0.840 ||
+        ops >= 0.850 ||
 
-        iso >= 0.215 ||
+        iso >= 0.220 ||
 
         barrelRate >= 12 ||
 
@@ -1901,10 +1675,6 @@ const NRFI = {
       }
 
     }
-
-    const batterCount =
-
-      batters.length;
 
     const averageOPS =
 
@@ -1934,99 +1704,49 @@ const NRFI = {
 
     let risk = 0;
 
-    /*
-
-    Season OPS risk — maximum 8
-
-    */
-
     if (averageOPS >= 0.875) {
 
       risk += 8;
 
-    } else if (
-
-      averageOPS >= 0.825
-
-    ) {
+    } else if (averageOPS >= 0.825) {
 
       risk += 6;
 
-    } else if (
-
-      averageOPS >= 0.775
-
-    ) {
+    } else if (averageOPS >= 0.775) {
 
       risk += 4;
 
-    } else if (
-
-      averageOPS >= 0.725
-
-    ) {
+    } else if (averageOPS >= 0.725) {
 
       risk += 2;
 
     }
-
-    /*
-
-    ISO risk — maximum 7
-
-    */
 
     if (averageISO >= 0.240) {
 
       risk += 7;
 
-    } else if (
-
-      averageISO >= 0.210
-
-    ) {
+    } else if (averageISO >= 0.210) {
 
       risk += 5;
 
-    } else if (
-
-      averageISO >= 0.180
-
-    ) {
+    } else if (averageISO >= 0.180) {
 
       risk += 3;
 
-    } else if (
-
-      averageISO >= 0.150
-
-    ) {
+    } else if (averageISO >= 0.150) {
 
       risk += 1;
 
     }
 
-    /*
-
-    Recent-form risk — maximum 6
-
-    */
-
-    if (
-
-      averageRecentOPS >=
-
-      1.000
-
-    ) {
+    if (averageRecentOPS >= 1.000) {
 
       risk += 6;
 
     } else if (
 
-      averageRecentOPS >=
-
-      0.900
+      averageRecentOPS >= 0.900
 
     ) {
 
@@ -2034,21 +1754,13 @@ const NRFI = {
 
     } else if (
 
-      averageRecentOPS >=
-
-      0.800
+      averageRecentOPS >= 0.800
 
     ) {
 
       risk += 2;
 
     }
-
-    /*
-
-    Dangerous/hot batter risk
-
-    */
 
     risk += Math.min(
 
@@ -2080,21 +1792,49 @@ const NRFI = {
 
     }
 
+    risk = this.clamp(
+
+      risk,
+
+      0,
+
+      30
+
+    );
+
+    let safetyScore = 0;
+
+    if (risk <= 6) {
+
+      safetyScore = 5;
+
+    } else if (risk <= 10) {
+
+      safetyScore = 4;
+
+    } else if (risk <= 15) {
+
+      safetyScore = 3;
+
+    } else if (risk <= 20) {
+
+      safetyScore = 2;
+
+    } else if (risk <= 24) {
+
+      safetyScore = 1;
+
+    }
+
     return {
 
-      score:
+      score: risk,
 
-        this.clamp(
+      safetyScore,
 
-          risk,
+      batterCount:
 
-          0,
-
-          30
-
-        ),
-
-      batterCount,
+        batters.length,
 
       averageOPS,
 
@@ -2102,13 +1842,11 @@ const NRFI = {
 
       averageRecentOPS,
 
-      totalHomeRuns,
-
-      recentHomeRuns,
-
       dangerousBatters,
 
       hotBatters,
+
+      recentHomeRuns,
 
       dataAvailable: true
 
@@ -2120,9 +1858,9 @@ const NRFI = {
 
   =======================================================
 
-  STARTING PITCHER NRFI SCORE
+  STARTING PITCHER SCORE
 
-  Maximum: 25 points per pitcher
+  Maximum: 30 points per pitcher
 
   =======================================================
 
@@ -2154,51 +1892,27 @@ const NRFI = {
 
     const era =
 
-      this.getPitcherERA(
-
-        stats
-
-      );
+      this.getPitcherERA(stats);
 
     const whip =
 
-      this.getPitcherWHIP(
-
-        stats
-
-      );
+      this.getPitcherWHIP(stats);
 
     const hr9 =
 
-      this.getPitcherHR9(
-
-        stats
-
-      );
+      this.getPitcherHR9(stats);
 
     const kbb =
 
-      this.getPitcherKBB(
-
-        stats
-
-      );
+      this.getPitcherKBB(stats);
 
     const firstInningERA =
 
-      this.getFirstInningERA(
-
-        stats
-
-      );
+      this.getFirstInningERA(stats);
 
     const firstInningWHIP =
 
-      this.getFirstInningWHIP(
-
-        stats
-
-      );
+      this.getFirstInningWHIP(stats);
 
     const firstInningScorelessRate =
 
@@ -2207,6 +1921,14 @@ const NRFI = {
         stats
 
       );
+
+    const firstInningDataAvailable =
+
+      firstInningERA > 0 ||
+
+      firstInningWHIP > 0 ||
+
+      firstInningScorelessRate >= 0;
 
     if (!hasStarter) {
 
@@ -2238,19 +1960,11 @@ const NRFI = {
 
         hasStarter: false,
 
-        firstInningDataAvailable:
-
-          firstInningERA > 0 ||
-
-          firstInningWHIP > 0 ||
-
-          firstInningScorelessRate >= 0
+        firstInningDataAvailable
 
       };
 
     }
-
-    let score = 0;
 
     let firstInningPoints = 0;
 
@@ -2264,33 +1978,19 @@ const NRFI = {
 
     /*
 
-    First-inning performance — maximum 9
-
-    Priority:
-
-    1. Scoreless first rate
-
-    2. First-inning ERA
-
-    3. First-inning WHIP
+    First-inning performance — maximum 10
 
     */
 
-    if (
-
-      firstInningScorelessRate >= 0
-
-    ) {
+    if (firstInningScorelessRate >= 0) {
 
       if (
 
-        firstInningScorelessRate >=
-
-        0.82
+        firstInningScorelessRate >= 0.82
 
       ) {
 
-        firstInningPoints += 6;
+        firstInningPoints += 7;
 
         reasons.push(
 
@@ -2300,13 +2000,11 @@ const NRFI = {
 
       } else if (
 
-        firstInningScorelessRate >=
-
-        0.75
+        firstInningScorelessRate >= 0.75
 
       ) {
 
-        firstInningPoints += 5;
+        firstInningPoints += 6;
 
         reasons.push(
 
@@ -2316,29 +2014,25 @@ const NRFI = {
 
       } else if (
 
-        firstInningScorelessRate >=
-
-        0.68
+        firstInningScorelessRate >= 0.68
 
       ) {
 
-        firstInningPoints += 3;
+        firstInningPoints += 4;
 
       } else if (
 
-        firstInningScorelessRate >=
-
-        0.60
+        firstInningScorelessRate >= 0.60
 
       ) {
 
-        firstInningPoints += 1;
+        firstInningPoints += 2;
 
       } else {
 
         warnings.push(
 
-          `${pitcherName} has allowed frequent first-inning scoring`
+          `${pitcherName} allows frequent first-inning scoring`
 
         );
 
@@ -2380,21 +2074,11 @@ const NRFI = {
 
       ) {
 
-        firstInningPoints -= 2;
-
         warnings.push(
 
           `${pitcherName} has a high first-inning ERA`
 
         );
-
-      } else if (
-
-        firstInningERA >= 5
-
-      ) {
-
-        firstInningPoints -= 1;
 
       }
 
@@ -2402,11 +2086,7 @@ const NRFI = {
 
     if (firstInningWHIP > 0) {
 
-      if (
-
-        firstInningWHIP <= 1
-
-      ) {
+      if (firstInningWHIP <= 1.00) {
 
         firstInningPoints += 2;
 
@@ -2423,8 +2103,6 @@ const NRFI = {
         firstInningWHIP >= 1.55
 
       ) {
-
-        firstInningPoints -= 2;
 
         warnings.push(
 
@@ -2444,267 +2122,21 @@ const NRFI = {
 
         0,
 
-        9
+        10
 
       );
 
     /*
 
-    Season ERA — maximum 5
+    Season fallback.
+
+    Strong season pitching can earn up to 7 of the
+
+    10 first-inning points when true inning splits
+
+    are unavailable.
 
     */
-
-    if (
-
-      era > 0 &&
-
-      era <= 2.75
-
-    ) {
-
-      eraPoints = 5;
-
-      reasons.push(
-
-        `${pitcherName} has an elite season ERA`
-
-      );
-
-    } else if (
-
-      era > 0 &&
-
-      era <= 3.40
-
-    ) {
-
-      eraPoints = 4;
-
-      reasons.push(
-
-        `${pitcherName} has a strong season ERA`
-
-      );
-
-    } else if (
-
-      era > 0 &&
-
-      era <= 4
-
-    ) {
-
-      eraPoints = 3;
-
-    } else if (
-
-      era > 0 &&
-
-      era <= 4.60
-
-    ) {
-
-      eraPoints = 1;
-
-    } else if (
-
-      era >= 5
-
-    ) {
-
-      warnings.push(
-
-        `${pitcherName} has an elevated season ERA`
-
-      );
-
-    }
-
-    /*
-
-    Season WHIP — maximum 5
-
-    */
-
-    if (
-
-      whip > 0 &&
-
-      whip <= 1.05
-
-    ) {
-
-      whipPoints = 5;
-
-      reasons.push(
-
-        `${pitcherName} limits baserunners`
-
-      );
-
-    } else if (
-
-      whip > 0 &&
-
-      whip <= 1.17
-
-    ) {
-
-      whipPoints = 4;
-
-    } else if (
-
-      whip > 0 &&
-
-      whip <= 1.28
-
-    ) {
-
-      whipPoints = 3;
-
-    } else if (
-
-      whip > 0 &&
-
-      whip <= 1.38
-
-    ) {
-
-      whipPoints = 1;
-
-    } else if (
-
-      whip >= 1.45
-
-    ) {
-
-      warnings.push(
-
-        `${pitcherName} allows too many baserunners`
-
-      );
-
-    }
-
-    /*
-
-    HR/9 — maximum 3
-
-    */
-
-    if (
-
-      hr9 > 0 &&
-
-      hr9 <= 0.80
-
-    ) {
-
-      hr9Points = 3;
-
-      reasons.push(
-
-        `${pitcherName} suppresses home runs`
-
-      );
-
-    } else if (
-
-      hr9 > 0 &&
-
-      hr9 <= 1.10
-
-    ) {
-
-      hr9Points = 2;
-
-    } else if (
-
-      hr9 > 0 &&
-
-      hr9 <= 1.35
-
-    ) {
-
-      hr9Points = 1;
-
-    } else if (
-
-      hr9 >= 1.55
-
-    ) {
-
-      warnings.push(
-
-        `${pitcherName} has elevated home-run risk`
-
-      );
-
-    }
-
-    /*
-
-    Command — maximum 3
-
-    */
-
-    if (kbb >= 4) {
-
-      commandPoints = 3;
-
-      reasons.push(
-
-        `${pitcherName} has excellent strikeout-to-walk command`
-
-      );
-
-    } else if (
-
-      kbb >= 3
-
-    ) {
-
-      commandPoints = 2;
-
-    } else if (
-
-      kbb >= 2
-
-    ) {
-
-      commandPoints = 1;
-
-    } else if (
-
-      kbb > 0 &&
-
-      kbb < 1.5
-
-    ) {
-
-      warnings.push(
-
-        `${pitcherName} has weak strikeout-to-walk command`
-
-      );
-
-    }
-
-    /*
-
-    When first-inning splits are unavailable, redistribute
-
-    part of the first-inning category using season quality.
-
-    */
-
-    const firstInningDataAvailable =
-
-      firstInningERA > 0 ||
-
-      firstInningWHIP > 0 ||
-
-      firstInningScorelessRate >= 0;
 
     if (!firstInningDataAvailable) {
 
@@ -2714,7 +2146,17 @@ const NRFI = {
 
         era > 0 &&
 
-        era <= 3.25
+        era <= 2.75
+
+      ) {
+
+        fallbackPoints += 4;
+
+      } else if (
+
+        era > 0 &&
+
+        era <= 3.40
 
       ) {
 
@@ -2724,7 +2166,7 @@ const NRFI = {
 
         era > 0 &&
 
-        era <= 4
+        era <= 4.00
 
       ) {
 
@@ -2746,7 +2188,7 @@ const NRFI = {
 
         whip > 0 &&
 
-        whip <= 1.15
+        whip <= 1.10
 
       ) {
 
@@ -2756,7 +2198,7 @@ const NRFI = {
 
         whip > 0 &&
 
-        whip <= 1.30
+        whip <= 1.28
 
       ) {
 
@@ -2778,13 +2220,265 @@ const NRFI = {
 
           0,
 
-          6
+          7
 
         );
 
     }
 
-    score =
+    /*
+
+    Season ERA — maximum 7
+
+    */
+
+    if (
+
+      era > 0 &&
+
+      era <= 2.75
+
+    ) {
+
+      eraPoints = 7;
+
+      reasons.push(
+
+        `${pitcherName} has an elite season ERA`
+
+      );
+
+    } else if (
+
+      era > 0 &&
+
+      era <= 3.40
+
+    ) {
+
+      eraPoints = 6;
+
+      reasons.push(
+
+        `${pitcherName} has a strong season ERA`
+
+      );
+
+    } else if (
+
+      era > 0 &&
+
+      era <= 4.00
+
+    ) {
+
+      eraPoints = 4;
+
+    } else if (
+
+      era > 0 &&
+
+      era <= 4.60
+
+    ) {
+
+      eraPoints = 2;
+
+    } else if (
+
+      era > 0 &&
+
+      era <= 5.00
+
+    ) {
+
+      eraPoints = 1;
+
+    } else if (era >= 5) {
+
+      warnings.push(
+
+        `${pitcherName} has an elevated season ERA`
+
+      );
+
+    }
+
+    /*
+
+    Season WHIP — maximum 6
+
+    */
+
+    if (
+
+      whip > 0 &&
+
+      whip <= 1.05
+
+    ) {
+
+      whipPoints = 6;
+
+      reasons.push(
+
+        `${pitcherName} limits baserunners`
+
+      );
+
+    } else if (
+
+      whip > 0 &&
+
+      whip <= 1.17
+
+    ) {
+
+      whipPoints = 5;
+
+    } else if (
+
+      whip > 0 &&
+
+      whip <= 1.28
+
+    ) {
+
+      whipPoints = 4;
+
+    } else if (
+
+      whip > 0 &&
+
+      whip <= 1.38
+
+    ) {
+
+      whipPoints = 2;
+
+    } else if (
+
+      whip > 0 &&
+
+      whip <= 1.45
+
+    ) {
+
+      whipPoints = 1;
+
+    } else if (whip >= 1.45) {
+
+      warnings.push(
+
+        `${pitcherName} allows too many baserunners`
+
+      );
+
+    }
+
+    /*
+
+    HR/9 — maximum 4
+
+    */
+
+    if (
+
+      hr9 > 0 &&
+
+      hr9 <= 0.75
+
+    ) {
+
+      hr9Points = 4;
+
+      reasons.push(
+
+        `${pitcherName} suppresses home runs`
+
+      );
+
+    } else if (
+
+      hr9 > 0 &&
+
+      hr9 <= 1.00
+
+    ) {
+
+      hr9Points = 3;
+
+    } else if (
+
+      hr9 > 0 &&
+
+      hr9 <= 1.25
+
+    ) {
+
+      hr9Points = 2;
+
+    } else if (
+
+      hr9 > 0 &&
+
+      hr9 <= 1.50
+
+    ) {
+
+      hr9Points = 1;
+
+    } else if (hr9 >= 1.55) {
+
+      warnings.push(
+
+        `${pitcherName} has elevated home-run risk`
+
+      );
+
+    }
+
+    /*
+
+    K/BB — maximum 3
+
+    */
+
+    if (kbb >= 4) {
+
+      commandPoints = 3;
+
+      reasons.push(
+
+        `${pitcherName} has excellent strikeout-to-walk command`
+
+      );
+
+    } else if (kbb >= 3) {
+
+      commandPoints = 2;
+
+    } else if (kbb >= 2) {
+
+      commandPoints = 1;
+
+    } else if (
+
+      kbb > 0 &&
+
+      kbb < 1.5
+
+    ) {
+
+      warnings.push(
+
+        `${pitcherName} has weak strikeout-to-walk command`
+
+      );
+
+    }
+
+    let score =
 
       firstInningPoints +
 
@@ -2798,19 +2492,15 @@ const NRFI = {
 
     /*
 
-    Pitcher-specific risk penalties
+    Pitcher risk penalties
 
     */
 
     if (era >= 5.50) {
 
-      score -= 3;
+      score -= 4;
 
-    } else if (
-
-      era >= 5
-
-    ) {
+    } else if (era >= 5.00) {
 
       score -= 2;
 
@@ -2818,13 +2508,9 @@ const NRFI = {
 
     if (whip >= 1.55) {
 
-      score -= 3;
+      score -= 4;
 
-    } else if (
-
-      whip >= 1.45
-
-    ) {
+    } else if (whip >= 1.45) {
 
       score -= 2;
 
@@ -2836,11 +2522,13 @@ const NRFI = {
 
     }
 
-    if (
+    if (firstInningERA >= 6.50) {
 
-      firstInningERA >= 6.50
+      score -= 4;
 
-    ) {
+    }
+
+    if (firstInningWHIP >= 1.65) {
 
       score -= 3;
 
@@ -2848,11 +2536,13 @@ const NRFI = {
 
     if (
 
-      firstInningWHIP >= 1.65
+      firstInningScorelessRate >= 0 &&
+
+      firstInningScorelessRate < 0.55
 
     ) {
 
-      score -= 2;
+      score -= 3;
 
     }
 
@@ -2916,13 +2606,13 @@ const NRFI = {
 
   =======================================================
 
-  TEAM OFFENSE NRFI SCORE
+  TEAM OFFENSE SAFETY
 
-  Maximum: 15 points per team
+  Maximum: 10 points per team
 
   Higher score means the offense is less likely to score
 
-  in the first inning.
+  during the first inning.
 
   =======================================================
 
@@ -2932,9 +2622,7 @@ const NRFI = {
 
     teamName,
 
-    stats = {},
-
-    topOrderRisk = {}
+    stats = {}
 
   ) {
 
@@ -2944,27 +2632,15 @@ const NRFI = {
 
     const average =
 
-      this.getTeamAverage(
-
-        stats
-
-      );
+      this.getTeamAverage(stats);
 
     const ops =
 
-      this.getTeamOPS(
-
-        stats
-
-      );
+      this.getTeamOPS(stats);
 
     const runsPerGame =
 
-      this.getTeamRunsPerGame(
-
-        stats
-
-      );
+      this.getTeamRunsPerGame(stats);
 
     const firstInningScoringRate =
 
@@ -2982,8 +2658,6 @@ const NRFI = {
 
       );
 
-    let score = 0;
-
     let firstInningPoints = 0;
 
     let opsPoints = 0;
@@ -2994,15 +2668,11 @@ const NRFI = {
 
     /*
 
-    First-inning scoring tendency — maximum 6
+    First-inning tendency — maximum 5
 
     */
 
-    if (
-
-      firstInningScoringRate >= 0
-
-    ) {
+    if (firstInningScoringRate >= 0) {
 
       if (
 
@@ -3010,7 +2680,7 @@ const NRFI = {
 
       ) {
 
-        firstInningPoints = 6;
+        firstInningPoints = 5;
 
         reasons.push(
 
@@ -3024,7 +2694,7 @@ const NRFI = {
 
       ) {
 
-        firstInningPoints = 5;
+        firstInningPoints = 4;
 
       } else if (
 
@@ -3040,13 +2710,17 @@ const NRFI = {
 
       ) {
 
-        firstInningPoints = 1;
+        firstInningPoints = 2;
 
       } else if (
 
-        firstInningScoringRate >= 0.40
+        firstInningScoringRate <= 0.39
 
       ) {
+
+        firstInningPoints = 1;
+
+      } else {
 
         warnings.push(
 
@@ -3068,7 +2742,7 @@ const NRFI = {
 
       ) {
 
-        firstInningPoints = 6;
+        firstInningPoints = 5;
 
         reasons.push(
 
@@ -3094,9 +2768,13 @@ const NRFI = {
 
       } else if (
 
-        firstInningRunsPerGame >= 0.45
+        firstInningRunsPerGame <= 0.42
 
       ) {
+
+        firstInningPoints = 1;
+
+      } else {
 
         warnings.push(
 
@@ -3110,7 +2788,7 @@ const NRFI = {
 
       /*
 
-      Fallback when first-inning team data is unavailable.
+      Season fallback — maximum 3 of 5.
 
       */
 
@@ -3122,23 +2800,13 @@ const NRFI = {
 
       ) {
 
-        firstInningPoints = 4;
-
-      } else if (
-
-        runsPerGame > 0 &&
-
-        runsPerGame <= 4.3
-
-      ) {
-
         firstInningPoints = 3;
 
       } else if (
 
         runsPerGame > 0 &&
 
-        runsPerGame <= 4.7
+        runsPerGame <= 4.4
 
       ) {
 
@@ -3148,7 +2816,7 @@ const NRFI = {
 
         runsPerGame > 0 &&
 
-        runsPerGame <= 5
+        runsPerGame <= 4.8
 
       ) {
 
@@ -3160,7 +2828,7 @@ const NRFI = {
 
     /*
 
-    Team OPS — maximum 4
+    Team OPS — maximum 2
 
     */
 
@@ -3168,11 +2836,11 @@ const NRFI = {
 
       ops > 0 &&
 
-      ops <= 0.680
+      ops <= 0.690
 
     ) {
 
-      opsPoints = 4;
+      opsPoints = 2;
 
       reasons.push(
 
@@ -3184,27 +2852,7 @@ const NRFI = {
 
       ops > 0 &&
 
-      ops <= 0.720
-
-    ) {
-
-      opsPoints = 3;
-
-    } else if (
-
-      ops > 0 &&
-
-      ops <= 0.755
-
-    ) {
-
-      opsPoints = 2;
-
-    } else if (
-
-      ops > 0 &&
-
-      ops <= 0.785
+      ops <= 0.750
 
     ) {
 
@@ -3226,7 +2874,7 @@ const NRFI = {
 
     /*
 
-    Team batting average — maximum 2
+    Team AVG — maximum 1
 
     */
 
@@ -3234,17 +2882,7 @@ const NRFI = {
 
       average > 0 &&
 
-      average <= 0.230
-
-    ) {
-
-      averagePoints = 2;
-
-    } else if (
-
-      average > 0 &&
-
-      average <= 0.250
+      average <= 0.245
 
     ) {
 
@@ -3254,7 +2892,7 @@ const NRFI = {
 
     /*
 
-    Runs per game — maximum 3
+    Runs per game — maximum 2
 
     */
 
@@ -3262,11 +2900,11 @@ const NRFI = {
 
       runsPerGame > 0 &&
 
-      runsPerGame <= 3.8
+      runsPerGame <= 4.0
 
     ) {
 
-      scoringPoints = 3;
+      scoringPoints = 2;
 
       reasons.push(
 
@@ -3278,17 +2916,7 @@ const NRFI = {
 
       runsPerGame > 0 &&
 
-      runsPerGame <= 4.3
-
-    ) {
-
-      scoringPoints = 2;
-
-    } else if (
-
-      runsPerGame > 0 &&
-
-      runsPerGame <= 4.7
+      runsPerGame <= 4.6
 
     ) {
 
@@ -3296,7 +2924,7 @@ const NRFI = {
 
     } else if (
 
-      runsPerGame >= 5
+      runsPerGame >= 5.0
 
     ) {
 
@@ -3308,7 +2936,7 @@ const NRFI = {
 
     }
 
-    score =
+    const score =
 
       firstInningPoints +
 
@@ -3317,78 +2945,6 @@ const NRFI = {
       averagePoints +
 
       scoringPoints;
-
-    /*
-
-    Top-order danger penalty
-
-    */
-
-    const topOrderPenalty =
-
-      this.clamp(
-
-        this.num(
-
-          topOrderRisk.score,
-
-          0
-
-        ) * 0.32,
-
-        0,
-
-        9
-
-      );
-
-    score -=
-
-      topOrderPenalty;
-
-    if (
-
-      topOrderRisk
-
-        .dangerousBatters >= 3
-
-    ) {
-
-      warnings.push(
-
-        `${teamName} has a dangerous top four`
-
-      );
-
-    }
-
-    if (
-
-      topOrderRisk.hotBatters >= 2
-
-    ) {
-
-      warnings.push(
-
-        `${teamName} has multiple hot hitters near the top`
-
-      );
-
-    }
-
-    if (
-
-      topOrderRisk.recentHomeRuns >= 4
-
-    ) {
-
-      warnings.push(
-
-        `${teamName}'s top order has recent home-run power`
-
-      );
-
-    }
 
     return {
 
@@ -3432,8 +2988,6 @@ const NRFI = {
 
       scoringPoints,
 
-      topOrderPenalty,
-
       firstInningDataAvailable:
 
         firstInningScoringRate >= 0 ||
@@ -3448,9 +3002,9 @@ const NRFI = {
 
   =======================================================
 
-  CONTEXT AND DATA CONFIDENCE
+  CONTEXT SCORE
 
-  Maximum: 20 points
+  Maximum: 10 points
 
   =======================================================
 
@@ -3468,11 +3022,7 @@ const NRFI = {
 
     awayConfirmed,
 
-    homeConfirmed,
-
-    awayTopOrderRisk,
-
-    homeTopOrderRisk
+    homeConfirmed
 
   }) {
 
@@ -3484,7 +3034,7 @@ const NRFI = {
 
     /*
 
-    Starting pitchers — maximum 6
+    Starting pitchers — maximum 4
 
     */
 
@@ -3496,7 +3046,7 @@ const NRFI = {
 
     ) {
 
-      score += 6;
+      score += 4;
 
       reasons.push(
 
@@ -3512,7 +3062,7 @@ const NRFI = {
 
     ) {
 
-      score += 2;
+      score += 1;
 
       warnings.push(
 
@@ -3532,7 +3082,7 @@ const NRFI = {
 
     /*
 
-    Confirmed lineups — maximum 6
+    Confirmed lineups — maximum 4
 
     */
 
@@ -3544,7 +3094,7 @@ const NRFI = {
 
     ) {
 
-      score += 6;
+      score += 4;
 
       reasons.push(
 
@@ -3560,7 +3110,7 @@ const NRFI = {
 
     ) {
 
-      score += 4;
+      score += 3;
 
     } else if (
 
@@ -3584,7 +3134,7 @@ const NRFI = {
 
     /*
 
-    First-inning pitcher data — maximum 4
+    First-inning pitcher data — maximum 2
 
     */
 
@@ -3600,7 +3150,7 @@ const NRFI = {
 
     ) {
 
-      score += 4;
+      score += 2;
 
       reasons.push(
 
@@ -3620,51 +3170,7 @@ const NRFI = {
 
     ) {
 
-      score += 2;
-
-    }
-
-    /*
-
-    Top-order data — maximum 4
-
-    */
-
-    if (
-
-      awayTopOrderRisk
-
-        .dataAvailable &&
-
-      homeTopOrderRisk
-
-        .dataAvailable &&
-
-      awayTopOrderRisk
-
-        .batterCount >= 4 &&
-
-      homeTopOrderRisk
-
-        .batterCount >= 4
-
-    ) {
-
-      score += 4;
-
-    } else if (
-
-      awayTopOrderRisk
-
-        .dataAvailable ||
-
-      homeTopOrderRisk
-
-        .dataAvailable
-
-    ) {
-
-      score += 2;
+      score += 1;
 
     }
 
@@ -3776,14 +3282,6 @@ const NRFI = {
 
       );
 
-    /*
-
-    The away offense faces the home pitcher.
-
-    The home offense faces the away pitcher.
-
-    */
-
     const awayTopOrderRisk =
 
       this.getTopOrderRisk(
@@ -3810,9 +3308,7 @@ const NRFI = {
 
         awayTeam,
 
-        game.awayTeamStats || {},
-
-        awayTopOrderRisk
+        game.awayTeamStats || {}
 
       );
 
@@ -3822,9 +3318,7 @@ const NRFI = {
 
         homeTeam,
 
-        game.homeTeamStats || {},
-
-        homeTopOrderRisk
+        game.homeTeamStats || {}
 
       );
 
@@ -3878,13 +3372,23 @@ const NRFI = {
 
         awayConfirmed,
 
-        homeConfirmed,
-
-        awayTopOrderRisk,
-
-        homeTopOrderRisk
+        homeConfirmed
 
       });
+
+    /*
+
+    Base score:
+
+    Pitchers: 60
+
+    Offenses: 20
+
+    Top-order safety: 10
+
+    Context: 10
+
+    */
 
     let score =
 
@@ -3895,6 +3399,10 @@ const NRFI = {
       awayOffense.score +
 
       homeOffense.score +
+
+      awayTopOrderRisk.safetyScore +
+
+      homeTopOrderRisk.safetyScore +
 
       context.score;
 
@@ -3930,7 +3438,7 @@ const NRFI = {
 
     =====================================================
 
-    MAJOR GAME-LEVEL PENALTIES
+    GAME-LEVEL PENALTIES
 
     =====================================================
 
@@ -3956,17 +3464,21 @@ const NRFI = {
 
     /*
 
-    One very weak starting pitcher can ruin an NRFI.
+    One very weak starter can ruin the NRFI.
 
     */
 
-    if (
+    const weakestPitcherScore =
 
-      awayPitcher.score <= 7 ||
+      Math.min(
 
-      homePitcher.score <= 7
+        awayPitcher.score,
 
-    ) {
+        homePitcher.score
+
+      );
+
+    if (weakestPitcherScore <= 8) {
 
       score -= 8;
 
@@ -3978,9 +3490,7 @@ const NRFI = {
 
     } else if (
 
-      awayPitcher.score <= 11 ||
-
-      homePitcher.score <= 11
+      weakestPitcherScore <= 13
 
     ) {
 
@@ -3990,63 +3500,7 @@ const NRFI = {
 
     /*
 
-    High season ERA penalties
-
-    */
-
-    if (
-
-      awayPitcher.era >= 5.50 ||
-
-      homePitcher.era >= 5.50
-
-    ) {
-
-      score -= 8;
-
-    } else if (
-
-      awayPitcher.era >= 5 ||
-
-      homePitcher.era >= 5
-
-    ) {
-
-      score -= 5;
-
-    }
-
-    /*
-
-    High WHIP penalties
-
-    */
-
-    if (
-
-      awayPitcher.whip >= 1.55 ||
-
-      homePitcher.whip >= 1.55
-
-    ) {
-
-      score -= 7;
-
-    } else if (
-
-      awayPitcher.whip >= 1.45 ||
-
-      homePitcher.whip >= 1.45
-
-    ) {
-
-      score -= 4;
-
-    }
-
-    /*
-
-    First-inning split penalties
+    First-inning split risks
 
     */
 
@@ -4058,7 +3512,7 @@ const NRFI = {
 
     ) {
 
-      score -= 7;
+      score -= 5;
 
       warnings.push(
 
@@ -4076,11 +3530,11 @@ const NRFI = {
 
       awayPitcher
 
-        .firstInningScorelessRate < 0.58
+        .firstInningScorelessRate < 0.55
 
     ) {
 
-      score -= 5;
+      score -= 4;
 
     }
 
@@ -4092,17 +3546,17 @@ const NRFI = {
 
       homePitcher
 
-        .firstInningScorelessRate < 0.58
+        .firstInningScorelessRate < 0.55
 
     ) {
 
-      score -= 5;
+      score -= 4;
 
     }
 
     /*
 
-    Dangerous top orders
+    Dangerous top-four penalties
 
     */
 
@@ -4112,15 +3566,21 @@ const NRFI = {
 
     ) {
 
-      score -= 6;
+      score -= 4;
+
+      warnings.push(
+
+        `${awayTeam} has an extremely dangerous top four`
+
+      );
 
     } else if (
 
-      awayTopOrderRisk.score >= 20
+      awayTopOrderRisk.score >= 21
 
     ) {
 
-      score -= 3;
+      score -= 2;
 
     }
 
@@ -4130,11 +3590,47 @@ const NRFI = {
 
     ) {
 
-      score -= 6;
+      score -= 4;
+
+      warnings.push(
+
+        `${homeTeam} has an extremely dangerous top four`
+
+      );
 
     } else if (
 
-      homeTopOrderRisk.score >= 20
+      homeTopOrderRisk.score >= 21
+
+    ) {
+
+      score -= 2;
+
+    }
+
+    /*
+
+    Early-scoring offense penalties
+
+    */
+
+    if (
+
+      awayOffense
+
+        .firstInningScoringRate >= 0.42
+
+    ) {
+
+      score -= 3;
+
+    }
+
+    if (
+
+      homeOffense
+
+        .firstInningScoringRate >= 0.42
 
     ) {
 
@@ -4144,53 +3640,35 @@ const NRFI = {
 
     /*
 
-    Team early-scoring penalties
+    Dual-pitcher bonuses
 
     */
 
     if (
 
-      awayOffense
+      awayPitcher.score >= 25 &&
 
-        .firstInningScoringRate >=
-
-        0.40
+      homePitcher.score >= 25
 
     ) {
 
-      score -= 5;
+      score += 5;
 
-    }
+      reasons.push(
 
-    if (
+        "Both starting pitchers grade as elite NRFI arms"
 
-      homeOffense
+      );
 
-        .firstInningScoringRate >=
+    } else if (
 
-        0.40
+      awayPitcher.score >= 22 &&
 
-    ) {
-
-      score -= 5;
-
-    }
-
-    /*
-
-    Strong dual-pitcher bonus
-
-    */
-
-    if (
-
-      awayPitcher.score >= 21 &&
-
-      homePitcher.score >= 21
+      homePitcher.score >= 22
 
     ) {
 
-      score += 4;
+      score += 3;
 
       reasons.push(
 
@@ -4202,19 +3680,19 @@ const NRFI = {
 
     /*
 
-    Weak dual-offense bonus
+    Lower-threat offense bonus
 
     */
 
     if (
 
-      awayOffense.score >= 11 &&
+      awayOffense.score >= 8 &&
 
-      homeOffense.score >= 11
+      homeOffense.score >= 8
 
     ) {
 
-      score += 3;
+      score += 2;
 
       reasons.push(
 
@@ -4224,29 +3702,33 @@ const NRFI = {
 
     }
 
-    score =
+    score = Math.round(
 
-      Math.round(
+      this.clamp(
 
-        this.clamp(
+        score,
 
-          score,
+        0,
 
-          0,
+        100
 
-          100
+      )
 
-        )
-
-      );
+    );
 
     const prediction =
 
-      this.getPrediction(
+      this.getPrediction(score);
 
-        score
+    /*
 
-      );
+    Data confidence is separate from the actual score.
+
+    Missing first-inning data reduces confidence, but
+
+    does not automatically create a YRFI prediction.
+
+    */
 
     const availableDataPoints = [
 
@@ -4254,9 +3736,13 @@ const NRFI = {
 
       awayPitcher.whip > 0,
 
+      awayPitcher.hr9 > 0,
+
       homePitcher.era > 0,
 
       homePitcher.whip > 0,
+
+      homePitcher.hr9 > 0,
 
       awayPitcher
 
@@ -4300,7 +3786,7 @@ const NRFI = {
 
           availableDataPoints /
 
-          14
+          16
 
         ) * 100
 
@@ -4388,17 +3874,27 @@ const NRFI = {
 
         [...new Set(reasons)]
 
-          .slice(0, 8),
+          .slice(0, 10),
 
       warnings:
 
         [...new Set(warnings)]
 
-          .slice(0, 8)
+          .slice(0, 10)
 
     };
 
   },
+
+  /*
+
+  =======================================================
+
+  PREDICTION TIERS
+
+  =======================================================
+
+  */
 
   getPrediction(score = 0) {
 
@@ -4536,15 +4032,9 @@ const NRFI = {
 
       .filter(Boolean)
 
-      .map(
+      .map(game =>
 
-        game =>
-
-          this.evaluateGame(
-
-            game
-
-          )
+        this.evaluateGame(game)
 
       )
 
@@ -4576,9 +4066,7 @@ const NRFI = {
 
     }
 
-    const date =
-
-      new Date(value);
+    const date = new Date(value);
 
     if (
 
@@ -4628,17 +4116,13 @@ const NRFI = {
 
   ) {
 
-    const number =
-
-      Number(value);
+    const number = Number(value);
 
     if (
 
       !Number.isFinite(number) ||
 
-      number < 0 ||
-
-      number === 0
+      number <= 0
 
     ) {
 
@@ -4678,17 +4162,17 @@ const NRFI = {
 
     const firstInningRate =
 
-      result.firstInningScorelessRate;
+      Number(
+
+        result.firstInningScorelessRate
+
+      );
 
     const firstInningRateHTML =
 
-      Number.isFinite(
+      Number.isFinite(firstInningRate) &&
 
-        Number(firstInningRate)
-
-      ) &&
-
-      Number(firstInningRate) >= 0
+      firstInningRate >= 0
 
         ? `
 
@@ -4830,7 +4314,7 @@ const NRFI = {
 
                 result.score || 0
 
-              )}/25
+              )}/30
 
             </strong>
 
@@ -4930,19 +4414,25 @@ const NRFI = {
 
     const firstInningRate =
 
-      offense
+      Number(
 
-        .firstInningScoringRate;
+        offense.firstInningScoringRate
+
+      );
+
+    const firstInningRPG =
+
+      Number(
+
+        offense.firstInningRunsPerGame
+
+      );
 
     const firstInningRateText =
 
-      Number.isFinite(
+      Number.isFinite(firstInningRate) &&
 
-        Number(firstInningRate)
-
-      ) &&
-
-      Number(firstInningRate) >= 0
+      firstInningRate >= 0
 
         ? this.formatPercent(
 
@@ -4954,21 +4444,11 @@ const NRFI = {
 
         : "N/A";
 
-    const firstInningRPG =
-
-      offense
-
-        .firstInningRunsPerGame;
-
     const firstInningRPGText =
 
-      Number.isFinite(
+      Number.isFinite(firstInningRPG) &&
 
-        Number(firstInningRPG)
-
-      ) &&
-
-      Number(firstInningRPG) >= 0
+      firstInningRPG >= 0
 
         ? this.formatNumber(
 
@@ -5052,7 +4532,33 @@ const NRFI = {
 
         <p>
 
-          Hot Top-Order Batters:
+          Top-Order Safety:
+
+          ${Math.round(
+
+            topOrderRisk.safetyScore || 0
+
+          )}/5
+
+        </p>
+
+        <p>
+
+          Dangerous Batters:
+
+          ${Math.round(
+
+            topOrderRisk
+
+              .dangerousBatters || 0
+
+          )}
+
+        </p>
+
+        <p>
+
+          Hot Batters:
 
           ${Math.round(
 
@@ -5070,7 +4576,7 @@ const NRFI = {
 
             offense.score || 0
 
-          )}/15
+          )}/10
 
         </p>
 
@@ -5354,11 +4860,41 @@ const NRFI = {
 
                 ${Math.round(
 
-                  result.context?.score ||
+                  result.context?.score || 0
 
-                  0
+                )}/10
 
-                )}/20
+              </p>
+
+              <p>
+
+                Starting Pitcher Weight:
+
+                60%
+
+              </p>
+
+              <p>
+
+                Offense Safety Weight:
+
+                20%
+
+              </p>
+
+              <p>
+
+                Top-Order Safety Weight:
+
+                10%
+
+              </p>
+
+              <p>
+
+                Lineup/Data Context:
+
+                10%
 
               </p>
 
@@ -5394,9 +4930,7 @@ const NRFI = {
 
   async load(
 
-    games =
-
-      window.games || []
+    games = window.games || []
 
   ) {
 
@@ -5448,11 +4982,7 @@ const NRFI = {
 
     const predictions =
 
-      this.build(
-
-        sourceGames
-
-      );
+      this.build(sourceGames);
 
     window.nrfiPredictions =
 
@@ -5507,6 +5037,18 @@ const NRFI = {
           item.prediction.key ===
 
           "strong"
+
+      ).length;
+
+    const leanCount =
+
+      predictions.filter(
+
+        item =>
+
+          item.prediction.key ===
+
+          "lean"
 
       ).length;
 
@@ -5644,6 +5186,22 @@ const NRFI = {
 
           <span>
 
+            Lean NRFI
+
+          </span>
+
+          <strong>
+
+            ${leanCount}
+
+          </strong>
+
+        </div>
+
+        <div>
+
+          <span>
+
             YRFI Alerts
 
           </span>
@@ -5662,23 +5220,31 @@ const NRFI = {
 
         <strong>
 
-          POPS NRFI Model 2.0
+          POPS NRFI Model 3.0
 
         </strong>
 
         <p>
 
-          Games are ranked using first-inning
+          Starting pitching now controls 60% of the
 
-          pitcher performance when available,
+          base score. Team offense, top-four lineup
 
-          season pitching, team early-scoring
+          danger, recent hitter form, confirmed
 
-          tendencies, top-four lineup danger,
+          lineups and first-inning tendencies make
 
-          recent hitter form and lineup
+          up the remaining score.
 
-          confirmation.
+        </p>
+
+        <p>
+
+          Missing first-inning data lowers confidence
+
+          but does not automatically lower a strong
+
+          pitching matchup into a YRFI alert.
 
         </p>
 
@@ -5696,9 +5262,9 @@ const NRFI = {
 
         <p>
 
-          Weather is displayed separately and
+          Weather is displayed separately and is not
 
-          is not included in NRFI scores.
+          included in NRFI scores.
 
         </p>
 
@@ -5710,13 +5276,7 @@ const NRFI = {
 
           .map(
 
-            (
-
-              result,
-
-              index
-
-            ) =>
+            (result, index) =>
 
               this.renderGameCard(
 
