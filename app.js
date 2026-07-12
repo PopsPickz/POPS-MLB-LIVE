@@ -2149,6 +2149,13 @@ function addHRPick(
       teamName ||
       batter.team ||
       "Team N/A",
+
+    gamePk:
+      Number(
+        game.gamePk ||
+        game.id ||
+        0
+      ),  
     
     position: batter.position,
 
