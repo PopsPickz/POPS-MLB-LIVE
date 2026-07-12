@@ -2019,8 +2019,11 @@ function addHRPick(
     batter.recentForm || emptyRecentForm();
 
   const statcast =
-    batter.statcast || emptyStatcast();
-
+  mergeStatcastWithFallback(
+    batter.name,
+    batter.statcast || emptyStatcast()
+  );
+  
   const hrLast10 =
     Number(recentForm.homeRuns || 0);
 
