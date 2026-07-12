@@ -2605,6 +2605,7 @@ window.hrPicks = hrPicks;
   }
 }
 /*
+/*
 =========================================================
 HIT PICKS
 =========================================================
@@ -2633,6 +2634,14 @@ function addHitPick(
   const hitStreak =
     Number(batter.hitStreak || 0);
 
+  /*
+  A player must have at least one of these:
+
+  - 2+ game hit streak
+  - Previous HR against pitcher
+  - Previous hit against pitcher
+  */
+
   if (
     hitStreak < 2 &&
     bvpHR <= 0 &&
@@ -2646,81 +2655,223 @@ function addHitPick(
     typeof Formula.getHitScore !==
       "function"
   ) {
+    console.warn(
+      "Formula.getHitScore is unavailable."
+    );
+
     return;
   }
 
-  const score = Formula.getHitScore(
-    batter.name,
-    batter.lineupSpot,
-    hitStreak,
-    bvpHR,
-    {
-      ...stats,
-      recentForm:
-        batter.recentForm || {}
-    }
-  );
+  const score =
+    Formula.getHitScore(
+      batter.name,
+      batter.lineupSpot,
+      hitStreak,
+      bvpHR,
+      {
+        ...stats,
 
- hitPicks.push({
-  id: getBatterId(batter),
+        recentForm:
+          batter.recentForm || {}
+      }
+    );
 
-  player: batter.name,
+  hitPicks.push({
+    id:
+      getBatterId(batter),
 
-  team:
-    teamName ||
-    batter.team ||
-    "Team N/A",
+    player:
+      batter.name,
 
-  gamePk:
-    Number(
-      game.gamePk ||
-      game.id ||
-      0
-    ),
+    team:
+      teamName ||
+      batter.team ||
+      "Team N/A",
 
-  game:
-    `${game.awayTeam} vs ${game.homeTeam}`,
+    gamePk:
+      Number(
+        game.gamePk ||
+        game.id ||
+        0
+      ),
 
-  gameTime:
-    formatTime(game.date),
+    game:
+      `${game.awayTeam} vs ${game.homeTeam}`,
 
-  pitcher:
-    normalizePitcherName(
-      pitcherName
-    ),
+    gameTime:
+      formatTime(game.date),
+
+    pitcher:
+      normalizePitcherName(
+        pitcherName
+      ),
 
     lineupSpot:
       batter.lineupSpot,
 
     confirmed:
-      batter.confirmed,
+      Boolean(batter.confirmed),
 
     hitStreak,
     bvpHR,
     bvpStats,
-    score
+
+    score:
+      Number(score || 0)
   });
 }
 
+/*
+=========================================================
+ADD HIT PICK TO GAMBLY
+=========================================================
+*/
+
+function addHitPickToGambly(
+  index,
+  button
+) {
+  const pick =
+    hitPicks[index];
+
+  if (!pick) {
+    console.warn(
+      "POPS Gambly could not find this Hit Pick."
+    );
+
+    if (button) {
+      button.textContent =
+        "⚠️ Pick unavailable";
+    }
+
+    return;
+  }
+
+  if (
+    typeof Gambly === "undefined" ||
+    typeof Gambly.addPick !== "function"
+  ) {
+    console.warn(
+      "Gambly module is unavailable."
+    );
+
+    if (button) {
+      button.textContent =
+        "⚠️ Gambly unavailable";
+    }
+
+    return;
+  }
+
+  const result =
+    Gambly.addPick({
+      playerId:
+        pick.id,
+
+      playerName:
+        pick.player,
+
+      team:
+        pick.team,
+
+      market:
+        "Player to Record a Hit",
+
+      selection:
+        `${pick.player} to record a hit`,
+
+      game:
+        pick.game,
+
+      gamePk:
+        pick.gamePk,
+
+      source:
+        "POPS Hit Pickz"
+    });
+
+  if (!button) {
+    return;
+  }
+
+  if (result?.success) {
+    button.textContent =
+      "✅ Added to Gambly";
+
+    button.classList.add(
+      "gambly-added"
+    );
+
+    return;
+  }
+
+  if (
+    result?.reason === "duplicate"
+  ) {
+    button.textContent =
+      "✅ Already Added";
+
+    button.classList.add(
+      "gambly-added"
+    );
+
+    return;
+  }
+
+  if (
+    result?.reason ===
+    "maximum-reached"
+  ) {
+    button.textContent =
+      "⚠️ Gambly Slip Full";
+
+    return;
+  }
+
+  if (
+    result?.reason ===
+    "invalid-pick"
+  ) {
+    button.textContent =
+      "⚠️ Invalid Pick";
+
+    return;
+  }
+
+  button.textContent =
+    "⚠️ Could Not Add";
+}
+
+/*
+=========================================================
+LOAD HIT PICKS
+=========================================================
+*/
+
 async function loadHitPicks() {
-  if (!hitPicksBox) return;
+  if (!hitPicksBox) {
+    return;
+  }
 
   hitPicksBox.innerHTML =
     "<p>Loading Hit Pickz...</p>";
 
   hitPicks = [];
 
-  for (const game of todayData.games) {
+  for (
+    const game of
+    todayData.games || []
+  ) {
     for (
       const batter of
       game.awayLineup || []
     ) {
       addHitPick(
-       game,
-       batter,
-       game.homePitcher,
-       game.awayTeam
-  );
+        game,
+        batter,
+        game.homePitcher,
+        game.awayTeam
+      );
     }
 
     for (
@@ -2728,13 +2879,17 @@ async function loadHitPicks() {
       game.homeLineup || []
     ) {
       addHitPick(
-      game,
-      batter,
-      game.awayPitcher,
-      game.homeTeam
-);
+        game,
+        batter,
+        game.awayPitcher,
+        game.homeTeam
+      );
     }
   }
+
+  /*
+  Remove duplicate players.
+  */
 
   const uniquePlayers = {};
 
@@ -2744,43 +2899,68 @@ async function loadHitPicks() {
 
     if (
       !uniquePlayers[key] ||
-      pick.score >
-        uniquePlayers[key].score
+      Number(pick.score || 0) >
+        Number(
+          uniquePlayers[key].score || 0
+        )
     ) {
-      uniquePlayers[key] = pick;
+      uniquePlayers[key] =
+        pick;
     }
   }
 
+  /*
+  Rank players by:
+
+  1. Hit streak
+  2. Previous HR against pitcher
+  3. Previous hits against pitcher
+  4. POPS Hit Score
+  */
+
   const rankedHitCandidates =
-  Object.values(uniquePlayers)
-    .sort(
-      (a, b) =>
-        Number(b.hitStreak || 0) -
-          Number(a.hitStreak || 0) ||
-
-        Number(b.bvpHR || 0) -
-          Number(a.bvpHR || 0) ||
-
-        Number(
-          b.bvpStats?.hits || 0
-        ) -
+    Object.values(uniquePlayers)
+      .sort(
+        (a, b) =>
           Number(
-            a.bvpStats?.hits || 0
-          ) ||
+            b.hitStreak || 0
+          ) -
+            Number(
+              a.hitStreak || 0
+            ) ||
 
-        Number(b.score || 0) -
-          Number(a.score || 0)
+          Number(
+            b.bvpHR || 0
+          ) -
+            Number(
+              a.bvpHR || 0
+            ) ||
+
+          Number(
+            b.bvpStats?.hits || 0
+          ) -
+            Number(
+              a.bvpStats?.hits || 0
+            ) ||
+
+          Number(
+            b.score || 0
+          ) -
+            Number(
+              a.score || 0
+            )
+      );
+
+  hitPicks =
+    DailyPickLock.getLockedPicks(
+      "hit",
+      rankedHitCandidates,
+      20
     );
 
-hitPicks =
-  DailyPickLock.getLockedPicks(
-    "hit",
-    rankedHitCandidates,
-    20
-  );
+  window.hitPicks =
+    hitPicks;
 
-window.hitPicks = hitPicks;
-  
   if (!hitPicks.length) {
     hitPicksBox.innerHTML = `
       <div class="pick-card">
@@ -2798,74 +2978,110 @@ window.hitPicks = hitPicks;
     return;
   }
 
-  hitPicksBox.innerHTML = hitPicks
-    .slice(0, 20)
-    .map(
-      (pick, index) => `
-        <div class="pick-card">
-          <span class="rank-badge">
-            #${index + 1}
-          </span>
+  hitPicksBox.innerHTML =
+    hitPicks
+      .slice(0, 20)
+      .map(
+        (pick, index) => `
+          <div class="pick-card">
 
-          <h3>
-            ${pick.player} -
-            ${pick.team}
-          </h3>
-
-          <p>
-            🔥 Hit Streak:
-            <span class="score">
-              ${pick.hitStreak} games
+            <span class="rank-badge">
+              #${index + 1}
             </span>
-          </p>
 
-          <p>
-            💣 Previous HR vs Pitcher:
-            <span class="score">
-              ${pick.bvpHR}
-            </span>
-          </p>
+            <h3>
+              ${pick.player} -
+              ${pick.team}
+            </h3>
 
-          <p>
-            📊 Hit Score:
-            <span class="score">
-              ${pick.score}/100
-            </span>
-          </p>
+            <p>
+              <strong>Game:</strong>
+              ${pick.game}
+            </p>
 
-          <p>
-            ⚾ vs ${pick.pitcher}<br>
+            <p>
+              <strong>Date/Time:</strong>
+              ${pick.gameTime}
+            </p>
 
-            <span class="small">
-              Previous vs Pitcher:
-              ${pick.bvpStats?.hits || 0}/${
-                pick.bvpStats?.atBats || 0
-              },
-              AVG ${
-                pick.bvpStats?.avg || ".000"
-              },
-              HR ${
-                pick.bvpStats?.homeRuns || 0
+            <p>
+              🔥 Hit Streak:
+
+              <span class="score">
+                ${pick.hitStreak} games
+              </span>
+            </p>
+
+            <p>
+              💣 Previous HR vs Pitcher:
+
+              <span class="score">
+                ${pick.bvpHR}
+              </span>
+            </p>
+
+            <p>
+              📊 Hit Score:
+
+              <span class="score">
+                ${pick.score}/100
+              </span>
+            </p>
+
+            <p>
+              ⚾ vs ${pick.pitcher}
+
+              <br />
+
+              <span class="small">
+                Previous vs Pitcher:
+
+                ${
+                  pick.bvpStats?.hits || 0
+                }/${
+                  pick.bvpStats?.atBats || 0
+                },
+
+                AVG ${
+                  pick.bvpStats?.avg ||
+                  ".000"
+                },
+
+                HR ${
+                  pick.bvpStats?.homeRuns ||
+                  0
+                }
+              </span>
+            </p>
+
+            <p>
+              📍 Batting spot:
+              ${pick.lineupSpot}
+            </p>
+
+            <p>
+              ${
+                pick.confirmed
+                  ? "✅ Confirmed lineup"
+                  : "🟡 Projected lineup"
               }
-            </span>
-          </p>
+            </p>
 
-          <p>
-            📍 Batting spot:
-            ${pick.lineupSpot}
-          </p>
+            <button
+              type="button"
+              class="gambly-add-button"
+              onclick="addHitPickToGambly(
+                ${index},
+                this
+              )"
+            >
+              🤖 Add to Gambly
+            </button>
 
-          <p>
-            ${
-              pick.confirmed
-                ? "✅ Confirmed lineup"
-                : "🟡 Projected lineup"
-            }
-          </p>
-        </div>
-      `
-    )
-    .join("");
+          </div>
+        `
+      )
+      .join("");
 }
 
 /*
