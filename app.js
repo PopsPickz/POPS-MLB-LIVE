@@ -14,6 +14,459 @@ let hitPicks = [];
 
 /*
 =========================================================
+POPS DAILY PICK LOCK
+=========================================================
+
+Locks the displayed Top 20 HR Pickz and Hit Pickz for the
+entire day.
+
+The list keeps the same players and order when:
+
+- Stats refresh
+- Starting pitchers change
+- The page reloads
+- Scores recalculate
+- Projected lineups change
+
+A player is removed only when that player's team has a
+confirmed lineup and the player is not in that lineup.
+=========================================================
+*/
+
+const DailyPickLock = {
+  limits: {
+    hr: 20,
+    hit: 20
+  },
+
+  normalizeName(value = "") {
+    return String(value)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  },
+
+  normalizeTeam(value = "") {
+    return String(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  },
+
+  getDate() {
+    if (
+      typeof API !== "undefined" &&
+      typeof API.today === "function"
+    ) {
+      return API.today();
+    }
+
+    const now = new Date();
+
+    const year = now.getFullYear();
+
+    const month = String(
+      now.getMonth() + 1
+    ).padStart(2, "0");
+
+    const day = String(
+      now.getDate()
+    ).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  },
+
+  getStorageKey(type) {
+    return (
+      `pops-${type}-picks-lock-` +
+      this.getDate()
+    );
+  },
+
+  getPickKey(pick = {}) {
+    const playerId = Number(
+      pick.id ||
+      pick.playerId ||
+      0
+    );
+
+    if (playerId > 0) {
+      return `id-${playerId}`;
+    }
+
+    return [
+      this.normalizeName(
+        pick.player ||
+        pick.name
+      ),
+
+      this.normalizeTeam(
+        pick.team
+      )
+    ].join("-");
+  },
+
+  getLineupPlayerKey(player = {}) {
+    const playerId = Number(
+      player.id ||
+      player.playerId ||
+      player.personId ||
+      player.batterId ||
+      player?.person?.id ||
+      0
+    );
+
+    if (playerId > 0) {
+      return `id-${playerId}`;
+    }
+
+    return [
+      this.normalizeName(
+        player.player ||
+        player.name
+      ),
+
+      this.normalizeTeam(
+        player.team
+      )
+    ].join("-");
+  },
+
+  load(type) {
+    try {
+      const savedValue =
+        localStorage.getItem(
+          this.getStorageKey(type)
+        );
+
+      if (!savedValue) {
+        return [];
+      }
+
+      const parsed =
+        JSON.parse(savedValue);
+
+      return Array.isArray(parsed)
+        ? parsed
+        : [];
+    } catch (error) {
+      console.warn(
+        `POPS could not load locked ${type} picks:`,
+        error
+      );
+
+      return [];
+    }
+  },
+
+  save(type, picks = []) {
+    try {
+      localStorage.setItem(
+        this.getStorageKey(type),
+        JSON.stringify(picks)
+      );
+    } catch (error) {
+      console.warn(
+        `POPS could not save locked ${type} picks:`,
+        error
+      );
+    }
+  },
+
+  clear(type) {
+    try {
+      localStorage.removeItem(
+        this.getStorageKey(type)
+      );
+    } catch (error) {
+      console.warn(
+        `POPS could not clear ${type} pick lock:`,
+        error
+      );
+    }
+  },
+
+  isLineupConfirmed(lineup = []) {
+    if (!Array.isArray(lineup)) {
+      return false;
+    }
+
+    if (lineup.length < 7) {
+      return false;
+    }
+
+    const confirmedPlayers =
+      lineup.filter(
+        player =>
+          player?.confirmed === true
+      );
+
+    return (
+      confirmedPlayers.length >= 7
+    );
+  },
+
+  findTeamLineup(teamName = "") {
+    const normalizedTeam =
+      this.normalizeTeam(teamName);
+
+    for (
+      const game of
+      todayData?.games || []
+    ) {
+      const awayTeam =
+        this.normalizeTeam(
+          game.awayTeam
+        );
+
+      const homeTeam =
+        this.normalizeTeam(
+          game.homeTeam
+        );
+
+      if (awayTeam === normalizedTeam) {
+        return {
+          lineup:
+            Array.isArray(game.awayLineup)
+              ? game.awayLineup
+              : [],
+
+          confirmed:
+            this.isLineupConfirmed(
+              game.awayLineup || []
+            )
+        };
+      }
+
+      if (homeTeam === normalizedTeam) {
+        return {
+          lineup:
+            Array.isArray(game.homeLineup)
+              ? game.homeLineup
+              : [],
+
+          confirmed:
+            this.isLineupConfirmed(
+              game.homeLineup || []
+            )
+        };
+      }
+    }
+
+    return {
+      lineup: [],
+      confirmed: false
+    };
+  },
+
+  isConfirmedInactive(pick = {}) {
+    const teamLineup =
+      this.findTeamLineup(
+        pick.team
+      );
+
+    /*
+    Never remove a player while the team's lineup
+    is still projected or incomplete.
+    */
+
+    if (!teamLineup.confirmed) {
+      return false;
+    }
+
+    const pickKey =
+      this.getPickKey(pick);
+
+    const appearsInLineup =
+      teamLineup.lineup.some(
+        player =>
+          this.getLineupPlayerKey(
+            player
+          ) === pickKey
+      );
+
+    return !appearsInLineup;
+  },
+
+  removeDuplicates(picks = []) {
+    const uniquePicks = [];
+    const usedKeys = new Set();
+
+    for (const pick of picks) {
+      if (!pick) continue;
+
+      const key =
+        this.getPickKey(pick);
+
+      if (!key || usedKeys.has(key)) {
+        continue;
+      }
+
+      usedKeys.add(key);
+      uniquePicks.push(pick);
+    }
+
+    return uniquePicks;
+  },
+
+  getLockedPicks(
+    type,
+    candidates = [],
+    requestedLimit = 20
+  ) {
+    const limit =
+      Number(
+        requestedLimit ||
+        this.limits[type] ||
+        20
+      );
+
+    const candidatePool =
+      this.removeDuplicates(
+        candidates
+      );
+
+    const candidateMap =
+      new Map();
+
+    for (const candidate of candidatePool) {
+      candidateMap.set(
+        this.getPickKey(candidate),
+        candidate
+      );
+    }
+
+    const savedPicks =
+      this.removeDuplicates(
+        this.load(type)
+      );
+
+    /*
+    First generation of the day:
+    lock the current ranked Top 20.
+    */
+
+    if (!savedPicks.length) {
+      const firstLockedList =
+        candidatePool.slice(
+          0,
+          limit
+        );
+
+      this.save(
+        type,
+        firstLockedList
+      );
+
+      console.log(
+        `🔒 POPS locked today's Top ${firstLockedList.length} ${type} picks.`
+      );
+
+      return firstLockedList;
+    }
+
+    const lockedPicks = [];
+    const usedKeys = new Set();
+
+    for (const savedPick of savedPicks) {
+      if (lockedPicks.length >= limit) {
+        break;
+      }
+
+      const key =
+        this.getPickKey(savedPick);
+
+      if (!key || usedKeys.has(key)) {
+        continue;
+      }
+
+      /*
+      Remove the player only when their team has a
+      confirmed lineup and they are not in it.
+      */
+
+      if (
+        this.isConfirmedInactive(
+          savedPick
+        )
+      ) {
+        console.log(
+          `🚫 POPS removed inactive player: ${savedPick.player}`
+        );
+
+        continue;
+      }
+
+      /*
+      Update the player's current stats without changing
+      their position in the locked rankings.
+      */
+
+      const currentCandidate =
+        candidateMap.get(key);
+
+      const updatedPick =
+        currentCandidate
+          ? {
+              ...savedPick,
+              ...currentCandidate
+            }
+          : savedPick;
+
+      lockedPicks.push(
+        updatedPick
+      );
+
+      usedKeys.add(key);
+    }
+
+    /*
+    Replace confirmed inactive players with the next
+    highest-ranked eligible candidate.
+    */
+
+    for (const candidate of candidatePool) {
+      if (lockedPicks.length >= limit) {
+        break;
+      }
+
+      const key =
+        this.getPickKey(candidate);
+
+      if (!key || usedKeys.has(key)) {
+        continue;
+      }
+
+      if (
+        this.isConfirmedInactive(
+          candidate
+        )
+      ) {
+        continue;
+      }
+
+      lockedPicks.push(candidate);
+      usedKeys.add(key);
+    }
+
+    this.save(
+      type,
+      lockedPicks
+    );
+
+    return lockedPicks;
+  }
+};
+
+window.DailyPickLock =
+  DailyPickLock;
+
+/*
+=========================================================
 POPS PICKZ 11.0 REFRESH SETTINGS
 =========================================================
 */
