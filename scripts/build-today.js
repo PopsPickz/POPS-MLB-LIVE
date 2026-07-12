@@ -1701,28 +1701,29 @@ async function enrichBatter(
   bvp,
   statcast
 ] = await Promise.all([
-    getPlayerInfo(playerId),
+  getPlayerInfo(playerId),
 
-    batter.hitting
-      ? Promise.resolve(
-          batter.hitting
-        )
-      : getBatterStats(playerId),
+  batter.hitting
+    ? Promise.resolve(
+        batter.hitting
+      )
+    : getBatterStats(playerId),
 
-    getHitStreak(playerId),
+  getHitStreak(playerId),
 
-    getRecentForm(playerId),
+  getRecentForm(playerId),
 
-    getBvPStats(
-  playerId,
-  opposingPitcherId
-),
+  getBvPStats(
+    playerId,
+    opposingPitcherId
+  ),
 
-getPlayerStatcast(
-  playerId
-)
-  ]);
-
+  getPlayerStatcast(
+    playerId
+  )
+    
+]);
+  
   return {
     id:
       playerId,
@@ -2100,34 +2101,48 @@ async function main() {
       );
 
     const battersWithRecentForm =
-  todayData.games.reduce(
-    (total, game) => {
-      ...
-    },
-    0
-  );
+      todayData.games.reduce(
+        (total, game) => {
+          const allBatters = [
+            ...game.awayLineup,
+            ...game.homeLineup
+          ];
 
-const battersWithStatcast =
-  todayData.games.reduce(
-    (total, game) => {
-      const allBatters = [
-        ...game.awayLineup,
-        ...game.homeLineup
-      ];
+          return (
+            total +
+            allBatters.filter(
+              batter =>
+                number(
+                  batter?.recentForm
+                    ?.games
+                ) > 0
+            ).length
+          );
+        },
+        0
+      );
 
-      return (
-        total +
-        allBatters.filter(
-          batter =>
-            batter?.statcast
-              ?.hasStatcastData === true
-        ).length;
-    },
-    0
-  );
+    const battersWithStatcast =
+      todayData.games.reduce(
+        (total, game) => {
+          const allBatters = [
+            ...game.awayLineup,
+            ...game.homeLineup
+          ];
 
-console.log(
-  
+          return (
+            total +
+            allBatters.filter(
+              batter =>
+                batter?.statcast
+                  ?.hasStatcastData === true
+            ).length
+          );
+        },
+        0
+      );
+
+    console.log(
       `✅ Finished: ${todayData.games.length} games and ${totalBatters} batters loaded.`
     );
 
@@ -2135,10 +2150,9 @@ console.log(
       `🔥 Recent form loaded for ${battersWithRecentForm}/${totalBatters} batters.`
     );
 
-   console.log(
-  `🚀 Statcast loaded for ${battersWithStatcast}/${totalBatters} batters.`
-);
-    
+    console.log(
+      `🚀 Statcast loaded for ${battersWithStatcast}/${totalBatters} batters.`
+    );
   } catch (error) {
     console.error(
       "❌ POPS data build failed:",
