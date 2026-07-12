@@ -94,6 +94,14 @@
         <span>Weather</span>
       </button>
 
+      <button
+        type="button"
+        onclick="openLivePlaysTab(this)"
+      >
+        <span class="tab-icon">🔴</span>
+        <span>Live Plays</span>
+      </button>
+
     </nav>
 
     <!-- Hidden but required by app.js -->
@@ -248,6 +256,36 @@
 
     </section>
 
+    <!-- =====================================================
+    LIVE PLAYS
+    ====================================================== -->
+
+    <section
+      class="card tab-section live-plays-section"
+      id="liveplays"
+    >
+
+      <div class="live-plays-section-header">
+
+        <h2>🔴 POPS Live Plays</h2>
+
+        <p>
+          Automatically tracks hits and home runs by
+          players listed in today's POPS Pickz.
+        </p>
+
+      </div>
+
+      <div id="livePlaysBox">
+
+        <p>
+          Waiting for today's MLB games to begin...
+        </p>
+
+      </div>
+
+    </section>
+
   </div>
 
   <!-- =====================================================
@@ -294,9 +332,13 @@
     async function openWeatherTab(button) {
       showTab("weather", button);
 
-      if (typeof showWeather !== "function") {
+      if (
+        typeof showWeather !== "function"
+      ) {
         const box =
-          document.getElementById("weatherBox");
+          document.getElementById(
+            "weatherBox"
+          );
 
         if (box) {
           box.innerHTML = `
@@ -350,11 +392,19 @@
   <script src="parlays.js?v=2"></script>
   <script src="nrfi.js?v=5"></script>
   <script src="weather.js?v=11"></script>
+
   <!-- =====================================================
   MAIN APP
   ====================================================== -->
 
   <script src="app.js?v=8"></script>
+
+  <!-- =====================================================
+  LIVE PLAYS
+  Must load after app.js
+  ====================================================== -->
+
+  <script src="liveplays.js?v=1"></script>
 
 </body>
 </html>
