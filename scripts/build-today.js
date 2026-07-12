@@ -1814,7 +1814,7 @@ async function buildTeamLineup({
 
   return await mapWithConcurrency(
     lineup,
-    5,
+    3,
     batter =>
       enrichBatter(
         batter,
