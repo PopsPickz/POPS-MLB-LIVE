@@ -2100,28 +2100,34 @@ async function main() {
       );
 
     const battersWithRecentForm =
-      todayData.games.reduce(
-        (total, game) => {
-          const allBatters = [
-            ...game.awayLineup,
-            ...game.homeLineup
-          ];
+  todayData.games.reduce(
+    (total, game) => {
+      ...
+    },
+    0
+  );
 
-          return (
-            total +
-            allBatters.filter(
-              batter =>
-                number(
-                  batter?.recentForm
-                    ?.games
-                ) > 0
-            ).length
-          );
-        },
-        0
-      );
+const battersWithStatcast =
+  todayData.games.reduce(
+    (total, game) => {
+      const allBatters = [
+        ...game.awayLineup,
+        ...game.homeLineup
+      ];
 
-    console.log(
+      return (
+        total +
+        allBatters.filter(
+          batter =>
+            batter?.statcast
+              ?.hasStatcastData === true
+        ).length;
+    },
+    0
+  );
+
+console.log(
+  
       `✅ Finished: ${todayData.games.length} games and ${totalBatters} batters loaded.`
     );
 
