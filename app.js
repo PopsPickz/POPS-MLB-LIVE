@@ -2666,20 +2666,36 @@ async function loadHitPicks() {
     }
   }
 
-  hitPicks =
-    Object.values(uniquePlayers);
+  const rankedHitCandidates =
+  Object.values(uniquePlayers)
+    .sort(
+      (a, b) =>
+        Number(b.hitStreak || 0) -
+          Number(a.hitStreak || 0) ||
 
-  hitPicks.sort(
-    (a, b) =>
-      b.hitStreak - a.hitStreak ||
-      b.bvpHR - a.bvpHR ||
-      Number(b.bvpStats?.hits || 0) -
-        Number(a.bvpStats?.hits || 0) ||
-      b.score - a.score
+        Number(b.bvpHR || 0) -
+          Number(a.bvpHR || 0) ||
+
+        Number(
+          b.bvpStats?.hits || 0
+        ) -
+          Number(
+            a.bvpStats?.hits || 0
+          ) ||
+
+        Number(b.score || 0) -
+          Number(a.score || 0)
+    );
+
+hitPicks =
+  DailyPickLock.getLockedPicks(
+    "hit",
+    rankedHitCandidates,
+    20
   );
 
-  window.hitPicks = hitPicks;
-
+window.hitPicks = hitPicks;
+  
   if (!hitPicks.length) {
     hitPicksBox.innerHTML = `
       <div class="pick-card">
