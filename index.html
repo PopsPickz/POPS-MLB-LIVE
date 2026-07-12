@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
 
@@ -86,6 +87,16 @@
         <span>Moneyline</span>
       </button>
 
+      <!-- Gambly Slip tab -->
+
+      <button
+        type="button"
+        onclick="showTab('gambly', this)"
+      >
+        <span class="tab-icon">🤖</span>
+        <span>Gambly Slip</span>
+      </button>
+
       <button
         type="button"
         onclick="openWeatherTab(this)"
@@ -104,7 +115,10 @@
 
     </nav>
 
-    <!-- Hidden but required by app.js -->
+    <!-- =====================================================
+    HIDDEN GAMES BOX
+    Required by app.js
+    ====================================================== -->
 
     <div
       id="gamesBox"
@@ -224,6 +238,21 @@
     </section>
 
     <!-- =====================================================
+    GAMBLY SLIP
+    ====================================================== -->
+
+    <section
+      class="card tab-section gambly-section"
+      id="gambly"
+    >
+
+      <div id="gamblyBox">
+        <p>Loading Gambly slip...</p>
+      </div>
+
+    </section>
+
+    <!-- =====================================================
     WEATHER CENTER
     DISPLAY ONLY — DOES NOT AFFECT PREDICTIONS
     ====================================================== -->
@@ -257,32 +286,36 @@
     </section>
 
     <!-- =====================================================
-LIVE PLAYS
-====================================================== -->
+    LIVE PLAYS
+    ====================================================== -->
 
-<section
-  class="card tab-section live-plays-section"
-  id="liveplays"
->
+    <section
+      class="card tab-section live-plays-section"
+      id="liveplays"
+    >
 
-  <div class="live-plays-section-header">
+      <div class="live-plays-section-header">
 
-    <h2>🔴 POPS Live Plays</h2>
+        <h2>🔴 POPS Live Plays</h2>
 
-    <p>
-      Automatically tracks hits and home runs by players
-      listed in today's displayed Top 20 POPS Pickz.
-    </p>
+        <p>
+          Automatically tracks hits and home runs by players
+          listed in today's displayed Top 20 POPS Pickz.
+        </p>
+
+      </div>
+
+      <div id="livePlaysBox">
+
+        <p>
+          Waiting for today's MLB games to begin...
+        </p>
+
+      </div>
+
+    </section>
 
   </div>
-
-  <div id="livePlaysBox">
-    <p>
-      Waiting for today's MLB games to begin...
-    </p>
-  </div>
-
-</section>
 
   <!-- =====================================================
   TAB NAVIGATION
@@ -325,6 +358,12 @@ LIVE PLAYS
       });
     }
 
+    /*
+    =======================================================
+    OPEN WEATHER TAB
+    =======================================================
+    */
+
     async function openWeatherTab(button) {
       showTab("weather", button);
 
@@ -354,6 +393,23 @@ LIVE PLAYS
 
       await showWeather();
     }
+
+    /*
+    =======================================================
+    OPEN LIVE PLAYS TAB
+    =======================================================
+    */
+
+    function openLivePlaysTab(button) {
+      showTab("liveplays", button);
+
+      if (
+        typeof LivePlays !== "undefined" &&
+        typeof LivePlays.render === "function"
+      ) {
+        LivePlays.render();
+      }
+    }
   </script>
 
   <!-- =====================================================
@@ -376,32 +432,35 @@ LIVE PLAYS
   <script src="formula.js"></script>
 
   <!-- =====================================================
-MODULES
-====================================================== -->
+  MODULES
+  ====================================================== -->
 
-<script src="moneyline.js"></script>
+  <script src="moneyline.js"></script>
 
-<!-- homerun.js disabled because app.js builds HR Pickz -->
-<!-- <script src="homerun.js"></script> -->
+  <!-- homerun.js disabled because app.js builds HR Pickz -->
+  <!-- <script src="homerun.js"></script> -->
 
-<script src="pitchers.js"></script>
-<script src="parlays.js?v=2"></script>
-<script src="nrfi.js?v=5"></script>
-<script src="weather.js?v=11"></script>
-<script src="gambly.js?v=1"></script>
+  <script src="pitchers.js"></script>
+  <script src="parlays.js?v=2"></script>
+  <script src="nrfi.js?v=5"></script>
+  <script src="weather.js?v=11"></script>
 
-<!-- =====================================================
-MAIN APP
-====================================================== -->
+  <!-- Gambly must load before app.js -->
 
-<script src="app.js?v=9"></script>
+  <script src="gambly.js?v=1"></script>
 
-<!-- =====================================================
-LIVE PLAYS
-Must load after app.js
-====================================================== -->
+  <!-- =====================================================
+  MAIN APP
+  ====================================================== -->
 
-<script src="liveplays.js?v=3"></script>
+  <script src="app.js?v=9"></script>
+
+  <!-- =====================================================
+  LIVE PLAYS
+  Must load after app.js
+  ====================================================== -->
+
+  <script src="liveplays.js?v=3"></script>
 
 </body>
 </html>
