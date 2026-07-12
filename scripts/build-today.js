@@ -4,7 +4,11 @@ const path = require("path");
 const MLB_BASE = "https://statsapi.mlb.com/api/v1";
 const MLB_LIVE_BASE = "https://statsapi.mlb.com/api/v1.1";
 
+const SAVANT_BASE =
+  "https://baseballsavant.mlb.com/statcast_search/csv";
+
 const REQUEST_DELAY_MS = 75;
+const STATCAST_REQUEST_DELAY_MS = 125;
 
 /*
 =========================================================
@@ -20,7 +24,8 @@ const cache = {
   hitStreak: new Map(),
   recentForm: new Map(),
   bvp: new Map(),
-  roster: new Map()
+  roster: new Map(),
+  statcast: new Map()
 };
 
 /*
@@ -60,8 +65,27 @@ function sleep(ms) {
 }
 
 function number(value) {
+  const parsed = Number(
+    String(value ?? "")
+      .replace("%", "")
+      .trim()
+  );
+
+  return Number.isFinite(parsed)
+    ? parsed
+    : 0;
+}
+
+function round(value, places = 1) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
+
+  if (!Number.isFinite(parsed)) {
+    return 0;
+  }
+
+  return Number(
+    parsed.toFixed(places)
+  );
 }
 
 function inningsToNumber(value) {
@@ -111,6 +135,193 @@ async function safeFetch(url, fallback = null) {
     console.warn("POPS request warning:", error.message);
     return fallback;
   }
+}
+
+/*
+=========================================================
+CSV NETWORK HELPERS
+=========================================================
+*/
+
+async function fetchText(
+  url,
+  attempts = 3
+) {
+  for (
+    let attempt = 1;
+    attempt <= attempts;
+    attempt++
+  ) {
+    try {
+      await sleep(
+        STATCAST_REQUEST_DELAY_MS
+      );
+
+      const response =
+        await fetch(url, {
+          headers: {
+            "User-Agent":
+              "POPS-Pickz-MLB",
+
+            Accept:
+              "text/csv,text/plain,*/*"
+          }
+        });
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}: ${url}`
+        );
+      }
+
+      return await response.text();
+    } catch (error) {
+      if (attempt === attempts) {
+        throw error;
+      }
+
+      console.warn(
+        `Statcast request failed. Retrying ${attempt}/${attempts}:`,
+        error.message
+      );
+
+      await sleep(
+        500 * attempt
+      );
+    }
+  }
+
+  return "";
+}
+
+function parseCSV(text = "") {
+  if (!text.trim()) {
+    return [];
+  }
+
+  const rows = [];
+
+  let currentCell = "";
+  let currentRow = [];
+  let insideQuotes = false;
+
+  for (
+    let index = 0;
+    index < text.length;
+    index++
+  ) {
+    const character =
+      text[index];
+
+    const nextCharacter =
+      text[index + 1];
+
+    if (
+      character === '"' &&
+      insideQuotes &&
+      nextCharacter === '"'
+    ) {
+      currentCell += '"';
+      index++;
+      continue;
+    }
+
+    if (character === '"') {
+      insideQuotes =
+        !insideQuotes;
+
+      continue;
+    }
+
+    if (
+      character === "," &&
+      !insideQuotes
+    ) {
+      currentRow.push(
+        currentCell
+      );
+
+      currentCell = "";
+      continue;
+    }
+
+    if (
+      (
+        character === "\n" ||
+        character === "\r"
+      ) &&
+      !insideQuotes
+    ) {
+      if (
+        character === "\r" &&
+        nextCharacter === "\n"
+      ) {
+        index++;
+      }
+
+      if (
+        currentCell !== "" ||
+        currentRow.length
+      ) {
+        currentRow.push(
+          currentCell
+        );
+
+        rows.push(
+          currentRow
+        );
+
+        currentCell = "";
+        currentRow = [];
+      }
+
+      continue;
+    }
+
+    currentCell += character;
+  }
+
+  if (
+    currentCell !== "" ||
+    currentRow.length
+  ) {
+    currentRow.push(
+      currentCell
+    );
+
+    rows.push(
+      currentRow
+    );
+  }
+
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const headers =
+    rows[0].map(header =>
+      String(header).trim()
+    );
+
+  return rows
+    .slice(1)
+    .filter(values =>
+      values.some(value =>
+        String(value).trim() !== ""
+      )
+    )
+    .map(values => {
+      const object = {};
+
+      headers.forEach(
+        (header, index) => {
+          object[header] =
+            values[index] ?? "";
+        }
+      );
+
+      return object;
+    });
 }
 
 /*
@@ -500,6 +711,405 @@ async function getBatterStats(playerId) {
   cache.batterStats.set(playerId, result);
 
   return result;
+}
+
+/*
+=========================================================
+STATCAST BATTER DATA
+=========================================================
+*/
+
+function emptyStatcast() {
+  return {
+    available: false,
+    hasStatcastData: false,
+    source: "none",
+
+    battedBalls: 0,
+    statcastPA: 0,
+
+    barrelRate: 0,
+    barrelPct: 0,
+
+    hardHitRate: 0,
+    hardHitPct: 0,
+
+    exitVelocity: 0,
+    avgExitVelo: 0,
+    avgExitVelocity: 0,
+
+    launchAngle: 0,
+    avgLaunchAngle: 0,
+
+    sweetSpotRate: 0,
+    sweetSpotPct: 0,
+
+    flyBallRate: 0,
+    flyBallPct: 0,
+
+    pullRate: 0,
+    pullPct: 0
+  };
+}
+
+function buildStatcastUrl(
+  playerId
+) {
+  const season =
+    getCurrentSeason();
+
+  const params =
+    new URLSearchParams();
+
+  params.set("all", "true");
+  params.set("hfGT", "R|");
+  params.set("hfSea", `${season}|`);
+  params.set("player_type", "batter");
+
+  params.set(
+    "game_date_gt",
+    `${season}-03-01`
+  );
+
+  params.set(
+    "game_date_lt",
+    getEasternDate()
+  );
+
+  params.append(
+    "player_lookup[]",
+    String(playerId)
+  );
+
+  params.set("min_pitches", "0");
+  params.set("min_results", "0");
+  params.set("min_pas", "0");
+  params.set("group_by", "name-year");
+  params.set("sort_col", "launch_speed");
+  params.set(
+    "player_event_sort",
+    "h_launch_speed"
+  );
+  params.set("sort_order", "desc");
+  params.set("type", "details");
+
+  return (
+    `${SAVANT_BASE}?` +
+    params.toString()
+  );
+}
+
+function hasLaunchSpeed(
+  row = {}
+) {
+  return (
+    row.launch_speed !== undefined &&
+    row.launch_speed !== null &&
+    row.launch_speed !== "" &&
+    number(row.launch_speed) > 0
+  );
+}
+
+function hasLaunchAngle(
+  row = {}
+) {
+  return (
+    row.launch_angle !== undefined &&
+    row.launch_angle !== null &&
+    row.launch_angle !== "" &&
+    Number.isFinite(
+      Number(row.launch_angle)
+    )
+  );
+}
+
+function isStatcastBarrel(
+  row = {}
+) {
+  const category =
+    number(
+      row.launch_speed_angle
+    );
+
+  if (category === 6) {
+    return true;
+  }
+
+  const exitVelocity =
+    number(
+      row.launch_speed
+    );
+
+  const launchAngle =
+    number(
+      row.launch_angle
+    );
+
+  if (exitVelocity < 98) {
+    return false;
+  }
+
+  const velocityAbove98 =
+    Math.floor(
+      exitVelocity - 98
+    );
+
+  const lowerBound =
+    Math.max(
+      8,
+      26 - velocityAbove98
+    );
+
+  const upperBound =
+    Math.min(
+      50,
+      30 + velocityAbove98
+    );
+
+  return (
+    launchAngle >= lowerBound &&
+    launchAngle <= upperBound
+  );
+}
+
+function calculateStatcast(
+  rows = []
+) {
+  const battedBalls =
+    rows.filter(row =>
+      hasLaunchSpeed(row) &&
+      hasLaunchAngle(row)
+    );
+
+  const total =
+    battedBalls.length;
+
+  if (!total) {
+    return emptyStatcast();
+  }
+
+  let totalExitVelocity = 0;
+  let totalLaunchAngle = 0;
+
+  let barrels = 0;
+  let hardHits = 0;
+  let sweetSpots = 0;
+  let flyBalls = 0;
+  let pulledBalls = 0;
+
+  for (
+    const row of battedBalls
+  ) {
+    const exitVelocity =
+      number(
+        row.launch_speed
+      );
+
+    const launchAngle =
+      number(
+        row.launch_angle
+      );
+
+    totalExitVelocity +=
+      exitVelocity;
+
+    totalLaunchAngle +=
+      launchAngle;
+
+    if (
+      isStatcastBarrel(row)
+    ) {
+      barrels++;
+    }
+
+    if (
+      exitVelocity >= 95
+    ) {
+      hardHits++;
+    }
+
+    if (
+      launchAngle >= 8 &&
+      launchAngle <= 32
+    ) {
+      sweetSpots++;
+    }
+
+    const battedBallType =
+      String(
+        row.bb_type || ""
+      ).toLowerCase();
+
+    if (
+      battedBallType ===
+        "fly_ball" ||
+      (
+        !battedBallType &&
+        launchAngle >= 25 &&
+        launchAngle <= 50
+      )
+    ) {
+      flyBalls++;
+    }
+
+    const direction =
+      String(
+        row.pull ||
+        row.hit_direction ||
+        ""
+      ).toLowerCase();
+
+    if (
+      direction === "pull" ||
+      direction === "pulled"
+    ) {
+      pulledBalls++;
+    }
+  }
+
+  const barrelRate =
+    (barrels / total) * 100;
+
+  const hardHitRate =
+    (hardHits / total) * 100;
+
+  const sweetSpotRate =
+    (sweetSpots / total) * 100;
+
+  const flyBallRate =
+    (flyBalls / total) * 100;
+
+  const pullRate =
+    (pulledBalls / total) * 100;
+
+  const exitVelocity =
+    totalExitVelocity / total;
+
+  const launchAngle =
+    totalLaunchAngle / total;
+
+  return {
+    available: true,
+    hasStatcastData: true,
+    source:
+      "baseball-savant-build",
+
+    battedBalls:
+      total,
+
+    statcastPA:
+      total,
+
+    barrelRate:
+      round(barrelRate),
+
+    barrelPct:
+      round(barrelRate),
+
+    hardHitRate:
+      round(hardHitRate),
+
+    hardHitPct:
+      round(hardHitRate),
+
+    exitVelocity:
+      round(exitVelocity),
+
+    avgExitVelo:
+      round(exitVelocity),
+
+    avgExitVelocity:
+      round(exitVelocity),
+
+    launchAngle:
+      round(launchAngle),
+
+    avgLaunchAngle:
+      round(launchAngle),
+
+    sweetSpotRate:
+      round(sweetSpotRate),
+
+    sweetSpotPct:
+      round(sweetSpotRate),
+
+    flyBallRate:
+      round(flyBallRate),
+
+    flyBallPct:
+      round(flyBallRate),
+
+    pullRate:
+      round(pullRate),
+
+    pullPct:
+      round(pullRate)
+  };
+}
+
+async function getPlayerStatcast(
+  playerId
+) {
+  playerId =
+    number(playerId);
+
+  if (!playerId) {
+    return emptyStatcast();
+  }
+
+  if (
+    cache.statcast.has(
+      playerId
+    )
+  ) {
+    return cache.statcast.get(
+      playerId
+    );
+  }
+
+  const url =
+    buildStatcastUrl(
+      playerId
+    );
+
+  try {
+    const csv =
+      await fetchText(url);
+
+    const rows =
+      parseCSV(csv);
+
+    const stats =
+      calculateStatcast(
+        rows
+      );
+
+    cache.statcast.set(
+      playerId,
+      stats
+    );
+
+    console.log(
+      `  Statcast ${playerId}: ${stats.battedBalls} batted balls`
+    );
+
+    return stats;
+  } catch (error) {
+    console.warn(
+      `Statcast unavailable for ${playerId}:`,
+      error.message
+    );
+
+    const empty =
+      emptyStatcast();
+
+    cache.statcast.set(
+      playerId,
+      empty
+    );
+
+    return empty;
+  }
 }
 
 /*
@@ -1084,12 +1694,13 @@ async function enrichBatter(
     number(batter.id);
 
   const [
-    playerInfo,
-    hitting,
-    hitStreak,
-    recentForm,
-    bvp
-  ] = await Promise.all([
+  playerInfo,
+  hitting,
+  hitStreak,
+  recentForm,
+  bvp,
+  statcast
+] = await Promise.all([
     getPlayerInfo(playerId),
 
     batter.hitting
@@ -1103,9 +1714,13 @@ async function enrichBatter(
     getRecentForm(playerId),
 
     getBvPStats(
-      playerId,
-      opposingPitcherId
-    )
+  playerId,
+  opposingPitcherId
+),
+
+getPlayerStatcast(
+  playerId
+)
   ]);
 
   return {
@@ -1135,36 +1750,8 @@ async function enrichBatter(
 
     hitting,
 
-    /*
-    Statcast data will be added later.
-    Null means unavailable—not zero performance.
-    */
-    statcast: {
-      available:
-        false,
-
-      barrelPct:
-        null,
-
-      hardHitPct:
-        null,
-
-      avgExitVelocity:
-        null,
-
-      launchAngle:
-        null,
-
-      sweetSpotPct:
-        null,
-
-      flyBallPct:
-        null,
-
-      pullPct:
-        null
-    },
-
+   statcast,
+    
     hitStreak,
 
     recentForm,
