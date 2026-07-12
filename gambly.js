@@ -362,6 +362,8 @@ const Gambly = {
       )
     );
 
+    this.render();
+    
     console.log(
       `Gambly slip updated: ${
         this.getSelectionCount()
