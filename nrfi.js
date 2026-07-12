@@ -1,1999 +1,1401 @@
 /*
-
 =========================================================
-
-POPS PICKZ SIMPLE NRFI MODEL
-
+POPS PICKZ NRFI MODEL
 File: nrfi.js
-
-Version: 4.0
-
+Version: 5.0
 =========================================================
 
-PURPOSE
+SIMPLE MODEL
 
-Rank every MLB game using the quality of the two
+This model focuses primarily on both starting pitchers:
 
-scheduled starting pitchers.
+- ERA
+- WHIP
+- HR/9
+- K/9
+- Starting pitcher confirmation
+- Lineup confirmation
 
-MODEL WEIGHTS PER PITCHER
+SCORING
 
-- ERA: 40 points
+Away starting pitcher: 45 points
+Home starting pitcher: 45 points
+Game confirmation context: 10 points
 
-- WHIP: 25 points
+Maximum score: 100
 
-- HR/9: 20 points
-
-- K/9: 15 points
-
-Each pitcher receives a score from 0 to 100.
-
-The final game score is primarily the average of both
-
-pitcher scores, with additional safeguards so one weak
-
-pitcher cannot be hidden by one elite pitcher.
-
-NOT USED
-
-- Weather
-
-- Team offense
-
-- Team OPS
-
-- Team batting average
-
-- Top-order danger
-
-- Recent batter form
-
-- First-inning splits
-
-- Season-stat fallback labels
-
-- Data-confidence percentage
-
-REQUIRED HTML
-
-<div id="nrfiBox">
-
-  <p>Loading NRFI predictions...</p>
-
-</div>
+Weather is NOT included.
 
 REQUIRED SCRIPT ORDER
 
-<script src="nrfi.js?v=4"></script>
-
+<script src="nrfi.js?v=5"></script>
 <script src="app.js"></script>
 
-CALL FROM app.js
+app.js must call:
 
 await NRFI.load(games);
 
 =========================================================
-
 */
 
 const NRFI = {
-
   box: null,
 
   settings: {
-
     eliteMinimum: 85,
-
     strongMinimum: 75,
-
     leanMinimum: 65,
+    tossUpMinimum: 50,
 
-    tossUpMinimum: 52,
+    maximumPitcherScore: 45,
+    maximumContextScore: 10,
 
-    minimumStarterInnings: 5,
-
-    weights: {
-
-      era: 40,
-
-      whip: 25,
-
-      hr9: 20,
-
-      k9: 15
-
-    }
-
+    minimumConfirmedBatters: 7
   },
 
   /*
-
   =======================================================
-
-  GENERAL HELPERS
-
+  BASIC HELPERS
   =======================================================
-
   */
 
   num(value, fallback = 0) {
-
     const number = Number(value);
 
     return Number.isFinite(number)
-
       ? number
-
       : fallback;
-
   },
 
   text(value, fallback = "") {
-
     if (
-
       value === null ||
-
       value === undefined
-
     ) {
-
       return fallback;
-
     }
 
     const result = String(value).trim();
 
     return result || fallback;
-
   },
 
   clamp(value, minimum, maximum) {
-
     return Math.min(
-
       maximum,
-
       Math.max(minimum, value)
-
     );
-
   },
 
   escapeHTML(value = "") {
-
     return String(value)
-
       .replaceAll("&", "&amp;")
-
       .replaceAll("<", "&lt;")
-
       .replaceAll(">", "&gt;")
-
       .replaceAll('"', "&quot;")
-
       .replaceAll("'", "&#039;");
-
   },
 
   formatNumber(
-
     value,
-
     places = 2,
-
     fallback = "N/A"
-
   ) {
-
     const number = Number(value);
 
     if (
-
       !Number.isFinite(number) ||
-
       number < 0
-
     ) {
-
       return fallback;
-
     }
 
     return number.toFixed(places);
-
   },
 
   normalizePitcherName(name) {
-
     const value = this.text(
-
       name,
-
       "TBD"
-
     );
 
     const normalized =
-
       value.toLowerCase();
 
     if (
-
       normalized === "tbd" ||
-
       normalized === "unknown" ||
-
       normalized === "to be determined"
-
     ) {
-
       return "TBD";
-
     }
 
     return value;
-
   },
 
   hasStarter(name, id) {
-
     return (
-
       this.normalizePitcherName(name) !==
-
         "TBD" &&
-
       this.num(id, 0) > 0
-
     );
-
   },
 
   getNestedValue(
-
     object = {},
-
     paths = []
-
   ) {
-
     for (const path of paths) {
-
-      const pieces =
-
+      const parts =
         String(path).split(".");
 
       let current = object;
-
       let found = true;
 
-      for (const piece of pieces) {
-
+      for (const part of parts) {
         if (
-
           current === null ||
-
           current === undefined ||
-
           typeof current !== "object" ||
-
-          !(piece in current)
-
+          !(part in current)
         ) {
-
           found = false;
-
           break;
-
         }
 
-        current = current[piece];
-
+        current = current[part];
       }
 
       if (
-
         found &&
-
         current !== null &&
-
         current !== undefined &&
-
         current !== ""
-
       ) {
-
         return current;
-
       }
-
     }
 
     return undefined;
-
   },
 
-  getFirstAvailableNumber(
-
+  getFirstNumber(
     object = {},
-
     paths = [],
-
     fallback = 0
-
   ) {
-
-    return this.num(
-
-      this.getNestedValue(
-
-        object,
-
-        paths
-
-      ),
-
-      fallback
-
+    const value = this.getNestedValue(
+      object,
+      paths
     );
 
+    return this.num(
+      value,
+      fallback
+    );
   },
 
   /*
-
   =======================================================
+  INNINGS CONVERSION
 
+  MLB innings are displayed like:
+
+  100.0 = 100 innings
+  100.1 = 100 innings and one out
+  100.2 = 100 innings and two outs
+
+  This helper converts those values correctly before
+  calculating K/9 and HR/9.
+  =======================================================
+  */
+
+  inningsToDecimal(value) {
+    const textValue =
+      String(value ?? "").trim();
+
+    if (!textValue) {
+      return 0;
+    }
+
+    const parts =
+      textValue.split(".");
+
+    const fullInnings =
+      this.num(parts[0], 0);
+
+    const outs =
+      this.num(parts[1], 0);
+
+    if (outs === 1) {
+      return fullInnings + 1 / 3;
+    }
+
+    if (outs === 2) {
+      return fullInnings + 2 / 3;
+    }
+
+    return this.num(
+      value,
+      0
+    );
+  },
+
+  /*
+  =======================================================
   PITCHER STAT HELPERS
-
   =======================================================
-
   */
 
   getPitcherERA(stats = {}) {
-
-    return this.getFirstAvailableNumber(
-
+    return this.getFirstNumber(
       stats,
-
       [
-
         "era",
-
         "earnedRunAverage",
-
         "ERA",
-
         "season.era",
-
         "pitching.era"
-
       ],
-
       0
-
     );
-
   },
 
   getPitcherWHIP(stats = {}) {
-
-    return this.getFirstAvailableNumber(
-
+    return this.getFirstNumber(
       stats,
-
       [
-
         "whip",
-
         "WHIP",
-
         "season.whip",
-
         "pitching.whip"
-
       ],
-
       0
-
     );
-
   },
 
   getPitcherInnings(stats = {}) {
-
-    return this.getFirstAvailableNumber(
-
+    const value = this.getNestedValue(
       stats,
-
       [
-
         "inningsPitched",
-
         "innings",
-
         "ip",
-
         "season.inningsPitched",
-
         "pitching.inningsPitched"
-
-      ],
-
-      0
-
+      ]
     );
 
-  },
-
-  getPitcherHomeRuns(stats = {}) {
-
-    return this.getFirstAvailableNumber(
-
-      stats,
-
-      [
-
-        "homeRuns",
-
-        "homeRunsAllowed",
-
-        "hrAllowed",
-
-        "hr",
-
-        "season.homeRuns",
-
-        "pitching.homeRuns"
-
-      ],
-
-      0
-
+    return this.inningsToDecimal(
+      value
     );
-
   },
 
   getPitcherStrikeouts(stats = {}) {
-
-    return this.getFirstAvailableNumber(
-
+    return this.getFirstNumber(
       stats,
-
       [
-
         "strikeOuts",
-
         "strikeouts",
-
+        "strikeOut",
         "so",
-
+        "SO",
         "k",
-
         "season.strikeOuts",
-
         "season.strikeouts",
-
-        "pitching.strikeOuts",
-
-        "pitching.strikeouts"
-
+        "pitching.strikeOuts"
       ],
-
       0
-
     );
-
   },
 
-  getPitcherHR9(stats = {}) {
-
-    const directValue =
-
-      this.getFirstAvailableNumber(
-
-        stats,
-
-        [
-
-          "hr9",
-
-          "homeRunsPer9",
-
-          "homeRunsPerNine",
-
-          "homeRunsPer9Inn",
-
-          "season.hr9",
-
-          "pitching.hr9"
-
-        ],
-
-        0
-
-      );
-
-    if (directValue > 0) {
-
-      return directValue;
-
-    }
-
-    const innings =
-
-      this.getPitcherInnings(stats);
-
-    const homeRuns =
-
-      this.getPitcherHomeRuns(stats);
-
-    if (innings <= 0) {
-
-      return 0;
-
-    }
-
-    return (
-
-      homeRuns * 9
-
-    ) / innings;
-
+  getPitcherHomeRuns(stats = {}) {
+    return this.getFirstNumber(
+      stats,
+      [
+        "homeRuns",
+        "homeRunsAllowed",
+        "hrAllowed",
+        "hr",
+        "season.homeRuns",
+        "pitching.homeRuns"
+      ],
+      0
+    );
   },
 
   getPitcherK9(stats = {}) {
-
     const directValue =
-
-      this.getFirstAvailableNumber(
-
+      this.getFirstNumber(
         stats,
-
         [
-
           "k9",
-
           "strikeoutsPer9",
-
           "strikeOutsPer9",
-
           "strikeoutsPerNine",
-
-          "strikeOutsPer9Inn",
-
           "season.k9",
-
           "pitching.k9"
-
         ],
-
         0
-
       );
 
     if (directValue > 0) {
-
       return directValue;
-
     }
 
     const innings =
-
       this.getPitcherInnings(stats);
 
     const strikeouts =
-
       this.getPitcherStrikeouts(stats);
 
-    if (innings <= 0) {
-
+    if (
+      innings <= 0 ||
+      strikeouts <= 0
+    ) {
       return 0;
-
     }
 
     return (
-
       strikeouts * 9
-
     ) / innings;
-
   },
 
-  /*
-
-  =======================================================
-
-  INDIVIDUAL STAT SCORES
-
-  =======================================================
-
-  */
-
-  scoreERA(era) {
-
-    if (era <= 0) return 0;
-
-    if (era <= 2.25) return 40;
-
-    if (era <= 2.75) return 37;
-
-    if (era <= 3.15) return 34;
-
-    if (era <= 3.50) return 30;
-
-    if (era <= 3.85) return 26;
-
-    if (era <= 4.20) return 21;
-
-    if (era <= 4.60) return 15;
-
-    if (era <= 5.00) return 9;
-
-    if (era <= 5.50) return 4;
-
-    return 0;
-
-  },
-
-  scoreWHIP(whip) {
-
-    if (whip <= 0) return 0;
-
-    if (whip <= 0.95) return 25;
-
-    if (whip <= 1.05) return 23;
-
-    if (whip <= 1.15) return 21;
-
-    if (whip <= 1.25) return 18;
-
-    if (whip <= 1.32) return 15;
-
-    if (whip <= 1.40) return 11;
-
-    if (whip <= 1.48) return 7;
-
-    if (whip <= 1.58) return 3;
-
-    return 0;
-
-  },
-
-  scoreHR9(hr9) {
-
-    if (hr9 < 0) return 0;
-
-    if (hr9 <= 0.60) return 20;
-
-    if (hr9 <= 0.80) return 18;
-
-    if (hr9 <= 1.00) return 16;
-
-    if (hr9 <= 1.15) return 13;
-
-    if (hr9 <= 1.30) return 10;
-
-    if (hr9 <= 1.50) return 6;
-
-    if (hr9 <= 1.75) return 3;
-
-    return 0;
-
-  },
-
-  scoreK9(k9) {
-
-    if (k9 <= 0) return 0;
-
-    if (k9 >= 11.00) return 15;
-
-    if (k9 >= 10.00) return 14;
-
-    if (k9 >= 9.00) return 12;
-
-    if (k9 >= 8.00) return 10;
-
-    if (k9 >= 7.00) return 7;
-
-    if (k9 >= 6.00) return 4;
-
-    if (k9 >= 5.00) return 2;
-
-    return 0;
-
-  },
-
-  /*
-
-  =======================================================
-
-  PITCHER EVALUATION
-
-  =======================================================
-
-  */
-
-  evaluatePitcher(
-
-    pitcherName,
-
-    pitcherId,
-
-    stats = {}
-
-  ) {
-
-    const name =
-
-      this.normalizePitcherName(
-
-        pitcherName
-
+  getPitcherHR9(stats = {}) {
+    const directValue =
+      this.getFirstNumber(
+        stats,
+        [
+          "hr9",
+          "homeRunsPer9",
+          "homeRunsPerNine",
+          "homeRunsPer9Inn",
+          "season.hr9",
+          "pitching.hr9"
+        ],
+        0
       );
 
-    const hasStarter =
-
-      this.hasStarter(
-
-        name,
-
-        pitcherId
-
-      );
-
-    const era =
-
-      this.getPitcherERA(stats);
-
-    const whip =
-
-      this.getPitcherWHIP(stats);
+    if (directValue > 0) {
+      return directValue;
+    }
 
     const innings =
-
       this.getPitcherInnings(stats);
 
     const homeRuns =
-
       this.getPitcherHomeRuns(stats);
 
-    const strikeouts =
+    if (innings <= 0) {
+      return 0;
+    }
 
-      this.getPitcherStrikeouts(stats);
+    return (
+      homeRuns * 9
+    ) / innings;
+  },
+
+  /*
+  =======================================================
+  LINEUP HELPERS
+  =======================================================
+  */
+
+  getLineup(
+    game = {},
+    side = "away"
+  ) {
+    const lineup =
+      side === "away"
+        ? game.awayLineup
+        : game.homeLineup;
+
+    return Array.isArray(lineup)
+      ? lineup
+      : [];
+  },
+
+  isLineupConfirmed(lineup = []) {
+    if (!lineup.length) {
+      return false;
+    }
+
+    const confirmedCount =
+      lineup.filter(
+        batter =>
+          batter?.confirmed === true
+      ).length;
+
+    return (
+      confirmedCount >=
+      this.settings.minimumConfirmedBatters
+    );
+  },
+
+  /*
+  =======================================================
+  PITCHER SCORING
+  Maximum: 45 points
+
+  ERA: 15 points
+  WHIP: 8 points
+  HR/9: 12 points
+  K/9: 10 points
+  =======================================================
+  */
+
+  scorePitcher(
+    pitcherName,
+    pitcherId,
+    stats = {}
+  ) {
+    const reasons = [];
+    const warnings = [];
+
+    const hasStarter =
+      this.hasStarter(
+        pitcherName,
+        pitcherId
+      );
+
+    const era =
+      this.getPitcherERA(stats);
+
+    const whip =
+      this.getPitcherWHIP(stats);
 
     const hr9 =
-
       this.getPitcherHR9(stats);
 
     const k9 =
-
       this.getPitcherK9(stats);
 
-    const eraScore =
+    const innings =
+      this.getPitcherInnings(stats);
 
-      this.scoreERA(era);
+    const strikeouts =
+      this.getPitcherStrikeouts(stats);
 
-    const whipScore =
-
-      this.scoreWHIP(whip);
-
-    const hr9Score =
-
-      this.scoreHR9(hr9);
-
-    const k9Score =
-
-      this.scoreK9(k9);
-
-    const reasons = [];
-
-    const warnings = [];
+    const homeRuns =
+      this.getPitcherHomeRuns(stats);
 
     if (!hasStarter) {
+      return {
+        score: 0,
 
-      warnings.push(
+        hasStarter: false,
 
-        "Starting pitcher is not confirmed"
+        era,
+        whip,
+        hr9,
+        k9,
+        innings,
+        strikeouts,
+        homeRuns,
 
-      );
+        eraPoints: 0,
+        whipPoints: 0,
+        hr9Points: 0,
+        k9Points: 0,
 
+        reasons: [],
+        warnings: [
+          "Starting pitcher is not confirmed"
+        ]
+      };
     }
 
-    if (era > 0 && era <= 3.50) {
+    let eraPoints = 0;
+    let whipPoints = 0;
+    let hr9Points = 0;
+    let k9Points = 0;
 
-      reasons.push(
-
-        `${name} has a strong ERA`
-
-      );
-
-    }
-
-    if (era >= 4.75) {
-
-      warnings.push(
-
-        `${name} has an elevated ERA`
-
-      );
-
-    }
-
-    if (whip > 0 && whip <= 1.20) {
-
-      reasons.push(
-
-        `${name} limits baserunners`
-
-      );
-
-    }
-
-    if (whip >= 1.45) {
-
-      warnings.push(
-
-        `${name} allows too many baserunners`
-
-      );
-
-    }
-
-    if (hr9 >= 0 && hr9 <= 1.00) {
-
-      reasons.push(
-
-        `${name} limits home runs`
-
-      );
-
-    }
-
-    if (hr9 >= 1.55) {
-
-      warnings.push(
-
-        `${name} has elevated home-run risk`
-
-      );
-
-    }
-
-    if (k9 >= 9) {
-
-      reasons.push(
-
-        `${name} has strong strikeout ability`
-
-      );
-
-    }
-
-    if (k9 > 0 && k9 < 6) {
-
-      warnings.push(
-
-        `${name} has a low strikeout rate`
-
-      );
-
-    }
+    /*
+    ERA — maximum 15
+    */
 
     if (
-
-      innings > 0 &&
-
-      innings <
-
-        this.settings.minimumStarterInnings
-
+      era > 0 &&
+      era <= 2.50
     ) {
+      eraPoints = 15;
 
-      warnings.push(
-
-        `${name} has a limited season sample`
-
+      reasons.push(
+        `${pitcherName} has an elite ERA`
       );
+    } else if (
+      era > 0 &&
+      era <= 3.00
+    ) {
+      eraPoints = 13;
 
+      reasons.push(
+        `${pitcherName} has an excellent ERA`
+      );
+    } else if (
+      era > 0 &&
+      era <= 3.50
+    ) {
+      eraPoints = 11;
+
+      reasons.push(
+        `${pitcherName} has a strong ERA`
+      );
+    } else if (
+      era > 0 &&
+      era <= 4.00
+    ) {
+      eraPoints = 8;
+    } else if (
+      era > 0 &&
+      era <= 4.50
+    ) {
+      eraPoints = 5;
+    } else if (
+      era > 0 &&
+      era <= 5.00
+    ) {
+      eraPoints = 2;
+    } else if (era > 5) {
+      warnings.push(
+        `${pitcherName} has a high ERA`
+      );
+    }
+
+    /*
+    WHIP — maximum 8
+    */
+
+    if (
+      whip > 0 &&
+      whip <= 1.00
+    ) {
+      whipPoints = 8;
+
+      reasons.push(
+        `${pitcherName} allows very few baserunners`
+      );
+    } else if (
+      whip > 0 &&
+      whip <= 1.10
+    ) {
+      whipPoints = 7;
+    } else if (
+      whip > 0 &&
+      whip <= 1.20
+    ) {
+      whipPoints = 6;
+    } else if (
+      whip > 0 &&
+      whip <= 1.30
+    ) {
+      whipPoints = 4;
+    } else if (
+      whip > 0 &&
+      whip <= 1.40
+    ) {
+      whipPoints = 2;
+    } else if (whip > 1.40) {
+      warnings.push(
+        `${pitcherName} allows too many baserunners`
+      );
+    }
+
+    /*
+    HR/9 — maximum 12
+    */
+
+    if (
+      hr9 > 0 &&
+      hr9 <= 0.60
+    ) {
+      hr9Points = 12;
+
+      reasons.push(
+        `${pitcherName} strongly suppresses home runs`
+      );
+    } else if (
+      hr9 > 0 &&
+      hr9 <= 0.80
+    ) {
+      hr9Points = 10;
+
+      reasons.push(
+        `${pitcherName} has a low HR/9`
+      );
+    } else if (
+      hr9 > 0 &&
+      hr9 <= 1.00
+    ) {
+      hr9Points = 8;
+    } else if (
+      hr9 > 0 &&
+      hr9 <= 1.20
+    ) {
+      hr9Points = 6;
+    } else if (
+      hr9 > 0 &&
+      hr9 <= 1.40
+    ) {
+      hr9Points = 3;
+    } else if (
+      hr9 > 0 &&
+      hr9 <= 1.60
+    ) {
+      hr9Points = 1;
+    } else if (hr9 > 1.60) {
+      warnings.push(
+        `${pitcherName} has elevated home-run risk`
+      );
+    }
+
+    /*
+    K/9 — maximum 10
+    */
+
+    if (k9 >= 11) {
+      k9Points = 10;
+
+      reasons.push(
+        `${pitcherName} has elite strikeout ability`
+      );
+    } else if (k9 >= 10) {
+      k9Points = 9;
+
+      reasons.push(
+        `${pitcherName} has excellent strikeout ability`
+      );
+    } else if (k9 >= 9) {
+      k9Points = 8;
+
+      reasons.push(
+        `${pitcherName} has a strong strikeout rate`
+      );
+    } else if (k9 >= 8) {
+      k9Points = 6;
+    } else if (k9 >= 7) {
+      k9Points = 4;
+    } else if (k9 >= 6) {
+      k9Points = 2;
+    } else if (
+      k9 > 0 &&
+      k9 < 6
+    ) {
+      warnings.push(
+        `${pitcherName} has a low strikeout rate`
+      );
     }
 
     let score =
-
-      eraScore +
-
-      whipScore +
-
-      hr9Score +
-
-      k9Score;
+      eraPoints +
+      whipPoints +
+      hr9Points +
+      k9Points;
 
     /*
-
-    A starter must be confirmed to receive a usable
-
-    NRFI pitcher score.
-
+    Additional risk penalties
     */
 
-    if (!hasStarter) {
-
-      score = 0;
-
-    }
-
-    /*
-
-    Major individual-pitcher penalties.
-
-    */
-
-    if (era >= 6) {
-
-      score -= 12;
-
-    } else if (era >= 5.25) {
-
-      score -= 7;
-
-    } else if (era >= 4.75) {
-
-      score -= 3;
-
-    }
-
-    if (whip >= 1.65) {
-
-      score -= 10;
-
-    } else if (whip >= 1.50) {
-
+    if (era >= 5.50) {
       score -= 5;
-
+    } else if (era >= 5.00) {
+      score -= 3;
     }
 
-    if (hr9 >= 2) {
+    if (whip >= 1.55) {
+      score -= 5;
+    } else if (whip >= 1.45) {
+      score -= 3;
+    }
 
-      score -= 8;
+    if (hr9 >= 1.80) {
+      score -= 5;
+    } else if (hr9 >= 1.60) {
+      score -= 3;
+    }
 
-    } else if (hr9 >= 1.70) {
-
-      score -= 4;
-
+    if (
+      k9 > 0 &&
+      k9 < 5.50
+    ) {
+      score -= 2;
     }
 
     score = Math.round(
-
       this.clamp(
-
         score,
-
         0,
-
-        100
-
+        this.settings.maximumPitcherScore
       )
-
     );
 
     return {
-
-      name,
-
-      id: this.num(pitcherId, 0),
-
-      hasStarter,
-
-      era,
-
-      whip,
-
-      innings,
-
-      homeRuns,
-
-      strikeouts,
-
-      hr9,
-
-      k9,
-
-      eraScore,
-
-      whipScore,
-
-      hr9Score,
-
-      k9Score,
-
       score,
 
-      reasons:
+      hasStarter: true,
 
+      era,
+      whip,
+      hr9,
+      k9,
+      innings,
+      strikeouts,
+      homeRuns,
+
+      eraPoints,
+      whipPoints,
+      hr9Points,
+      k9Points,
+
+      reasons:
         [...new Set(reasons)],
 
       warnings:
-
         [...new Set(warnings)]
-
     };
-
   },
 
   /*
-
   =======================================================
+  CONTEXT SCORE
+  Maximum: 10 points
+  =======================================================
+  */
 
+  scoreContext({
+    awayPitcher,
+    homePitcher,
+    awayLineup,
+    homeLineup,
+    awayConfirmed,
+    homeConfirmed
+  }) {
+    const reasons = [];
+    const warnings = [];
+
+    let score = 0;
+
+    /*
+    Starting pitcher confirmation: 6 points
+    */
+
+    if (
+      awayPitcher.hasStarter &&
+      homePitcher.hasStarter
+    ) {
+      score += 6;
+
+      reasons.push(
+        "Both starting pitchers are confirmed"
+      );
+    } else if (
+      awayPitcher.hasStarter ||
+      homePitcher.hasStarter
+    ) {
+      score += 2;
+
+      warnings.push(
+        "Only one starting pitcher is confirmed"
+      );
+    } else {
+      warnings.push(
+        "Starting pitchers are not confirmed"
+      );
+    }
+
+    /*
+    Lineup confirmation: 4 points
+    */
+
+    if (
+      awayConfirmed &&
+      homeConfirmed
+    ) {
+      score += 4;
+
+      reasons.push(
+        "Both starting lineups are confirmed"
+      );
+    } else if (
+      awayConfirmed ||
+      homeConfirmed
+    ) {
+      score += 3;
+    } else if (
+      awayLineup.length >= 7 &&
+      homeLineup.length >= 7
+    ) {
+      score += 2;
+    } else {
+      warnings.push(
+        "Lineup information is incomplete"
+      );
+    }
+
+    return {
+      score: this.clamp(
+        score,
+        0,
+        this.settings.maximumContextScore
+      ),
+
+      reasons,
+      warnings
+    };
+  },
+
+  /*
+  =======================================================
   GAME EVALUATION
-
   =======================================================
-
   */
 
   evaluateGame(game = {}) {
+    const awayTeam = this.text(
+      typeof game.awayTeam === "object"
+        ? game.awayTeam?.name
+        : game.awayTeam,
+      "Away Team"
+    );
 
-    const awayTeam =
+    const homeTeam = this.text(
+      typeof game.homeTeam === "object"
+        ? game.homeTeam?.name
+        : game.homeTeam,
+      "Home Team"
+    );
 
-      this.text(
-
-        typeof game.awayTeam ===
-
-          "object"
-
-          ? game.awayTeam?.name
-
-          : game.awayTeam,
-
-        "Away Team"
-
+    const awayPitcherName =
+      this.normalizePitcherName(
+        game.awayPitcher
       );
 
-    const homeTeam =
-
-      this.text(
-
-        typeof game.homeTeam ===
-
-          "object"
-
-          ? game.homeTeam?.name
-
-          : game.homeTeam,
-
-        "Home Team"
-
+    const homePitcherName =
+      this.normalizePitcherName(
+        game.homePitcher
       );
 
     const awayPitcher =
-
-      this.evaluatePitcher(
-
-        game.awayPitcher,
-
+      this.scorePitcher(
+        awayPitcherName,
         game.awayPitcherId,
-
         game.awayPitcherStats || {}
-
       );
 
     const homePitcher =
-
-      this.evaluatePitcher(
-
-        game.homePitcher,
-
+      this.scorePitcher(
+        homePitcherName,
         game.homePitcherId,
-
         game.homePitcherStats || {}
-
       );
 
-    const averagePitcherScore =
-
-      (
-
-        awayPitcher.score +
-
-        homePitcher.score
-
-      ) / 2;
-
-    const weakestPitcherScore =
-
-      Math.min(
-
-        awayPitcher.score,
-
-        homePitcher.score
-
+    const awayLineup =
+      this.getLineup(
+        game,
+        "away"
       );
 
-    const strongestPitcherScore =
-
-      Math.max(
-
-        awayPitcher.score,
-
-        homePitcher.score
-
+    const homeLineup =
+      this.getLineup(
+        game,
+        "home"
       );
+
+    const awayConfirmed =
+      this.isLineupConfirmed(
+        awayLineup
+      );
+
+    const homeConfirmed =
+      this.isLineupConfirmed(
+        homeLineup
+      );
+
+    const context =
+      this.scoreContext({
+        awayPitcher,
+        homePitcher,
+        awayLineup,
+        homeLineup,
+        awayConfirmed,
+        homeConfirmed
+      });
 
     let score =
-
-      averagePitcherScore;
+      awayPitcher.score +
+      homePitcher.score +
+      context.score;
 
     const reasons = [
-
       ...awayPitcher.reasons,
-
-      ...homePitcher.reasons
-
+      ...homePitcher.reasons,
+      ...context.reasons
     ];
 
     const warnings = [
-
       ...awayPitcher.warnings,
-
-      ...homePitcher.warnings
-
+      ...homePitcher.warnings,
+      ...context.warnings
     ];
 
     /*
-
-    =====================================================
-
-    BOTH-PITCHER BONUSES
-
-    =====================================================
-
+    A weak pitcher can ruin an NRFI matchup.
     */
 
-    if (
-
-      awayPitcher.score >= 88 &&
-
-      homePitcher.score >= 88
-
-    ) {
-
-      score += 7;
-
-      reasons.push(
-
-        "Both starting pitchers have elite NRFI profiles"
-
+    const weakestPitcherScore =
+      Math.min(
+        awayPitcher.score,
+        homePitcher.score
       );
 
-    } else if (
-
-      awayPitcher.score >= 80 &&
-
-      homePitcher.score >= 80
-
-    ) {
-
-      score += 5;
-
-      reasons.push(
-
-        "Both starting pitchers have strong NRFI profiles"
-
-      );
-
-    } else if (
-
-      awayPitcher.score >= 72 &&
-
-      homePitcher.score >= 72
-
-    ) {
-
-      score += 3;
-
-      reasons.push(
-
-        "Both starting pitchers have solid NRFI profiles"
-
-      );
-
-    }
-
-    if (
-
-      awayPitcher.era <= 3.50 &&
-
-      homePitcher.era <= 3.50 &&
-
-      awayPitcher.era > 0 &&
-
-      homePitcher.era > 0
-
-    ) {
-
-      score += 2;
-
-      reasons.push(
-
-        "Both starters have strong ERAs"
-
-      );
-
-    }
-
-    if (
-
-      awayPitcher.k9 >= 8.5 &&
-
-      homePitcher.k9 >= 8.5
-
-    ) {
-
-      score += 2;
-
-      reasons.push(
-
-        "Both starters have strong strikeout rates"
-
-      );
-
-    }
-
-    if (
-
-      awayPitcher.hr9 <= 1.10 &&
-
-      homePitcher.hr9 <= 1.10 &&
-
-      awayPitcher.hr9 >= 0 &&
-
-      homePitcher.hr9 >= 0
-
-    ) {
-
-      score += 2;
-
-      reasons.push(
-
-        "Both starters limit home runs"
-
-      );
-
-    }
-
-    /*
-
-    =====================================================
-
-    WEAKEST-PITCHER SAFEGUARDS
-
-    =====================================================
-
-    NRFI requires both pitchers to survive the first
-
-    inning. One poor starter must lower the game score.
-
-    */
-
-    if (weakestPitcherScore < 35) {
-
-      score -= 25;
+    if (weakestPitcherScore <= 12) {
+      score -= 12;
 
       warnings.push(
-
-        "One starting pitcher has a very poor NRFI profile"
-
+        "One starting pitcher grades as a major first-inning risk"
       );
-
     } else if (
-
-      weakestPitcherScore < 50
-
+      weakestPitcherScore <= 18
     ) {
-
-      score -= 16;
+      score -= 7;
 
       warnings.push(
-
-        "One starting pitcher has a weak NRFI profile"
-
-      );
-
-    } else if (
-
-      weakestPitcherScore < 60
-
-    ) {
-
-      score -= 9;
-
-      warnings.push(
-
         "One starting pitcher grades below average"
-
       );
-
     } else if (
-
-      weakestPitcherScore < 68
-
+      weakestPitcherScore <= 22
     ) {
-
-      score -= 4;
-
+      score -= 3;
     }
 
     /*
-
-    Prevent one elite pitcher from hiding one weak
-
-    pitcher.
-
-    */
-
-    const pitcherGap =
-
-      strongestPitcherScore -
-
-      weakestPitcherScore;
-
-    if (pitcherGap >= 35) {
-
-      score -= 8;
-
-      warnings.push(
-
-        "There is a large quality gap between the starters"
-
-      );
-
-    } else if (
-
-      pitcherGap >= 25
-
-    ) {
-
-      score -= 4;
-
-    }
-
-    /*
-
-    Missing starters.
-
+    Bonus when both pitchers have strong numbers.
     */
 
     if (
-
-      !awayPitcher.hasStarter ||
-
-      !homePitcher.hasStarter
-
+      awayPitcher.score >= 38 &&
+      homePitcher.score >= 38
     ) {
+      score += 6;
 
+      reasons.push(
+        "Both starting pitchers have elite NRFI profiles"
+      );
+    } else if (
+      awayPitcher.score >= 34 &&
+      homePitcher.score >= 34
+    ) {
+      score += 4;
+
+      reasons.push(
+        "Both starting pitchers have strong NRFI profiles"
+      );
+    } else if (
+      awayPitcher.score >= 30 &&
+      homePitcher.score >= 30
+    ) {
+      score += 2;
+
+      reasons.push(
+        "Both starting pitchers grade above average"
+      );
+    }
+
+    /*
+    Missing starters should never receive a high rating.
+    */
+
+    if (
+      !awayPitcher.hasStarter ||
+      !homePitcher.hasStarter
+    ) {
       score = Math.min(
-
         score,
-
-        35
-
+        49
       );
-
-      warnings.push(
-
-        "Both starting pitchers must be confirmed"
-
-      );
-
     }
 
     score = Math.round(
-
       this.clamp(
-
         score,
-
         0,
-
         100
-
       )
-
     );
 
     const prediction =
-
       this.getPrediction(score);
 
+    /*
+    Data confidence is separate from the NRFI score.
+    */
+
+    const availableDataPoints = [
+      awayPitcher.hasStarter,
+      homePitcher.hasStarter,
+
+      awayPitcher.era > 0,
+      homePitcher.era > 0,
+
+      awayPitcher.whip > 0,
+      homePitcher.whip > 0,
+
+      awayPitcher.hr9 > 0,
+      homePitcher.hr9 > 0,
+
+      awayPitcher.k9 > 0,
+      homePitcher.k9 > 0,
+
+      awayConfirmed,
+      homeConfirmed
+    ].filter(Boolean).length;
+
+    const dataConfidence =
+      Math.round(
+        (
+          availableDataPoints /
+          12
+        ) * 100
+      );
+
     return {
-
       gamePk: this.num(
-
         game.gamePk ||
-
         game.id,
-
         0
-
       ),
 
       awayTeam,
-
       homeTeam,
 
       matchup:
-
         `${awayTeam} vs ${homeTeam}`,
 
-      gameTime:
+      gameTime: this.text(
+        game.date ||
+        game.gameDate,
+        ""
+      ),
 
-        this.text(
-
-          game.date ||
-
-          game.gameDate,
-
-          ""
-
-        ),
-
-      venue:
-
-        this.text(
-
-          typeof game.venue ===
-
-            "object"
-
-            ? game.venue?.name
-
-            : game.venue,
-
-          "Venue TBD"
-
-        ),
+      venue: this.text(
+        typeof game.venue === "object"
+          ? game.venue?.name
+          : game.venue,
+        "Venue TBD"
+      ),
 
       score,
-
       prediction,
+      dataConfidence,
 
-      averagePitcherScore:
-
-        Math.round(
-
-          averagePitcherScore
-
-        ),
-
-      weakestPitcherScore,
-
-      strongestPitcherScore,
+      awayPitcherName,
+      homePitcherName,
 
       awayPitcher,
-
       homePitcher,
 
+      context,
+
+      awayConfirmed,
+      homeConfirmed,
+
       reasons:
-
         [...new Set(reasons)]
-
           .slice(0, 8),
 
       warnings:
-
         [...new Set(warnings)]
-
           .slice(0, 8)
-
     };
-
   },
 
   /*
-
   =======================================================
-
   PREDICTION TIERS
-
   =======================================================
-
   */
 
   getPrediction(score = 0) {
-
     if (
-
       score >=
-
       this.settings.eliteMinimum
-
     ) {
-
       return {
-
         key: "elite",
-
         label: "Elite NRFI",
-
         icon: "🟢",
-
         recommendation:
-
-          "Both starters grade as elite"
-
+          "Top NRFI candidate"
       };
-
     }
 
     if (
-
       score >=
-
       this.settings.strongMinimum
-
     ) {
-
       return {
-
         key: "strong",
-
         label: "Strong NRFI",
-
         icon: "✅",
-
         recommendation:
-
-          "Strong two-pitcher matchup"
-
+          "Strong NRFI lean"
       };
-
     }
 
     if (
-
       score >=
-
       this.settings.leanMinimum
-
     ) {
-
       return {
-
         key: "lean",
-
         label: "Lean NRFI",
-
         icon: "🟡",
-
         recommendation:
-
-          "Solid pitching-based NRFI lean"
-
+          "Moderate NRFI lean"
       };
-
     }
 
     if (
-
       score >=
-
       this.settings.tossUpMinimum
-
     ) {
-
       return {
-
         key: "tossup",
-
         label: "Toss-Up",
-
         icon: "⚪",
-
         recommendation:
-
-          "Pitcher numbers do not create a clear edge"
-
+          "No strong first-inning edge"
       };
-
     }
 
     return {
-
       key: "yrfi",
-
       label: "YRFI Alert",
-
       icon: "🔴",
-
       recommendation:
-
-        "At least one starter carries elevated risk"
-
+        "Elevated first-inning run risk"
     };
-
   },
 
   /*
-
   =======================================================
-
   BUILD ALL GAMES
-
   =======================================================
-
   */
 
   build(games = []) {
-
     if (!Array.isArray(games)) {
-
       return [];
-
     }
 
     return games
-
       .filter(Boolean)
-
       .map(game =>
-
         this.evaluateGame(game)
-
       )
-
       .sort(
-
         (a, b) =>
-
           b.score - a.score
-
       );
-
   },
 
   /*
-
   =======================================================
-
   DISPLAY HELPERS
-
   =======================================================
-
   */
 
   formatGameTime(value) {
-
     if (!value) {
-
       return "Time TBD";
-
     }
 
     const date =
-
       new Date(value);
 
     if (
-
       Number.isNaN(
-
         date.getTime()
-
       )
-
     ) {
-
       return "Time TBD";
-
     }
 
     return date.toLocaleString(
-
       [],
-
       {
-
         weekday: "short",
-
         month: "short",
-
         day: "numeric",
-
         hour: "numeric",
-
         minute: "2-digit"
-
       }
-
     );
+  },
 
+  renderFactors(
+    title,
+    items = [],
+    type = "positive"
+  ) {
+    if (!items.length) {
+      return "";
+    }
+
+    return `
+      <div class="nrfi-factors ${type}">
+        <h4>
+          ${this.escapeHTML(title)}
+        </h4>
+
+        ${items
+          .map(item => `
+            <p>
+              ${
+                type === "positive"
+                  ? "✓"
+                  : "!"
+              }
+
+              ${this.escapeHTML(item)}
+            </p>
+          `)
+          .join("")}
+      </div>
+    `;
   },
 
   renderPitcher(
-
-    pitcher = {}
-
+    name,
+    result = {}
   ) {
-
     return `
-
       <div class="nrfi-pitcher">
 
         <h4>
-
-          ${this.escapeHTML(
-
-            pitcher.name ||
-
-            "Pitcher TBD"
-
-          )}
-
+          ${this.escapeHTML(name)}
         </h4>
 
         <div class="nrfi-stat-grid">
 
           <span>
-
             ERA
-
             <strong>
-
               ${this.formatNumber(
-
-                pitcher.era,
-
+                result.era,
                 2
-
               )}
-
             </strong>
-
           </span>
 
           <span>
-
             WHIP
-
             <strong>
-
               ${this.formatNumber(
-
-                pitcher.whip,
-
+                result.whip,
                 2
-
               )}
-
             </strong>
-
           </span>
 
           <span>
-
             HR/9
-
             <strong>
-
               ${this.formatNumber(
-
-                pitcher.hr9,
-
+                result.hr9,
                 2
-
               )}
-
             </strong>
-
           </span>
 
           <span>
-
             K/9
-
             <strong>
-
               ${this.formatNumber(
-
-                pitcher.k9,
-
+                result.k9,
                 2
-
               )}
-
             </strong>
-
           </span>
 
           <span>
-
             Strikeouts
-
             <strong>
-
               ${Math.round(
-
-                pitcher.strikeouts || 0
-
+                result.strikeouts || 0
               )}
-
             </strong>
-
           </span>
 
           <span>
-
-            Innings
-
+            HR Allowed
             <strong>
-
-              ${this.formatNumber(
-
-                pitcher.innings,
-
-                1
-
+              ${Math.round(
+                result.homeRuns || 0
               )}
-
             </strong>
-
           </span>
 
           <span>
-
             Pitcher Score
-
             <strong>
-
               ${Math.round(
-
-                pitcher.score || 0
-
-              )}/100
-
+                result.score || 0
+              )}/45
             </strong>
-
           </span>
 
         </div>
 
-        <div class="nrfi-pitcher-score-breakdown">
+        <div class="nrfi-pitcher-breakdown">
 
           <p>
-
-            ERA:
-
+            ERA points:
             <strong>
-
-              ${pitcher.eraScore || 0}/40
-
+              ${result.eraPoints || 0}/15
             </strong>
-
           </p>
 
           <p>
-
-            WHIP:
-
+            WHIP points:
             <strong>
-
-              ${pitcher.whipScore || 0}/25
-
+              ${result.whipPoints || 0}/8
             </strong>
-
           </p>
 
           <p>
-
-            HR/9:
-
+            HR/9 points:
             <strong>
-
-              ${pitcher.hr9Score || 0}/20
-
+              ${result.hr9Points || 0}/12
             </strong>
-
           </p>
 
           <p>
-
-            K/9:
-
+            K/9 points:
             <strong>
-
-              ${pitcher.k9Score || 0}/15
-
+              ${result.k9Points || 0}/10
             </strong>
-
           </p>
 
         </div>
 
       </div>
-
     `;
-
-  },
-
-  renderFactors(
-
-    title,
-
-    items = [],
-
-    type = "positive"
-
-  ) {
-
-    if (!items.length) {
-
-      return "";
-
-    }
-
-    return `
-
-      <div class="nrfi-factors ${type}">
-
-        <h4>
-
-          ${this.escapeHTML(title)}
-
-        </h4>
-
-        ${items
-
-          .map(item => `
-
-            <p>
-
-              ${
-
-                type === "positive"
-
-                  ? "✓"
-
-                  : "!"
-
-              }
-
-              ${this.escapeHTML(item)}
-
-            </p>
-
-          `)
-
-          .join("")}
-
-      </div>
-
-    `;
-
   },
 
   renderGameCard(
-
     result = {},
-
     index = 0
-
   ) {
-
     const prediction =
-
       result.prediction || {};
 
     return `
-
       <article
-
         class="
-
           nrfi-game-card
-
           nrfi-${prediction.key}
-
         "
-
       >
 
         <div class="nrfi-card-header">
@@ -2001,43 +1403,27 @@ const NRFI = {
           <div>
 
             <span class="nrfi-rank">
-
               #${index + 1}
-
             </span>
 
             <h3>
-
               ${this.escapeHTML(
-
                 result.matchup
-
               )}
-
             </h3>
 
             <p>
-
               ⏰ ${this.escapeHTML(
-
                 this.formatGameTime(
-
                   result.gameTime
-
                 )
-
               )}
-
             </p>
 
             <p>
-
               🏟️ ${this.escapeHTML(
-
                 result.venue
-
               )}
-
             </p>
 
           </div>
@@ -2045,21 +1431,15 @@ const NRFI = {
           <div class="nrfi-score-box">
 
             <span>
-
               POPS NRFI
-
             </span>
 
             <strong>
-
               ${result.score}
-
             </strong>
 
             <small>
-
               /100
-
             </small>
 
           </div>
@@ -2069,53 +1449,51 @@ const NRFI = {
         <div class="nrfi-prediction">
 
           <span class="nrfi-prediction-icon">
-
             ${prediction.icon || "⚪"}
-
           </span>
 
           <div>
 
             <strong>
-
               ${
-
                 prediction.label ||
-
                 "Toss-Up"
-
               }
-
             </strong>
 
             <small>
-
               ${
-
                 prediction.recommendation ||
-
                 ""
-
               }
-
             </small>
 
           </div>
 
         </div>
 
+        <div class="nrfi-confidence-row">
+
+          <span>
+            Data confidence
+          </span>
+
+          <strong>
+            ${result.dataConfidence}%
+          </strong>
+
+        </div>
+
         <div class="nrfi-pitcher-grid">
 
           ${this.renderPitcher(
-
+            result.awayPitcherName,
             result.awayPitcher
-
           )}
 
           ${this.renderPitcher(
-
+            result.homePitcherName,
             result.homePitcher
-
           )}
 
         </div>
@@ -2123,39 +1501,21 @@ const NRFI = {
         <div class="nrfi-lineup-status">
 
           <span>
-
-            Away starter:
-
+            Away lineup:
             ${
-
-              result.awayPitcher
-
-                ?.hasStarter
-
+              result.awayConfirmed
                 ? "✅ Confirmed"
-
-                : "⚠️ TBD"
-
+                : "🟡 Projected"
             }
-
           </span>
 
           <span>
-
-            Home starter:
-
+            Home lineup:
             ${
-
-              result.homePitcher
-
-                ?.hasStarter
-
+              result.homeConfirmed
                 ? "✅ Confirmed"
-
-                : "⚠️ TBD"
-
+                : "🟡 Projected"
             }
-
           </span>
 
         </div>
@@ -2163,117 +1523,58 @@ const NRFI = {
         <details class="nrfi-breakdown">
 
           <summary>
-
             View prediction breakdown
-
           </summary>
 
           <div class="nrfi-breakdown-content">
 
             ${this.renderFactors(
-
               "NRFI Advantages",
-
               result.reasons,
-
               "positive"
-
             )}
 
             ${this.renderFactors(
-
               "YRFI Risk Factors",
-
               result.warnings,
-
               "warning"
-
             )}
 
             <div class="nrfi-context-score">
 
               <h4>
-
-                Simple NRFI Model
-
+                Model scoring
               </h4>
 
               <p>
-
-                Combined Pitcher Average:
-
+                Away pitcher:
                 <strong>
-
-                  ${result.averagePitcherScore}/100
-
+                  ${result.awayPitcher.score}/45
                 </strong>
-
               </p>
 
               <p>
-
-                Weakest Pitcher Score:
-
+                Home pitcher:
                 <strong>
-
-                  ${Math.round(
-
-                    result.weakestPitcherScore ||
-
-                    0
-
-                  )}/100
-
+                  ${result.homePitcher.score}/45
                 </strong>
-
               </p>
 
               <p>
-
-                ERA Weight:
-
-                <strong>40%</strong>
-
+                Confirmation context:
+                <strong>
+                  ${result.context.score}/10
+                </strong>
               </p>
 
               <p>
-
-                WHIP Weight:
-
-                <strong>25%</strong>
-
+                Starting pitcher weight:
+                <strong>90%</strong>
               </p>
 
               <p>
-
-                HR/9 Weight:
-
-                <strong>20%</strong>
-
-              </p>
-
-              <p>
-
-                K/9 Weight:
-
-                <strong>15%</strong>
-
-              </p>
-
-              <p>
-
-                Team offense:
-
-                <strong>Not included</strong>
-
-              </p>
-
-              <p>
-
                 Weather:
-
                 <strong>Not included</strong>
-
               </p>
 
             </div>
@@ -2283,193 +1584,136 @@ const NRFI = {
         </details>
 
       </article>
-
     `;
-
   },
 
   /*
-
   =======================================================
-
   LOAD AND RENDER
-
   =======================================================
-
   */
 
   async load(
-
-    games = window.games || []
-
+    games =
+      window.games || []
   ) {
-
     this.box =
-
       document.getElementById(
-
         "nrfiBox"
-
       );
 
     if (!this.box) {
-
       console.warn(
-
         "POPS NRFI: #nrfiBox was not found."
-
       );
 
       return [];
-
     }
 
     this.box.innerHTML = `
-
       <div class="nrfi-loading">
-
         <p>
-
-          Comparing starting-pitcher ERA,
-
+          Comparing both starting pitchers using ERA,
           WHIP, HR/9 and K/9...
-
         </p>
-
       </div>
-
     `;
 
     const sourceGames =
-
       Array.isArray(games)
-
         ? games
-
         : [];
 
     const predictions =
-
       this.build(sourceGames);
 
     window.nrfiPredictions =
-
       predictions;
 
     if (!predictions.length) {
-
       this.box.innerHTML = `
-
         <div class="pick-card">
 
           <h3>
-
             No NRFI Predictions Available
-
           </h3>
 
           <p>
-
-            MLB games or starting-pitcher
-
-            statistics have not loaded yet.
-
+            MLB games or starting-pitcher data have
+            not loaded yet.
           </p>
 
         </div>
-
       `;
 
       return [];
-
     }
 
     const eliteCount =
-
       predictions.filter(
-
         item =>
-
           item.prediction.key ===
-
           "elite"
-
       ).length;
 
     const strongCount =
-
       predictions.filter(
-
         item =>
-
           item.prediction.key ===
-
           "strong"
-
       ).length;
 
     const leanCount =
-
       predictions.filter(
-
         item =>
-
           item.prediction.key ===
-
           "lean"
-
       ).length;
 
     const yrfiCount =
-
       predictions.filter(
-
         item =>
-
           item.prediction.key ===
-
           "yrfi"
-
       ).length;
 
-    this.box.innerHTML = `
+    const averageConfidence =
+      Math.round(
+        predictions.reduce(
+          (total, item) =>
+            total +
+            this.num(
+              item.dataConfidence,
+              0
+            ),
+          0
+        ) /
+        predictions.length
+      );
 
+    this.box.innerHTML = `
       <div class="nrfi-hero">
 
         <div
-
           class="
-
             nrfi-light
-
             nrfi-light-left
-
           "
-
         ></div>
 
         <div
-
           class="
-
             nrfi-light
-
             nrfi-light-right
-
           "
-
         ></div>
 
         <h1>
-
           POPS NRFI
 
           <span>
-
             PREDICTIONS
-
           </span>
-
         </h1>
 
       </div>
@@ -2477,83 +1721,53 @@ const NRFI = {
       <div class="nrfi-summary">
 
         <div>
-
           <span>
-
             Games Analyzed
-
           </span>
 
           <strong>
-
             ${predictions.length}
-
           </strong>
-
         </div>
 
         <div>
-
           <span>
-
             Elite NRFI
-
           </span>
 
           <strong>
-
             ${eliteCount}
-
           </strong>
-
         </div>
 
         <div>
-
           <span>
-
             Strong NRFI
-
           </span>
 
           <strong>
-
             ${strongCount}
-
           </strong>
-
         </div>
 
         <div>
-
           <span>
-
             Lean NRFI
-
           </span>
 
           <strong>
-
             ${leanCount}
-
           </strong>
-
         </div>
 
         <div>
-
           <span>
-
             YRFI Alerts
-
           </span>
 
           <strong>
-
             ${yrfiCount}
-
           </strong>
-
         </div>
 
       </div>
@@ -2561,41 +1775,29 @@ const NRFI = {
       <div class="nrfi-model-note">
 
         <strong>
-
-          POPS Simple NRFI Model 4.0
-
+          POPS NRFI Model 5.0
         </strong>
 
         <p>
-
-          Every game is ranked using both
-
-          starting pitchers.
-
+          This simplified model gives 90% of the score
+          to the two starting pitchers.
         </p>
 
         <p>
-
-          ERA 40% • WHIP 25% • HR/9 20% •
-
-          K/9 15%
-
+          Pitchers are graded using ERA, WHIP, HR/9
+          and K/9. When both pitchers have strong
+          numbers, the NRFI score increases.
         </p>
 
         <p>
-
-          Both pitchers must have strong numbers
-
-          for a game to receive a high NRFI score.
-
+          Average data confidence:
+          <strong>
+            ${averageConfidence}%
+          </strong>
         </p>
 
         <p>
-
-          Team offense, batter statistics and
-
-          weather are not included.
-
+          Weather is not included in the NRFI score.
         </p>
 
       </div>
@@ -2603,41 +1805,26 @@ const NRFI = {
       <div class="nrfi-game-list">
 
         ${predictions
-
           .map(
-
             (result, index) =>
-
               this.renderGameCard(
-
                 result,
-
                 index
-
               )
-
           )
-
           .join("")}
 
       </div>
-
     `;
 
     return predictions;
-
   }
-
 };
 
 /*
-
 =========================================================
-
 GLOBAL ACCESS
-
 =========================================================
-
 */
 
 window.NRFI = NRFI;
