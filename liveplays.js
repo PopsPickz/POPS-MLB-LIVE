@@ -2,7 +2,7 @@
 =========================================================
 POPS PICKZ LIVE PLAYS
 File: liveplays.js
-Version: 3.0
+Version: 4.0
 =========================================================
 
 TRACKS ONLY:
@@ -40,10 +40,13 @@ const LivePlays = {
   box: null,
 
   settings: {
-    refreshInterval: 45 * 1000,
-    maximumHRPicks: 20,
-    maximumHitPicks: 20
-  },
+  refreshInterval: 45 * 1000,
+  maximumHRPicks: 20,
+  maximumHitPicks: 20,
+
+  recapStoragePrefix:
+    "pops-live-results-"
+},
 
   timer: null,
   loading: false,
@@ -887,6 +890,152 @@ const LivePlays = {
       );
   },
 
+/*
+=========================================================
+AUTOMATIC DAILY RECAP STORAGE
+=========================================================
+*/
+
+getRecapDateKey() {
+  if (
+    typeof window.todayData?.date === "string" &&
+    window.todayData.date
+  ) {
+    return window.todayData.date;
+  }
+
+  if (
+    typeof API !== "undefined" &&
+    typeof API.today === "function"
+  ) {
+    return API.today();
+  }
+
+  const now = new Date();
+
+  const year =
+    now.getFullYear();
+
+  const month =
+    String(
+      now.getMonth() + 1
+    ).padStart(2, "0");
+
+  const day =
+    String(
+      now.getDate()
+    ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+},
+
+saveDailyRecap() {
+  const dateKey =
+    this.getRecapDateKey();
+
+  const hrResults =
+    this.getHRResultsArray();
+
+  const hitResults =
+    this.getHitResultsArray();
+
+  const hrTracked =
+    this.getHRPicks().length;
+
+  const hitTracked =
+    this.getHitPicks().length;
+
+  /*
+  Success is based on how many unique picks recorded
+  at least one result, not the total number of hits.
+  */
+
+  const successfulHRPicks =
+    hrResults.length;
+
+  const successfulHitPicks =
+    hitResults.length;
+
+  const recapData = {
+    date:
+      dateKey,
+
+    savedAt:
+      new Date().toISOString(),
+
+    summary: {
+      successfulHRPicks,
+      successfulHitPicks,
+
+      hrTracked,
+      hitTracked,
+
+      hrSuccess:
+        hrTracked > 0
+          ? Math.round(
+              (
+                successfulHRPicks /
+                hrTracked
+              ) * 100
+            )
+          : 0,
+
+      hitSuccess:
+        hitTracked > 0
+          ? Math.round(
+              (
+                successfulHitPicks /
+                hitTracked
+              ) * 100
+            )
+          : 0
+    },
+
+    hrPicks:
+      hrResults.map(result => ({
+        ...result,
+
+        homered:
+          Number(
+            result.homeRuns || 0
+          ) > 0
+      })),
+
+    hitPicks:
+      hitResults.map(result => ({
+        ...result,
+
+        hit:
+          Number(
+            result.hits || 0
+          ) > 0
+      }))
+  };
+
+  const storageKey =
+    `${this.settings.recapStoragePrefix}${dateKey}`;
+
+  try {
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify(recapData)
+    );
+
+    console.log(
+      `📊 POPS recap saved: ${storageKey}`
+    );
+
+    return true;
+  } catch (error) {
+    console.warn(
+      "POPS could not save the daily recap:",
+      error
+    );
+
+    return false;
+  }
+},
+  
   /*
   =======================================================
   PLAYER CARDS
@@ -1501,8 +1650,16 @@ const LivePlays = {
       this.lastUpdated =
         new Date();
 
-      this.render();
-    } finally {
+     /*
+     Save today's current results for tomorrow's Recap tab.
+     The same storage entry is updated every 45 seconds.
+    */
+
+    this.saveDailyRecap();
+
+     this.render();
+      
+   } finally {
       this.loading = false;
     }
   },
