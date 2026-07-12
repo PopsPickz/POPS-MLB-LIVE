@@ -2,23 +2,49 @@
 =========================================================
 POPS PICKZ LIVE PLAYS
 File: liveplays.js
-Version: 2.0
-Design: Modern Two-Column Card Layout
+Version: 3.0
 =========================================================
 
 TRACKS ONLY:
 
-- Home runs by players in the displayed Top 20 HR Pickz
-- Singles, doubles and triples by players in the displayed
-  Top 20 Hit Pickz
+- Home runs by players displayed in the Top 20 HR Pickz
+- Hits by players displayed in the Top 20 Hit Pickz
 
 IMPORTANT:
 
-- Players outside the displayed Top 20 are ignored.
-- Home runs appear only in the HR Pickz column.
-- Regular hits appear only in the Hit Pickz column.
-- MLB live feeds refresh every 45 seconds.
-- This file must load after app.js.
+- Each player appears only once per column.
+- Multiple hits increase that player's hit total.
+- Multiple home runs increase that player's HR total.
+- Home runs and hits are displayed in separate columns.
+- A home run is displayed in the HR column only.
+- Players outside the displayed Top 20 lists are ignored.
+
+The MLB live feed is checked every 45 seconds.
+
+REQUIRED SCRIPT ORDER:
+
+<script src="app.js"></script>
+<script src="liveplays.js?v=3"></script>
+
+REQUIRED HTML:
+
+<section
+  class="card tab-section live-plays-section"
+  id="liveplays"
+>
+  <div class="live-plays-section-header">
+    <h2>🔴 POPS Live Plays</h2>
+
+    <p>
+      Automatically tracks hits and home runs by
+      players listed in today's POPS Pickz.
+    </p>
+  </div>
+
+  <div id="livePlaysBox">
+    <p>Waiting for today's MLB games to begin...</p>
+  </div>
+</section>
 =========================================================
 */
 
@@ -33,16 +59,13 @@ const LivePlays = {
 
   timer: null,
   loading: false,
-  started: false,
 
   detectedPlayIds: new Set(),
-
-  hrEvents: [],
-  hitEvents: [],
+  liveEvents: [],
 
   /*
   =======================================================
-  GENERAL HELPERS
+  BASIC HELPERS
   =======================================================
   */
 
@@ -73,14 +96,59 @@ const LivePlays = {
       : fallback;
   },
 
-  formatClockTime(timestamp) {
-    const date = new Date(timestamp);
-
-    if (Number.isNaN(date.getTime())) {
-      return "";
+  getTeamName(team = "", fallback = "Team N/A") {
+    if (
+      typeof team === "string" &&
+      team.trim()
+    ) {
+      return team.trim();
     }
 
-    return date.toLocaleTimeString([], {
+    if (
+      team &&
+      typeof team === "object"
+    ) {
+      return (
+        team.name ||
+        team.teamName ||
+        fallback
+      );
+    }
+
+    return fallback;
+  },
+
+  getGameMatchup(game = {}) {
+    const awayTeam =
+      this.getTeamName(
+        game.awayTeam,
+        "Away Team"
+      );
+
+    const homeTeam =
+      this.getTeamName(
+        game.homeTeam,
+        "Home Team"
+      );
+
+    return `${awayTeam} vs ${homeTeam}`;
+  },
+
+  formatGameTime(value) {
+    if (!value) {
+      return "Time TBD";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Time TBD";
+    }
+
+    return date.toLocaleString([], {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
       hour: "numeric",
       minute: "2-digit"
     });
@@ -88,7 +156,7 @@ const LivePlays = {
 
   /*
   =======================================================
-  POPS DATA
+  SITE DATA
   =======================================================
   */
 
@@ -111,7 +179,8 @@ const LivePlays = {
   },
 
   /*
-  Only use the displayed Top 20 HR players.
+  Only return the same Top 20 HR players that are
+  displayed on the HR Pickz page.
   */
 
   getHRPicks() {
@@ -126,7 +195,8 @@ const LivePlays = {
   },
 
   /*
-  Only use the displayed Top 20 Hit Pickz.
+  Only return the same Top 20 Hit players that are
+  displayed on the Hit Pickz page.
   */
 
   getHitPicks() {
@@ -141,10 +211,10 @@ const LivePlays = {
   },
 
   findHRPick(playerName = "") {
-    const targetName =
+    const normalizedPlayerName =
       this.normalizeName(playerName);
 
-    if (!targetName) {
+    if (!normalizedPlayerName) {
       return null;
     }
 
@@ -157,17 +227,18 @@ const LivePlays = {
 
         return (
           this.normalizeName(pickName) ===
-          targetName
+          normalizedPlayerName
         );
-      }) || null
+      }) ||
+      null
     );
   },
 
   findHitPick(playerName = "") {
-    const targetName =
+    const normalizedPlayerName =
       this.normalizeName(playerName);
 
-    if (!targetName) {
+    if (!normalizedPlayerName) {
       return null;
     }
 
@@ -180,31 +251,37 @@ const LivePlays = {
 
         return (
           this.normalizeName(pickName) ===
-          targetName
+          normalizedPlayerName
         );
-      }) || null
+      }) ||
+      null
     );
   },
 
-  getPickRank(pick, type = "hr") {
-    const picks =
-      type === "hr"
-        ? this.getHRPicks()
-        : this.getHitPicks();
-
-    const index =
-      picks.findIndex(item => item === pick);
-
-    return index >= 0
-      ? index + 1
-      : 0;
-  },
-
   /*
-  =======================================================
-  GAME STATUS
-  =======================================================
+  Finds a player's existing card so the name is not
+  displayed more than once in the same column.
   */
+
+  findExistingEvent(
+    type,
+    playerName = ""
+  ) {
+    const normalizedPlayerName =
+      this.normalizeName(playerName);
+
+    return (
+      this.liveEvents.find(event => {
+        return (
+          event.type === type &&
+          this.normalizeName(
+            event.player
+          ) === normalizedPlayerName
+        );
+      }) ||
+      null
+    );
+  },
 
   getGameStatus(game = {}) {
     const status =
@@ -214,6 +291,7 @@ const LivePlays = {
 
     return String(
       status.abstractGameState ||
+      status.abstractGameCode ||
       status.detailedState ||
       status.statusCode ||
       status.codedGameState ||
@@ -232,7 +310,8 @@ const LivePlays = {
       status.includes("completed") ||
       status.includes("game over") ||
       status === "i" ||
-      status === "f"
+      status === "f" ||
+      status === "o"
     );
   },
 
@@ -258,7 +337,7 @@ const LivePlays = {
         );
       } catch (error) {
         console.warn(
-          `POPS Live Plays API fallback for ${gamePk}:`,
+          `POPS Live Plays API fallback for game ${gamePk}:`,
           error
         );
       }
@@ -282,7 +361,7 @@ const LivePlays = {
 
   /*
   =======================================================
-  PLAY HELPERS
+  PLAY EXTRACTION
   =======================================================
   */
 
@@ -302,7 +381,8 @@ const LivePlays = {
       play?.about?.inning ?? "",
       play?.about?.halfInning ?? "",
       play?.result?.eventType ?? "",
-      play?.matchup?.batter?.id ?? ""
+      play?.matchup?.batter?.id ?? "",
+      play?.result?.description ?? ""
     ].join("-");
   },
 
@@ -321,63 +401,59 @@ const LivePlays = {
       ""
     )
       .toLowerCase()
-      .replace(/\s+/g, "_");
+      .trim();
   },
 
   isHomeRun(play = {}) {
+    const eventType =
+      this.getEventType(play);
+
     return (
-      this.getEventType(play) ===
-      "home_run"
+      eventType === "home_run" ||
+      eventType === "home run" ||
+      eventType.includes("home_run")
     );
   },
 
-  /*
-  A home run is not added to the Hit Pickz column.
+  isHit(play = {}) {
+    const eventType =
+      this.getEventType(play);
 
-  Hit Pickz column contains:
-  - Single
-  - Double
-  - Triple
-  */
-
-  isRegularHit(play = {}) {
     return [
       "single",
       "double",
       "triple"
-    ].includes(
-      this.getEventType(play)
-    );
+    ].includes(eventType);
   },
 
-  getHitLabel(play = {}) {
+  getHitType(play = {}) {
     const eventType =
       this.getEventType(play);
 
-    const labels = {
-      single: "Single",
-      double: "Double",
-      triple: "Triple",
-      home_run: "Home Run"
-    };
+    if (eventType === "double") {
+      return "Double";
+    }
 
-    return (
-      labels[eventType] ||
-      "Hit"
-    );
+    if (eventType === "triple") {
+      return "Triple";
+    }
+
+    if (eventType === "single") {
+      return "Single";
+    }
+
+    return "Hit";
   },
 
   getInningText(play = {}) {
     const inning =
-      this.number(
-        play?.about?.inning,
-        0
+      Number(
+        play?.about?.inning || 0
       );
 
     const half =
       String(
-        play?.about?.halfInning ||
-        ""
+        play?.about?.halfInning || ""
       ).toLowerCase();
 
     if (!inning) {
@@ -398,20 +474,16 @@ const LivePlays = {
     return (
       play?.result?.description ||
       play?.result?.event ||
-      "Live result detected."
+      "Live play detected"
     );
   },
 
   getHitData(play = {}) {
-    const playEvents =
-      Array.isArray(play?.playEvents)
-        ? play.playEvents
-        : [];
-
     const hitData =
-      playEvents
-        .map(event => event?.hitData)
-        .find(Boolean) || {};
+      play?.playEvents
+        ?.map(event => event?.hitData)
+        .find(Boolean) ||
+      {};
 
     return {
       exitVelocity:
@@ -434,24 +506,6 @@ const LivePlays = {
     };
   },
 
-  getGameMatchup(game = {}) {
-    const awayTeam =
-      typeof game.awayTeam === "object"
-        ? game.awayTeam?.name
-        : game.awayTeam;
-
-    const homeTeam =
-      typeof game.homeTeam === "object"
-        ? game.homeTeam?.name
-        : game.homeTeam;
-
-    return `${
-      awayTeam || "Away Team"
-    } vs ${
-      homeTeam || "Home Team"
-    }`;
-  },
-
   /*
   =======================================================
   EVENT CREATION
@@ -461,17 +515,35 @@ const LivePlays = {
   createHomeRunEvent(
     play,
     game,
-    pick,
-    playId
+    pick
   ) {
     const hitData =
       this.getHitData(play);
 
+    const hrPicks =
+      this.getHRPicks();
+
+    const rank =
+      hrPicks.findIndex(item => {
+        return (
+          this.normalizeName(
+            item?.player ||
+            item?.name ||
+            ""
+          ) ===
+          this.normalizeName(
+            this.getPlayerName(play)
+          )
+        );
+      }) + 1;
+
     return {
-      id: playId,
       type: "homeRun",
-      eventLabel: "Home Run",
+
       icon: "💣",
+
+      title:
+        "POPS HR PICK HIT",
 
       player:
         this.getPlayerName(play),
@@ -482,6 +554,18 @@ const LivePlays = {
 
       game:
         this.getGameMatchup(game),
+
+      gamePk:
+        Number(
+          game.gamePk ||
+          game.id ||
+          0
+        ),
+
+      scheduledTime:
+        game.date ||
+        game.gameDate ||
+        "",
 
       inning:
         this.getInningText(play),
@@ -495,11 +579,12 @@ const LivePlays = {
           0
         ),
 
-      rank:
-        this.getPickRank(
-          pick,
-          "hr"
-        ),
+      rank,
+
+      totalResults: 1,
+
+      resultLabel:
+        "Home Run",
 
       exitVelocity:
         hitData.exitVelocity,
@@ -510,6 +595,9 @@ const LivePlays = {
       distance:
         hitData.distance,
 
+      firstDetected:
+        Date.now(),
+
       timestamp:
         Date.now()
     };
@@ -518,16 +606,32 @@ const LivePlays = {
   createHitEvent(
     play,
     game,
-    pick,
-    playId
+    pick
   ) {
+    const hitPicks =
+      this.getHitPicks();
+
+    const rank =
+      hitPicks.findIndex(item => {
+        return (
+          this.normalizeName(
+            item?.player ||
+            item?.name ||
+            ""
+          ) ===
+          this.normalizeName(
+            this.getPlayerName(play)
+          )
+        );
+      }) + 1;
+
     return {
-      id: playId,
       type: "hit",
-      eventLabel:
-        this.getHitLabel(play),
 
       icon: "🔥",
+
+      title:
+        "POPS HIT PICK HIT",
 
       player:
         this.getPlayerName(play),
@@ -538,6 +642,18 @@ const LivePlays = {
 
       game:
         this.getGameMatchup(game),
+
+      gamePk:
+        Number(
+          game.gamePk ||
+          game.id ||
+          0
+        ),
+
+      scheduledTime:
+        game.date ||
+        game.gameDate ||
+        "",
 
       inning:
         this.getInningText(play),
@@ -551,11 +667,19 @@ const LivePlays = {
           0
         ),
 
-      rank:
-        this.getPickRank(
-          pick,
-          "hit"
-        ),
+      rank,
+
+      totalResults: 1,
+
+      resultLabel:
+        this.getHitType(play),
+
+      hitTypes: [
+        this.getHitType(play)
+      ],
+
+      firstDetected:
+        Date.now(),
 
       timestamp:
         Date.now()
@@ -564,15 +688,125 @@ const LivePlays = {
 
   /*
   =======================================================
-  PROCESS ONE GAME
+  UPDATE EXISTING EVENTS
+  =======================================================
+  */
+
+  updateHomeRunEvent(
+    existingEvent,
+    newEvent
+  ) {
+    existingEvent.totalResults =
+      this.number(
+        existingEvent.totalResults,
+        1
+      ) + 1;
+
+    existingEvent.inning =
+      newEvent.inning;
+
+    existingEvent.description =
+      newEvent.description;
+
+    existingEvent.resultLabel =
+      "Home Run";
+
+    existingEvent.timestamp =
+      Date.now();
+
+    /*
+    Keep the player's longest home run.
+    */
+
+    existingEvent.distance =
+      Math.max(
+        this.number(
+          existingEvent.distance,
+          0
+        ),
+        this.number(
+          newEvent.distance,
+          0
+        )
+      );
+
+    /*
+    Keep the player's highest exit velocity.
+    */
+
+    existingEvent.exitVelocity =
+      Math.max(
+        this.number(
+          existingEvent.exitVelocity,
+          0
+        ),
+        this.number(
+          newEvent.exitVelocity,
+          0
+        )
+      );
+
+    /*
+    Show the latest launch angle.
+    */
+
+    if (
+      this.number(
+        newEvent.launchAngle,
+        0
+      ) !== 0
+    ) {
+      existingEvent.launchAngle =
+        newEvent.launchAngle;
+    }
+  },
+
+  updateHitEvent(
+    existingEvent,
+    newEvent
+  ) {
+    existingEvent.totalResults =
+      this.number(
+        existingEvent.totalResults,
+        1
+      ) + 1;
+
+    existingEvent.inning =
+      newEvent.inning;
+
+    existingEvent.description =
+      newEvent.description;
+
+    existingEvent.resultLabel =
+      newEvent.resultLabel;
+
+    existingEvent.timestamp =
+      Date.now();
+
+    if (
+      !Array.isArray(
+        existingEvent.hitTypes
+      )
+    ) {
+      existingEvent.hitTypes = [];
+    }
+
+    existingEvent.hitTypes.push(
+      newEvent.resultLabel
+    );
+  },
+
+  /*
+  =======================================================
+  PROCESS GAME
   =======================================================
   */
 
   async processGame(game = {}) {
     const gamePk =
-      this.number(
+      Number(
         game.gamePk ||
-        game.id,
+        game.id ||
         0
       );
 
@@ -613,9 +847,10 @@ const LivePlays = {
       }
 
       /*
-      HOME RUN COLUMN
+      HOME RUN CHECK
 
-      Player must be in the displayed Top 20 HR list.
+      A home run is accepted only when the player is
+      currently inside the displayed Top 20 HR Pickz.
       */
 
       if (this.isHomeRun(play)) {
@@ -624,204 +859,448 @@ const LivePlays = {
             playerName
           );
 
-        if (hrPick) {
-          this.hrEvents.unshift(
-            this.createHomeRunEvent(
-              play,
-              game,
-              hrPick,
-              playId
-            )
-          );
+        if (!hrPick) {
+          /*
+          The player was not in the displayed Top 20.
+          Mark the play as checked, but do not show it.
+          */
 
           this.detectedPlayIds.add(
             playId
           );
+
+          continue;
         }
 
+        const newHomeRunEvent =
+          this.createHomeRunEvent(
+            play,
+            game,
+            hrPick
+          );
+
+        const existingHomeRun =
+          this.findExistingEvent(
+            "homeRun",
+            playerName
+          );
+
+        if (existingHomeRun) {
+          this.updateHomeRunEvent(
+            existingHomeRun,
+            newHomeRunEvent
+          );
+        } else {
+          this.liveEvents.unshift(
+            newHomeRunEvent
+          );
+        }
+
+        this.detectedPlayIds.add(
+          playId
+        );
+
         /*
-        Stop here so a home run does not also appear
-        inside the Hit Pickz column.
+        Do not also place the home run inside the Hit
+        Pickz column.
         */
 
         continue;
       }
 
       /*
-      HIT COLUMN
+      HIT CHECK
 
-      Player must be in the displayed Top 20 Hit list.
-      Only singles, doubles and triples count here.
+      Singles, doubles and triples are accepted only when
+      the player is inside the displayed Top 20 Hit Pickz.
       */
 
-      if (this.isRegularHit(play)) {
+      if (this.isHit(play)) {
         const hitPick =
           this.findHitPick(
             playerName
           );
 
-        if (hitPick) {
-          this.hitEvents.unshift(
-            this.createHitEvent(
-              play,
-              game,
-              hitPick,
-              playId
-            )
-          );
-
+        if (!hitPick) {
           this.detectedPlayIds.add(
             playId
           );
+
+          continue;
         }
+
+        const newHitEvent =
+          this.createHitEvent(
+            play,
+            game,
+            hitPick
+          );
+
+        const existingHit =
+          this.findExistingEvent(
+            "hit",
+            playerName
+          );
+
+        if (existingHit) {
+          this.updateHitEvent(
+            existingHit,
+            newHitEvent
+          );
+        } else {
+          this.liveEvents.unshift(
+            newHitEvent
+          );
+        }
+
+        this.detectedPlayIds.add(
+          playId
+        );
       }
     }
   },
 
   /*
   =======================================================
-  CARD RENDERER
+  EVENT FILTERS
   =======================================================
   */
 
-  renderEventCard(
-    event = {},
-    type = "hr"
-  ) {
-    const isHomeRun =
-      type === "hr";
+  getHomeRunEvents() {
+    return this.liveEvents
+      .filter(event =>
+        event.type === "homeRun"
+      )
+      .sort(
+        (a, b) =>
+          b.timestamp -
+          a.timestamp
+      );
+  },
 
-    const extraStats =
-      isHomeRun
-        ? `
-          <div class="live-result-stat-grid">
+  getHitEvents() {
+    return this.liveEvents
+      .filter(event =>
+        event.type === "hit"
+      )
+      .sort(
+        (a, b) =>
+          b.timestamp -
+          a.timestamp
+      );
+  },
 
-            ${
-              event.exitVelocity > 0
-                ? `
-                  <div>
-                    <span>Exit Velocity</span>
-                    <strong>
-                      ${event.exitVelocity.toFixed(1)}
-                      MPH
-                    </strong>
-                  </div>
-                `
-                : ""
-            }
+  getTotalHomeRuns() {
+    return this.getHomeRunEvents()
+      .reduce(
+        (total, event) =>
+          total +
+          this.number(
+            event.totalResults,
+            1
+          ),
+        0
+      );
+  },
 
-            ${
-              event.distance > 0
-                ? `
-                  <div>
-                    <span>Distance</span>
-                    <strong>
-                      ${Math.round(event.distance)}
-                      FT
-                    </strong>
-                  </div>
-                `
-                : ""
-            }
+  getTotalHits() {
+    return this.getHitEvents()
+      .reduce(
+        (total, event) =>
+          total +
+          this.number(
+            event.totalResults,
+            1
+          ),
+        0
+      );
+  },
 
-            ${
-              event.launchAngle !== 0
-                ? `
-                  <div>
-                    <span>Launch Angle</span>
-                    <strong>
-                      ${event.launchAngle.toFixed(0)}°
-                    </strong>
-                  </div>
-                `
-                : ""
-            }
+  /*
+  =======================================================
+  CARD RENDERING
+  =======================================================
+  */
 
-          </div>
-        `
-        : "";
+  renderHomeRunStats(event = {}) {
+    const stats = [];
+
+    if (
+      this.number(
+        event.exitVelocity,
+        0
+      ) > 0
+    ) {
+      stats.push(`
+        <div class="live-play-stat">
+          <span>Max Exit Velocity</span>
+
+          <strong>
+            ${this.number(
+              event.exitVelocity,
+              0
+            ).toFixed(1)} MPH
+          </strong>
+        </div>
+      `);
+    }
+
+    if (
+      this.number(
+        event.distance,
+        0
+      ) > 0
+    ) {
+      stats.push(`
+        <div class="live-play-stat">
+          <span>Longest Distance</span>
+
+          <strong>
+            ${Math.round(
+              this.number(
+                event.distance,
+                0
+              )
+            )} FT
+          </strong>
+        </div>
+      `);
+    }
+
+    if (
+      this.number(
+        event.launchAngle,
+        0
+      ) !== 0
+    ) {
+      stats.push(`
+        <div class="live-play-stat">
+          <span>Latest Launch Angle</span>
+
+          <strong>
+            ${this.number(
+              event.launchAngle,
+              0
+            ).toFixed(0)}°
+          </strong>
+        </div>
+      `);
+    }
+
+    if (!stats.length) {
+      return "";
+    }
+
+    return `
+      <div class="live-play-stat-grid">
+        ${stats.join("")}
+      </div>
+    `;
+  },
+
+  renderHitTypes(event = {}) {
+    const hitTypes =
+      Array.isArray(event.hitTypes)
+        ? event.hitTypes
+        : [];
+
+    if (!hitTypes.length) {
+      return "";
+    }
+
+    const totals = {
+      Single: 0,
+      Double: 0,
+      Triple: 0
+    };
+
+    for (const hitType of hitTypes) {
+      if (
+        Object.prototype.hasOwnProperty.call(
+          totals,
+          hitType
+        )
+      ) {
+        totals[hitType] += 1;
+      }
+    }
+
+    const labels = [];
+
+    if (totals.Single > 0) {
+      labels.push(
+        `${totals.Single} ${
+          totals.Single === 1
+            ? "single"
+            : "singles"
+        }`
+      );
+    }
+
+    if (totals.Double > 0) {
+      labels.push(
+        `${totals.Double} ${
+          totals.Double === 1
+            ? "double"
+            : "doubles"
+        }`
+      );
+    }
+
+    if (totals.Triple > 0) {
+      labels.push(
+        `${totals.Triple} ${
+          totals.Triple === 1
+            ? "triple"
+            : "triples"
+        }`
+      );
+    }
+
+    if (!labels.length) {
+      return "";
+    }
+
+    return `
+      <p class="live-play-hit-types">
+        <strong>Hit Breakdown:</strong>
+        ${this.escapeHTML(
+          labels.join(" • ")
+        )}
+      </p>
+    `;
+  },
+
+  renderEvent(event = {}) {
+    const resultCount =
+      this.number(
+        event.totalResults,
+        1
+      );
+
+    const countLabel =
+      event.type === "homeRun"
+        ? (
+            resultCount === 1
+              ? "Home Run"
+              : "Home Runs"
+          )
+        : (
+            resultCount === 1
+              ? "Hit"
+              : "Hits"
+          );
+
+    const extraDetails =
+      event.type === "homeRun"
+        ? this.renderHomeRunStats(
+            event
+          )
+        : this.renderHitTypes(
+            event
+          );
 
     return `
       <article
         class="
-          live-result-card
-          ${
-            isHomeRun
-              ? "live-result-hr"
-              : "live-result-hit"
-          }
+          live-play-card
+          live-play-${event.type}
         "
       >
 
-        <div class="live-result-card-top">
+        <div class="live-play-card-glow"></div>
 
-          <div class="live-result-player">
+        <div class="live-play-header">
 
-            <span class="live-result-icon">
-              ${event.icon}
+          <span class="live-play-icon">
+            ${event.icon}
+          </span>
+
+          <div class="live-play-player-copy">
+
+            <span class="live-play-label">
+              ${this.escapeHTML(
+                event.title
+              )}
             </span>
 
-            <div>
-              <div class="live-result-name-row">
-
-                ${
-                  event.rank > 0
-                    ? `
-                      <span class="live-result-rank">
-                        #${event.rank}
-                      </span>
-                    `
-                    : ""
-                }
-
-                <h4>
-                  ${this.escapeHTML(
-                    event.player
-                  )}
-                </h4>
-
-              </div>
-
-              <span
-                class="
-                  live-result-event-badge
-                  ${
-                    isHomeRun
-                      ? "home-run"
-                      : "regular-hit"
-                  }
-                "
-              >
-                ${this.escapeHTML(
-                  event.eventLabel
-                )}
-              </span>
-
-            </div>
+            <h3>
+              ${this.escapeHTML(
+                event.player
+              )}
+            </h3>
 
           </div>
 
-          <time>
+          ${
+            event.rank > 0
+              ? `
+                <span class="live-play-rank">
+                  #${event.rank}
+                </span>
+              `
+              : ""
+          }
+
+        </div>
+
+        <div class="live-play-result-total">
+
+          <span>
+            ${countLabel}
+          </span>
+
+          <strong>
+            ${resultCount}
+          </strong>
+
+        </div>
+
+        <div class="live-play-card-details">
+
+          <p>
+            <strong>Team:</strong>
+
             ${this.escapeHTML(
-              this.formatClockTime(
-                event.timestamp
-              )
+              event.team
             )}
-          </time>
+          </p>
+
+          <p>
+            <strong>Game:</strong>
+
+            ${this.escapeHTML(
+              event.game
+            )}
+          </p>
+
+          ${
+            event.scheduledTime
+              ? `
+                <p>
+                  <strong>Scheduled:</strong>
+
+                  ${this.escapeHTML(
+                    this.formatGameTime(
+                      event.scheduledTime
+                    )
+                  )}
+                </p>
+              `
+              : ""
+          }
+
+          <p>
+            <strong>Latest Inning:</strong>
+
+            ${this.escapeHTML(
+              event.inning
+            )}
+          </p>
 
         </div>
 
-        <div class="live-result-game">
-          ${this.escapeHTML(
-            event.game
-          )}
-          <span>•</span>
-          ${this.escapeHTML(
-            event.inning
-          )}
-        </div>
-
-        <p class="live-result-description">
+        <p class="live-play-description">
           ${this.escapeHTML(
             event.description
           )}
@@ -830,120 +1309,56 @@ const LivePlays = {
         ${
           event.score > 0
             ? `
-              <div class="live-result-score-row">
-
-                <span>POPS Score</span>
-
+              <p class="live-play-pops-score">
                 <strong>
-                  ${event.score}/100
+                  POPS Score:
                 </strong>
 
-              </div>
+                <span class="score">
+                  ${event.score}/100
+                </span>
+              </p>
             `
             : ""
         }
 
-        ${extraStats}
+        ${extraDetails}
 
       </article>
     `;
   },
 
-  renderEmptyColumn(
-    type = "hr"
-  ) {
-    const isHomeRun =
-      type === "hr";
+  renderEmptyColumn({
+    type = "hit",
+    title = "",
+    message = ""
+  }) {
+    const icon =
+      type === "homeRun"
+        ? "💣"
+        : "🔥";
 
     return `
-      <div class="live-column-empty">
-
-        <span>
-          ${isHomeRun ? "💣" : "🔥"}
-        </span>
-
-        <h4>
-          ${
-            isHomeRun
-              ? "No HR Pickz Hits Yet"
-              : "No Hit Pickz Results Yet"
-          }
-        </h4>
-
-        <p>
-          ${
-            isHomeRun
-              ? "Watching home runs from the displayed Top 20 HR Pickz."
-              : "Watching singles, doubles and triples from the displayed Top 20 Hit Pickz."
-          }
-        </p>
-
-      </div>
-    `;
-  },
-
-  renderColumn(
-    title,
-    description,
-    events,
-    type
-  ) {
-    const isHomeRun =
-      type === "hr";
-
-    return `
-      <section
+      <div
         class="
-          live-results-column
-          ${
-            isHomeRun
-              ? "live-hr-column"
-              : "live-hit-column"
-          }
+          live-plays-column-empty
+          live-plays-empty-${type}
         "
       >
 
-        <div class="live-column-header">
+        <span class="live-empty-icon">
+          ${icon}
+        </span>
 
-          <div>
-            <h3>
-              ${isHomeRun ? "💣" : "🔥"}
-              ${this.escapeHTML(title)}
-            </h3>
+        <h4>
+          ${this.escapeHTML(title)}
+        </h4>
 
-            <p>
-              ${this.escapeHTML(
-                description
-              )}
-            </p>
-          </div>
+        <p>
+          ${this.escapeHTML(message)}
+        </p>
 
-          <span class="live-column-count">
-            ${events.length}
-          </span>
-
-        </div>
-
-        <div class="live-column-list">
-
-          ${
-            events.length
-              ? events
-                  .map(event =>
-                    this.renderEventCard(
-                      event,
-                      type
-                    )
-                  )
-                  .join("")
-              : this.renderEmptyColumn(
-                  type
-                )
-          }
-
-        </div>
-
-      </section>
+      </div>
     `;
   },
 
@@ -965,6 +1380,12 @@ const LivePlays = {
       return;
     }
 
+    const homeRunEvents =
+      this.getHomeRunEvents();
+
+    const hitEvents =
+      this.getHitEvents();
+
     const games =
       this.getGames();
 
@@ -973,113 +1394,196 @@ const LivePlays = {
         this.isGameLiveOrFinal(game)
       );
 
-    const hrCount =
-      this.hrEvents.length;
+    const totalHomeRuns =
+      this.getTotalHomeRuns();
 
-    const hitCount =
-      this.hitEvents.length;
-
-    const totalCount =
-      hrCount + hitCount;
+    const totalHits =
+      this.getTotalHits();
 
     this.box.innerHTML = `
       <div class="live-plays-dashboard">
 
-        <div class="live-plays-hero">
+        <div class="live-plays-status-bar">
 
-          <div class="live-plays-title">
+          <div class="live-plays-monitor-status">
 
-            <span class="live-main-dot"></span>
-
-            <div>
-              <h2>
-                POPS Live Plays
-              </h2>
-
-              <p>
-                Automatically tracks hits and home runs
-                by players listed in today's POPS Pickz.
-              </p>
-            </div>
-
-          </div>
-
-          <span class="live-now-badge">
-            <span></span>
-            LIVE
-          </span>
-
-        </div>
-
-        <div class="live-plays-summary-grid">
-
-          <div class="live-summary-card status">
-
-            <span
-              class="
-                live-status-dot
-                ${anyLiveGames ? "active" : ""}
-              "
-            ></span>
+            <span class="live-pulse-dot"></span>
 
             <div>
               <strong>
                 ${
                   anyLiveGames
-                    ? "Live monitoring active"
+                    ? "Live monitor active"
                     : "Waiting for games"
                 }
               </strong>
 
               <small>
-                Feeds refresh every 45 seconds
+                MLB feeds refresh every 45 seconds
               </small>
             </div>
 
           </div>
 
-          <div class="live-summary-card total">
+          <div class="live-plays-total-results">
 
-            <strong class="live-total-number">
-              ${totalCount}
-            </strong>
+            <span>
+              ${totalHomeRuns + totalHits}
+            </span>
 
-            <div>
-              <span>Total Results</span>
-              <small>Today</small>
-            </div>
+            <small>
+              Total Results
+            </small>
 
           </div>
 
         </div>
 
-        <div class="live-results-grid">
+        <div class="live-plays-pick-status">
 
-          ${this.renderColumn(
-            "HR Pickz Hits",
-            "Home runs by players in the Top 20 HR Pickz",
-            this.hrEvents,
-            "hr"
-          )}
+          <span>
+            💣 Watching
+            ${this.getHRPicks().length}
+            Top HR Pickz
+          </span>
 
-          ${this.renderColumn(
-            "Hit Pickz Hits",
-            "Singles, doubles and triples by players in the Top 20 Hit Pickz",
-            this.hitEvents,
-            "hit"
-          )}
+          <span>
+            🔥 Watching
+            ${this.getHitPicks().length}
+            Top Hit Pickz
+          </span>
 
         </div>
 
-        <div class="live-monitor-footer">
+        <div class="live-plays-columns">
 
-          <span>
-            🎯 Watching Top 20 HR Pickz
-          </span>
+          <section
+            class="
+              live-plays-column
+              live-plays-hr-column
+            "
+          >
 
-          <span>
-            🔥 Watching Top 20 Hit Pickz
-          </span>
+            <div class="live-plays-column-header">
+
+              <div>
+                <span class="live-column-icon">
+                  💣
+                </span>
+
+                <div>
+                  <small>
+                    HOME RUN RESULTS
+                  </small>
+
+                  <h3>
+                    HR Pickz Hits
+                  </h3>
+                </div>
+              </div>
+
+              <span class="live-column-count">
+                ${totalHomeRuns}
+              </span>
+
+            </div>
+
+            <p class="live-column-description">
+              Home runs by players displayed in the
+              Top 20 POPS HR Pickz.
+            </p>
+
+            <div class="live-plays-column-list">
+
+              ${
+                homeRunEvents.length
+                  ? homeRunEvents
+                      .map(event =>
+                        this.renderEvent(
+                          event
+                        )
+                      )
+                      .join("")
+                  : this.renderEmptyColumn({
+                      type: "homeRun",
+
+                      title:
+                        anyLiveGames
+                          ? "Watching for HR Pickz"
+                          : "Waiting for Games",
+
+                      message:
+                        "A Top 20 POPS HR Pick will appear here after hitting a home run."
+                    })
+              }
+
+            </div>
+
+          </section>
+
+          <section
+            class="
+              live-plays-column
+              live-plays-hit-column
+            "
+          >
+
+            <div class="live-plays-column-header">
+
+              <div>
+                <span class="live-column-icon">
+                  🔥
+                </span>
+
+                <div>
+                  <small>
+                    HIT RESULTS
+                  </small>
+
+                  <h3>
+                    Hit Pickz Hits
+                  </h3>
+                </div>
+              </div>
+
+              <span class="live-column-count">
+                ${totalHits}
+              </span>
+
+            </div>
+
+            <p class="live-column-description">
+              Singles, doubles and triples by players
+              displayed in the Top 20 POPS Hit Pickz.
+            </p>
+
+            <div class="live-plays-column-list">
+
+              ${
+                hitEvents.length
+                  ? hitEvents
+                      .map(event =>
+                        this.renderEvent(
+                          event
+                        )
+                      )
+                      .join("")
+                  : this.renderEmptyColumn({
+                      type: "hit",
+
+                      title:
+                        anyLiveGames
+                          ? "Watching for Hit Pickz"
+                          : "Waiting for Games",
+
+                      message:
+                        "A Top 20 POPS Hit Pick will appear here after recording a hit."
+                    })
+              }
+
+            </div>
+
+          </section>
 
         </div>
 
@@ -1121,16 +1625,17 @@ const LivePlays = {
         )
       );
 
-      this.hrEvents.sort(
+      this.liveEvents.sort(
         (a, b) =>
           b.timestamp -
           a.timestamp
       );
 
-      this.hitEvents.sort(
-        (a, b) =>
-          b.timestamp -
-          a.timestamp
+      this.render();
+    } catch (error) {
+      console.error(
+        "POPS Live Plays refresh error:",
+        error
       );
 
       this.render();
@@ -1139,13 +1644,13 @@ const LivePlays = {
     }
   },
 
+  /*
+  =======================================================
+  START AND STOP
+  =======================================================
+  */
+
   start() {
-    if (this.started) {
-      return;
-    }
-
-    this.started = true;
-
     this.box =
       document.getElementById(
         "livePlaysBox"
@@ -1155,19 +1660,21 @@ const LivePlays = {
 
     this.refresh().catch(error => {
       console.warn(
-        "POPS Live Plays initial refresh:",
+        "POPS Live Plays initial refresh error:",
         error
       );
     });
 
     if (this.timer) {
-      clearInterval(this.timer);
+      clearInterval(
+        this.timer
+      );
     }
 
     this.timer = setInterval(() => {
       this.refresh().catch(error => {
         console.warn(
-          "POPS Live Plays refresh:",
+          "POPS Live Plays interval error:",
           error
         );
       });
@@ -1180,11 +1687,27 @@ const LivePlays = {
 
   stop() {
     if (this.timer) {
-      clearInterval(this.timer);
+      clearInterval(
+        this.timer
+      );
+
       this.timer = null;
     }
+  },
 
-    this.started = false;
+  /*
+  This can be used after the daily picks are rebuilt.
+  */
+
+  picksUpdated() {
+    this.render();
+
+    this.refresh().catch(error => {
+      console.warn(
+        "POPS Live Plays pick refresh error:",
+        error
+      );
+    });
   }
 };
 
@@ -1194,7 +1717,12 @@ GLOBAL ACCESS
 =========================================================
 */
 
-window.LivePlays = LivePlays;
+window.LivePlays =
+  LivePlays;
+
+/*
+Called by the Live Plays navigation button.
+*/
 
 window.openLivePlaysTab =
   async function(button) {
@@ -1213,8 +1741,11 @@ window.openLivePlaysTab =
   };
 
 /*
-app.js may still be loading the picks when DOMContentLoaded
-fires, so wait before starting the monitor.
+Start after app.js has had time to create:
+
+- window.games
+- window.hrPicks
+- window.hitPicks
 */
 
 document.addEventListener(
@@ -1222,6 +1753,6 @@ document.addEventListener(
   () => {
     setTimeout(() => {
       LivePlays.start();
-    }, 6000);
+    }, 5000);
   }
 );
