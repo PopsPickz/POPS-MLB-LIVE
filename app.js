@@ -2141,7 +2141,9 @@ function addHRPick(
       : [];
 
   hrPicks.push({
-    player: batter.name,
+  id: getBatterId(batter),
+
+  player: batter.name,
     
     team:
       teamName ||
