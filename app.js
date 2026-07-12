@@ -2576,17 +2576,33 @@ function addHitPick(
     }
   );
 
-  hitPicks.push({
-    player: batter.name,
-    team:
-      teamName ||
-      batter.team ||
-     "Team N/A",
+ hitPicks.push({
+  id: getBatterId(batter),
 
-    pitcher:
-      normalizePitcherName(
-        pitcherName
-      ),
+  player: batter.name,
+
+  team:
+    teamName ||
+    batter.team ||
+    "Team N/A",
+
+  gamePk:
+    Number(
+      game.gamePk ||
+      game.id ||
+      0
+    ),
+
+  game:
+    `${game.awayTeam} vs ${game.homeTeam}`,
+
+  gameTime:
+    formatTime(game.date),
+
+  pitcher:
+    normalizePitcherName(
+      pitcherName
+    ),
 
     lineupSpot:
       batter.lineupSpot,
