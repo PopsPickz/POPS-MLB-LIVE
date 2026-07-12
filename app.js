@@ -1930,6 +1930,80 @@ HR PICKS
 =========================================================
 */
 
+function addHRPickToGambly(index, button) {
+  const pick = hrPicks[index];
+
+  if (!pick) {
+    console.warn(
+      "POPS Gambly could not find this HR pick."
+    );
+
+    return;
+  }
+
+  if (
+    typeof Gambly === "undefined" ||
+    typeof Gambly.addPick !== "function"
+  ) {
+    console.warn(
+      "Gambly module is not available."
+    );
+
+    if (button) {
+      button.textContent =
+        "⚠️ Gambly unavailable";
+    }
+
+    return;
+  }
+
+  const result = Gambly.addPick({
+    playerId: pick.id,
+
+    playerName: pick.player,
+
+    team: pick.team,
+
+    market: "Home Run",
+
+    selection:
+      `${pick.player} to hit a home run`,
+
+    game: pick.game,
+
+    gamePk: pick.gamePk,
+
+    source: "POPS HR Pickz"
+  });
+
+  if (!button) {
+    return;
+  }
+
+  if (result.success) {
+    button.textContent = "✅ Added to Gambly";
+    button.classList.add("gambly-added");
+
+    return;
+  }
+
+  if (result.reason === "duplicate") {
+    button.textContent = "✅ Already Added";
+    button.classList.add("gambly-added");
+
+    return;
+  }
+
+  if (
+    result.reason === "maximum-reached"
+  ) {
+    button.textContent = "⚠️ Slip Full";
+    return;
+  }
+
+  button.textContent = "⚠️ Could Not Add";
+}
+
 function addHRPick(
   game,
   batter,
