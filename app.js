@@ -2289,12 +2289,21 @@ async function loadHRPicks() {
     }
   }
 
-  hrPicks =
-    Object.values(uniquePlayers).sort(
-      (a, b) => b.score - a.score
-    );
+  const rankedHRCandidates =
+  Object.values(uniquePlayers).sort(
+    (a, b) =>
+      Number(b.score || 0) -
+      Number(a.score || 0)
+  );
 
-  window.hrPicks = hrPicks;
+hrPicks =
+  DailyPickLock.getLockedPicks(
+    "hr",
+    rankedHRCandidates,
+    20
+  );
+
+window.hrPicks = hrPicks;
 
   if (!hrPicks.length) {
     hrPicksBox.innerHTML = `
