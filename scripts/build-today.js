@@ -2134,6 +2134,11 @@ console.log(
     console.log(
       `🔥 Recent form loaded for ${battersWithRecentForm}/${totalBatters} batters.`
     );
+
+   console.log(
+  `🚀 Statcast loaded for ${battersWithStatcast}/${totalBatters} batters.`
+);
+    
   } catch (error) {
     console.error(
       "❌ POPS data build failed:",
