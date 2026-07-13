@@ -3124,6 +3124,16 @@ async function recalculateAllPicks() {
     await loadHRPicks();
     await loadHitPicks();
 
+    if (
+    typeof Ladder !== "undefined" &&
+    typeof Ladder.load === "function"
+) {
+    await Ladder.load(
+     hitPicks,
+     todayData.games
+  );
+}
+
 if (
   typeof NRFI !== "undefined" &&
   typeof NRFI.load === "function"
@@ -3133,8 +3143,7 @@ if (
 
 if (
   typeof Moneyline !== "undefined" &&
-  typeof Moneyline.load ===
-    "function"
+  typeof Moneyline.load === "function"
 ) {
   await Moneyline.load(games);
 }
