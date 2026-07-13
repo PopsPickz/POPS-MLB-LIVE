@@ -2638,20 +2638,21 @@ function addHitPick(
     Number(batter.hitStreak || 0);
 
   /*
-  A player must have at least one of these:
+A player must satisfy BOTH requirements:
 
-  - 2+ game hit streak
-  - Previous HR against pitcher
-  - Previous hit against pitcher
-  */
+1. Hit streak of at least 2 games
+2. At least 1 career hit against today's pitcher
+*/
 
-  if (
-    hitStreak < 2 &&
-    bvpHR <= 0 &&
-    Number(bvpStats.hits || 0) <= 0
-  ) {
-    return;
-  }
+const bvpHits =
+  Number(bvpStats.hits || 0);
+
+if (
+  hitStreak < 2 ||
+  bvpHits < 1
+) {
+  return;
+}
 
   if (
     typeof Formula === "undefined" ||
@@ -2913,47 +2914,47 @@ async function loadHitPicks() {
   }
 
   /*
-  Rank players by:
+Rank players by:
 
-  1. Hit streak
-  2. Previous HR against pitcher
-  3. Previous hits against pitcher
-  4. POPS Hit Score
-  */
+1. Hit streak
+2. Previous hits against pitcher
+3. BvP batting average
+4. POPS Hit Score
+*/
 
-  const rankedHitCandidates =
-    Object.values(uniquePlayers)
-      .sort(
-        (a, b) =>
-          Number(
-            b.hitStreak || 0
-          ) -
-            Number(
-              a.hitStreak || 0
-            ) ||
+const rankedHitCandidates =
+  Object.values(uniquePlayers)
+    .sort((a, b) => {
+      const streakDifference =
+        Number(b.hitStreak || 0) -
+        Number(a.hitStreak || 0);
 
-          Number(
-            b.bvpHR || 0
-          ) -
-            Number(
-              a.bvpHR || 0
-            ) ||
+      if (streakDifference !== 0) {
+        return streakDifference;
+      }
 
-          Number(
-            b.bvpStats?.hits || 0
-          ) -
-            Number(
-              a.bvpStats?.hits || 0
-            ) ||
+      const bvpHitsDifference =
+        Number(b.bvpStats?.hits || 0) -
+        Number(a.bvpStats?.hits || 0);
 
-          Number(
-            b.score || 0
-          ) -
-            Number(
-              a.score || 0
-            )
+      if (bvpHitsDifference !== 0) {
+        return bvpHitsDifference;
+      }
+
+      const bvpAvgDifference =
+        Number(b.bvpStats?.avg || 0) -
+        Number(a.bvpStats?.avg || 0);
+
+      if (bvpAvgDifference !== 0) {
+        return bvpAvgDifference;
+      }
+
+      return (
+        Number(b.score || 0) -
+        Number(a.score || 0)
       );
-
+    });
+  
   hitPicks =
     DailyPickLock.getLockedPicks(
       "hit",
@@ -2969,12 +2970,12 @@ async function loadHitPicks() {
       <div class="pick-card">
         <h3>No Hit Pickz Found</h3>
 
-        <p>
-          No available batters currently
-          have a 2+ game hit streak or
-          previous success against today's
-          pitcher.
-        </p>
+      <p>
+       No available batters currently have
+       both a 2+ game hit streak and at least
+       1 career hit against today's opposing
+       pitcher.
+     </p>
       </div>
     `;
 
