@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-14T20:42:07.742Z",
+  "generatedAt": "2026-07-14T22:23:41.854Z",
   "date": "2026-07-14",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
@@ -317,9 +317,9 @@
             "iso": 0.167
           },
           "bvp": {
-            "atBats": 1,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 4,
+            "hits": 2,
+            "avg": ".500",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -491,9 +491,9 @@
             "iso": 0.116
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 6,
+            "hits": 1,
+            "avg": ".167",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -752,7 +752,7 @@
             "iso": 0.286
           },
           "bvp": {
-            "atBats": 3,
+            "atBats": 6,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -928,9 +928,9 @@
             "iso": 0.162
           },
           "bvp": {
-            "atBats": 13,
+            "atBats": 5,
             "hits": 3,
-            "avg": ".231",
+            "avg": ".600",
             "homeRuns": 2
           },
           "dataQuality": {
@@ -944,7 +944,7 @@
         {
           "id": 665742,
           "name": "Juan Soto",
-          "position": "RF",
+          "position": "LF",
           "lineupSpot": 2,
           "confirmed": true,
           "batSide": "L",
@@ -1015,9 +1015,9 @@
             "iso": 0.353
           },
           "bvp": {
-            "atBats": 11,
-            "hits": 2,
-            "avg": ".182",
+            "atBats": 3,
+            "hits": 1,
+            "avg": ".333",
             "homeRuns": 1
           },
           "dataQuality": {
@@ -1363,9 +1363,9 @@
             "iso": 0.22
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 12,
+            "hits": 3,
+            "avg": ".250",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -1379,7 +1379,7 @@
         {
           "id": 669016,
           "name": "Brandon Marsh",
-          "position": "LF",
+          "position": "RF",
           "lineupSpot": 7,
           "confirmed": true,
           "batSide": "L",
