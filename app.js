@@ -2745,9 +2745,25 @@ if (
     confirmed:
       Boolean(batter.confirmed),
 
-    hitStreak,
-    bvpHR,
-    bvpStats,
+hitStreak,
+
+bvpHits,
+bvpAtBats,
+bvpPlateAppearances,
+hasPitcherHistory,
+
+qualificationType:
+  qualifiesWithHistory
+    ? "pitcher-history"
+    : "hot-streak",
+
+qualificationReason:
+  qualifiesWithHistory
+    ? "2+ game hit streak and at least 1 previous hit vs pitcher"
+    : "4+ game hit streak with no previous pitcher history",
+
+bvpHR,
+bvpStats,
 
     score:
       Number(score || 0)
