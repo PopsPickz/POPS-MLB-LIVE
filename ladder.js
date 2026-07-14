@@ -2,12 +2,16 @@
 =========================================================
 POPS LADDER CHALLENGE
 File: ladder.js
-Version: 2.0
+Version: 3.0
 =========================================================
 
 Uses the final locked POPS Hitz Pickz list from app.js.
 
-Each Ladder step contains two players.
+The Ladder randomly selects two eligible players.
+
+Once selected, those two players remain locked for the
+entire day. Two new random players are selected the next
+day.
 
 Both players must record at least one hit for the
 current Ladder step to win.
@@ -31,12 +35,12 @@ const Ladder = {
     maximumSteps: 3,
 
     /*
-    The v2 storage name forces the redesigned Ladder
-    to create a fresh challenge.
+    Version 3 creates a fresh random Ladder after
+    replacing the previous version.
     */
 
     storagePrefix:
-      "pops-ladder-v2"
+      "pops-ladder-v3"
   },
 
   /*
@@ -105,7 +109,20 @@ const Ladder = {
         !parsed ||
         !Array.isArray(
           parsed.picks
-        )
+        ) ||
+        parsed.picks.length !==
+          this.settings.picksPerStep
+      ) {
+        return null;
+      }
+
+      /*
+      Confirm the saved Ladder belongs to today.
+      */
+
+      if (
+        parsed.date !==
+        this.getDate()
       ) {
         return null;
       }
@@ -308,6 +325,48 @@ const Ladder = {
 
   /*
   =======================================================
+  RANDOMIZE ELIGIBLE PICKS
+  =======================================================
+
+  Uses a Fisher-Yates shuffle.
+
+  The original Hitz Pickz array is not modified.
+  =======================================================
+  */
+
+  shufflePicks(
+    picks = []
+  ) {
+    const shuffled =
+      [...picks];
+
+    for (
+      let index =
+        shuffled.length - 1;
+      index > 0;
+      index--
+    ) {
+      const randomIndex =
+        Math.floor(
+          Math.random() *
+          (index + 1)
+        );
+
+      const temporaryPick =
+        shuffled[index];
+
+      shuffled[index] =
+        shuffled[randomIndex];
+
+      shuffled[randomIndex] =
+        temporaryPick;
+    }
+
+    return shuffled;
+  },
+
+  /*
+  =======================================================
   BVP AND ELIGIBILITY HELPERS
   =======================================================
   */
@@ -425,13 +484,18 @@ const Ladder = {
 
   /*
   =======================================================
-  BUILD TODAY'S CHALLENGE
+  BUILD TODAY'S RANDOM CHALLENGE
   =======================================================
   */
 
   buildChallenge(
     hitPicks = []
   ) {
+    /*
+    Remove duplicate players and keep only players
+    who qualify under the Hitz eligibility rules.
+    */
+
     const eligiblePicks =
       this.removeDuplicates(
         hitPicks
@@ -450,14 +514,24 @@ const Ladder = {
     }
 
     /*
-    The Hitz list is already ranked by app.js.
+    Randomly shuffle every eligible player.
 
-    The first two eligible players become the
-    automatic Ladder selections.
+    This happens only when today's saved Ladder does
+    not already exist.
+    */
+
+    const randomizedPicks =
+      this.shufflePicks(
+        eligiblePicks
+      );
+
+    /*
+    Select the first two players from the randomized
+    list after shuffling.
     */
 
     const selectedPicks =
-      eligiblePicks
+      randomizedPicks
         .slice(
           0,
           this.settings.picksPerStep
@@ -568,7 +642,7 @@ const Ladder = {
           };
         });
 
-    return {
+    const challenge = {
       date:
         this.getDate(),
 
@@ -578,6 +652,12 @@ const Ladder = {
       status:
         "pending",
 
+      selectionType:
+        "random",
+
+      locked:
+        true,
+
       createdAt:
         new Date()
           .toISOString(),
@@ -585,11 +665,24 @@ const Ladder = {
       picks:
         selectedPicks
     };
+
+    console.log(
+      "🎲 POPS selected and locked today's random Ladder picks:",
+      selectedPicks.map(
+        pick => pick.player
+      )
+    );
+
+    return challenge;
   },
 
   /*
   =======================================================
-  UPDATE SAVED PLAYERS WITH CURRENT DATA
+  UPDATE LOCKED PLAYERS WITH CURRENT DATA
+  =======================================================
+
+  This updates statistics, game information and lineup
+  status without replacing the two selected players.
   =======================================================
   */
 
@@ -615,6 +708,16 @@ const Ladder = {
     return {
       ...savedChallenge,
 
+      date:
+        savedChallenge.date ||
+        this.getDate(),
+
+      selectionType:
+        "random",
+
+      locked:
+        true,
+
       picks:
         savedChallenge.picks.map(
           savedPick => {
@@ -625,8 +728,27 @@ const Ladder = {
                 )
               );
 
+            /*
+            Do not replace a locked player when that
+            player is missing from the current list.
+
+            Keep the saved player for the entire day.
+            */
+
             if (!currentPick) {
-              return savedPick;
+              return {
+                ...savedPick,
+
+                result:
+                  savedPick.result ||
+                  "pending",
+
+                hitsToday:
+                  Number(
+                    savedPick.hitsToday ||
+                    0
+                  )
+              };
             }
 
             const bvpHits =
@@ -652,9 +774,14 @@ const Ladder = {
             return {
               ...savedPick,
 
+              /*
+              The player identity stays locked.
+              */
+
+              id:
+                savedPick.id,
+
               player:
-                currentPick.player ||
-                currentPick.name ||
                 savedPick.player,
 
               team:
@@ -682,8 +809,8 @@ const Ladder = {
 
               lineupSpot:
                 Number(
-                  currentPick.lineupSpot ||
-                  savedPick.lineupSpot ||
+                  currentPick.lineupSpot ??
+                  savedPick.lineupSpot ??
                   0
                 ),
 
@@ -728,8 +855,7 @@ const Ladder = {
                 ),
 
               /*
-              Keep the live result information already
-              stored in the saved challenge.
+              Keep live results already saved.
               */
 
               result:
@@ -885,7 +1011,7 @@ const Ladder = {
         <div class="ladder-player-topbar">
 
           <span class="ladder-pick-tag">
-            PICK ${index + 1}
+            RANDOM PICK ${index + 1}
           </span>
 
           <span
@@ -1029,6 +1155,7 @@ const Ladder = {
               ${Number(
                 pick.score || 0
               )}
+
               <span>
                 /100
               </span>
@@ -1159,7 +1286,7 @@ const Ladder = {
             <div>
 
               <small>
-                POPS DAILY CHALLENGE
+                RANDOM DAILY CHALLENGE
               </small>
 
               <h3>
@@ -1171,8 +1298,9 @@ const Ladder = {
           </div>
 
           <p>
-            Two automatic POPS Hitz Pickz must
-            each record at least one hit to advance.
+            Two random players are selected from
+            today's eligible POPS Hitz Pickz list.
+            They remain locked until tomorrow.
           </p>
 
         </header>
@@ -1188,7 +1316,7 @@ const Ladder = {
               </span>
 
               <h4>
-                Two Picks Must Hit
+                Two Random Picks Must Hit
               </h4>
 
             </div>
@@ -1284,8 +1412,9 @@ const Ladder = {
             </strong>
 
             <p>
-              Both players must record at least
-              one hit for this Ladder step to win.
+              Both randomly selected players must
+              record at least one hit for this
+              Ladder step to win.
             </p>
 
           </div>
@@ -1309,18 +1438,21 @@ const Ladder = {
         <div class="ladder-rule-panel">
 
           <span class="ladder-rule-icon">
-            🪜
+            🔒
           </span>
 
           <div>
 
             <strong>
-              Advancement Rule
+              Daily Pick Lock
             </strong>
 
             <p>
-              Both players must record a hit.
-              One miss ends the current Ladder step.
+              Today's two random selections will
+              not change when the page refreshes
+              or the predictions recalculate.
+              New random players are selected
+              tomorrow.
             </p>
 
           </div>
@@ -1346,7 +1478,7 @@ const Ladder = {
       <div class="ladder-empty-v2">
 
         <div class="ladder-empty-icon">
-          🪜
+          🎲
         </div>
 
         <h3>
@@ -1354,7 +1486,7 @@ const Ladder = {
         </h3>
 
         <p>
-          Selecting today's automatic
+          Randomly selecting two eligible
           POPS Hitz Pickz...
         </p>
 
@@ -1380,7 +1512,8 @@ const Ladder = {
 
         <p>
           The Ladder needs at least two
-          eligible POPS Hitz Pickz.
+          eligible POPS Hitz Pickz before
+          random selections can be created.
         </p>
 
         <div class="ladder-empty-rules">
@@ -1454,8 +1587,18 @@ const Ladder = {
           ? currentHitPicks
           : [];
 
+      /*
+      First check whether today's two random players
+      were already selected and saved.
+      */
+
       let challenge =
         this.loadSavedChallenge();
+
+      /*
+      Only select random players when no saved challenge
+      exists for today's date.
+      */
 
       if (!challenge) {
         challenge =
@@ -1472,6 +1615,11 @@ const Ladder = {
           challenge
         );
       } else {
+        /*
+        Keep the same two players and only update their
+        current information.
+        */
+
         challenge =
           this.mergeCurrentData(
             challenge,
@@ -1480,6 +1628,13 @@ const Ladder = {
 
         this.saveChallenge(
           challenge
+        );
+
+        console.log(
+          "🔒 POPS loaded today's locked random Ladder picks:",
+          challenge.picks.map(
+            pick => pick.player
+          )
         );
       }
 
