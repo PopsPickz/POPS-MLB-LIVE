@@ -2172,6 +2172,689 @@ async function buildTodayData() {
 
 /*
 =========================================================
+SHARED DAILY LADDER
+=========================================================
+
+Creates one shared data/ladder.json file.
+
+Every phone, laptop and browser will load the same two
+players.
+
+The selections remain unchanged for the entire Eastern
+date, even when the GitHub workflow runs multiple times.
+=========================================================
+*/
+
+const LADDER_PICK_COUNT = 2;
+const LADDER_POOL_LIMIT = 20;
+
+function getLadderOutputPath() {
+  return path.join(
+    process.cwd(),
+    "data",
+    "ladder.json"
+  );
+}
+
+function getLadderPlayerKey(
+  player = {}
+) {
+  const playerId =
+    number(
+      player.id ||
+      player.playerId
+    );
+
+  if (playerId > 0) {
+    return `id-${playerId}`;
+  }
+
+  return [
+    String(
+      player.player ||
+      player.name ||
+      ""
+    )
+      .toLowerCase()
+      .trim(),
+
+    String(
+      player.team ||
+      ""
+    )
+      .toLowerCase()
+      .trim()
+  ].join("-");
+}
+
+function removeDuplicateLadderPlayers(
+  players = []
+) {
+  const unique = [];
+  const usedKeys =
+    new Set();
+
+  for (const player of players) {
+    if (!player) {
+      continue;
+    }
+
+    const key =
+      getLadderPlayerKey(
+        player
+      );
+
+    if (
+      !key ||
+      usedKeys.has(key)
+    ) {
+      continue;
+    }
+
+    usedKeys.add(key);
+    unique.push(player);
+  }
+
+  return unique;
+}
+
+function shuffleLadderPlayers(
+  players = []
+) {
+  const shuffled =
+    [...players];
+
+  for (
+    let index =
+      shuffled.length - 1;
+    index > 0;
+    index--
+  ) {
+    const randomIndex =
+      Math.floor(
+        Math.random() *
+        (index + 1)
+      );
+
+    [
+      shuffled[index],
+      shuffled[randomIndex]
+    ] = [
+      shuffled[randomIndex],
+      shuffled[index]
+    ];
+  }
+
+  return shuffled;
+}
+
+function ladderPlayerQualifies(
+  player = {}
+) {
+  const hitStreak =
+    number(
+      player.hitStreak
+    );
+
+  const bvpHits =
+    number(
+      player.bvp?.hits
+    );
+
+  const bvpAtBats =
+    number(
+      player.bvp?.atBats
+    );
+
+  const bvpPlateAppearances =
+    number(
+      player.bvp
+        ?.plateAppearances
+    );
+
+  const hasPitcherHistory =
+    bvpAtBats > 0 ||
+    bvpPlateAppearances > 0;
+
+  const qualifiesWithHistory =
+    hasPitcherHistory &&
+    hitStreak >= 2 &&
+    bvpHits >= 1;
+
+  const qualifiesWithoutHistory =
+    !hasPitcherHistory &&
+    hitStreak >= 4;
+
+  return (
+    qualifiesWithHistory ||
+    qualifiesWithoutHistory
+  );
+}
+
+function calculateBuilderHitScore(
+  batter = {}
+) {
+  const hitting =
+    batter.hitting || {};
+
+  const recentForm =
+    batter.recentForm || {};
+
+  const avg =
+    number(
+      hitting.avg
+    );
+
+  const ops =
+    number(
+      hitting.ops
+    );
+
+  const recentOPS =
+    number(
+      recentForm.ops
+    );
+
+  const lineupSpot =
+    number(
+      batter.lineupSpot
+    ) || 9;
+
+  const hitStreak =
+    number(
+      batter.hitStreak
+    );
+
+  const previousHR =
+    number(
+      batter.bvp?.homeRuns
+    );
+
+  let score = 60;
+
+  if (avg >= 0.320) {
+    score += 15;
+  } else if (avg >= 0.300) {
+    score += 12;
+  } else if (avg >= 0.280) {
+    score += 9;
+  } else if (avg >= 0.260) {
+    score += 6;
+  }
+
+  if (ops >= 0.950) {
+    score += 8;
+  } else if (ops >= 0.900) {
+    score += 6;
+  } else if (ops >= 0.850) {
+    score += 4;
+  }
+
+  if (recentOPS >= 0.950) {
+    score += 5;
+  }
+
+  if (
+    lineupSpot === 3 ||
+    lineupSpot === 4
+  ) {
+    score += 5;
+  } else if (
+    lineupSpot === 2 ||
+    lineupSpot === 5
+  ) {
+    score += 4;
+  } else if (lineupSpot === 1) {
+    score += 3;
+  } else if (lineupSpot === 6) {
+    score += 2;
+  } else {
+    score += 1;
+  }
+
+  if (hitStreak >= 10) {
+    score += 10;
+  } else if (hitStreak >= 7) {
+    score += 8;
+  } else if (hitStreak >= 5) {
+    score += 6;
+  } else if (hitStreak >= 3) {
+    score += 4;
+  }
+
+  if (previousHR > 0) {
+    score += Math.min(
+      previousHR * 2,
+      6
+    );
+  }
+
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(score)
+    )
+  );
+}
+
+function buildLadderCandidate(
+  game,
+  batter,
+  team,
+  pitcher
+) {
+  const bvp =
+    batter.bvp || {};
+
+  const bvpAtBats =
+    number(
+      bvp.atBats
+    );
+
+  const bvpPlateAppearances =
+    number(
+      bvp.plateAppearances
+    );
+
+  const hasPitcherHistory =
+    bvpAtBats > 0 ||
+    bvpPlateAppearances > 0;
+
+  return {
+    id:
+      number(
+        batter.id
+      ),
+
+    player:
+      batter.name ||
+      "Unknown Player",
+
+    team,
+
+    game:
+      `${game.awayTeam} vs ${game.homeTeam}`,
+
+    gamePk:
+      number(
+        game.gamePk
+      ),
+
+    gameTime:
+      game.date ||
+      "",
+
+    pitcher:
+      pitcher ||
+      "Pitcher TBD",
+
+    lineupSpot:
+      number(
+        batter.lineupSpot
+      ),
+
+    confirmed:
+      batter.confirmed === true,
+
+    hitStreak:
+      number(
+        batter.hitStreak
+      ),
+
+    bvpHits:
+      number(
+        bvp.hits
+      ),
+
+    bvpAtBats,
+
+    bvpPlateAppearances,
+
+    bvpAverage:
+      bvp.avg ||
+      ".000",
+
+    bvpHomeRuns:
+      number(
+        bvp.homeRuns
+      ),
+
+    hasPitcherHistory,
+
+    qualificationReason:
+      hasPitcherHistory
+        ? (
+            "2+ game hit streak and at least " +
+            "1 previous hit vs pitcher"
+          )
+        : (
+            "4+ game hit streak with no " +
+            "previous pitcher history"
+          ),
+
+    score:
+      calculateBuilderHitScore(
+        batter
+      ),
+
+    result:
+      "pending",
+
+    hitsToday:
+      0
+  };
+}
+
+function buildSharedLadderPool(
+  todayData
+) {
+  const candidates = [];
+
+  for (
+    const game of
+    todayData.games || []
+  ) {
+    for (
+      const batter of
+      game.awayLineup || []
+    ) {
+      if (
+        !ladderPlayerQualifies(
+          batter
+        )
+      ) {
+        continue;
+      }
+
+      candidates.push(
+        buildLadderCandidate(
+          game,
+          batter,
+          game.awayTeam,
+          game.homePitcher
+        )
+      );
+    }
+
+    for (
+      const batter of
+      game.homeLineup || []
+    ) {
+      if (
+        !ladderPlayerQualifies(
+          batter
+        )
+      ) {
+        continue;
+      }
+
+      candidates.push(
+        buildLadderCandidate(
+          game,
+          batter,
+          game.homeTeam,
+          game.awayPitcher
+        )
+      );
+    }
+  }
+
+  const uniqueCandidates =
+    removeDuplicateLadderPlayers(
+      candidates
+    );
+
+  /*
+  Match the browser Hit Pickz ranking:
+
+  1. Hit streak
+  2. Previous BvP hits
+  3. BvP batting average
+  4. POPS Hit Score
+  */
+
+  uniqueCandidates.sort(
+    (a, b) => {
+      const streakDifference =
+        number(b.hitStreak) -
+        number(a.hitStreak);
+
+      if (streakDifference !== 0) {
+        return streakDifference;
+      }
+
+      const bvpHitsDifference =
+        number(b.bvpHits) -
+        number(a.bvpHits);
+
+      if (bvpHitsDifference !== 0) {
+        return bvpHitsDifference;
+      }
+
+      const bvpAverageDifference =
+        number(b.bvpAverage) -
+        number(a.bvpAverage);
+
+      if (
+        bvpAverageDifference !== 0
+      ) {
+        return bvpAverageDifference;
+      }
+
+      return (
+        number(b.score) -
+        number(a.score)
+      );
+    }
+  );
+
+  /*
+  The random Ladder is selected from the canonical
+  Top 20 shared Hit Pickz pool.
+  */
+
+  return uniqueCandidates.slice(
+    0,
+    LADDER_POOL_LIMIT
+  );
+}
+
+function loadExistingLadder() {
+  const outputPath =
+    getLadderOutputPath();
+
+  try {
+    if (
+      !fs.existsSync(
+        outputPath
+      )
+    ) {
+      return null;
+    }
+
+    const contents =
+      fs.readFileSync(
+        outputPath,
+        "utf8"
+      );
+
+    const parsed =
+      JSON.parse(contents);
+
+    if (
+      !parsed ||
+      !Array.isArray(
+        parsed.picks
+      )
+    ) {
+      return null;
+    }
+
+    return parsed;
+  } catch (error) {
+    console.warn(
+      "Could not read existing ladder.json:",
+      error.message
+    );
+
+    return null;
+  }
+}
+
+function buildOrPreserveLadder(
+  todayData
+) {
+  const date =
+    todayData.date ||
+    getEasternDate();
+
+  const existingLadder =
+    loadExistingLadder();
+
+  /*
+  Preserve the exact same two players when the
+  existing file already belongs to today's
+  Eastern date.
+  */
+
+  if (
+    existingLadder?.date === date &&
+    existingLadder
+      ?.picks?.length ===
+        LADDER_PICK_COUNT
+  ) {
+    console.log(
+      "🔒 Preserving today's shared Ladder picks:",
+      existingLadder.picks.map(
+        pick => pick.player
+      )
+    );
+
+    return existingLadder;
+  }
+
+  const sharedHitPool =
+    buildSharedLadderPool(
+      todayData
+    );
+
+  if (
+    sharedHitPool.length <
+    LADDER_PICK_COUNT
+  ) {
+    console.warn(
+      `Only ${sharedHitPool.length} eligible shared Ladder players were found.`
+    );
+
+    return {
+      generatedAt:
+        new Date()
+          .toISOString(),
+
+      date,
+
+      selectionType:
+        "shared-daily-random",
+
+      locked:
+        true,
+
+      step:
+        1,
+
+      status:
+        "unavailable",
+
+      poolSize:
+        sharedHitPool.length,
+
+      picks:
+        []
+    };
+  }
+
+  const selectedPicks =
+    shuffleLadderPlayers(
+      sharedHitPool
+    ).slice(
+      0,
+      LADDER_PICK_COUNT
+    );
+
+  const ladder = {
+    generatedAt:
+      new Date()
+        .toISOString(),
+
+    date,
+
+    selectionType:
+      "shared-daily-random",
+
+    locked:
+      true,
+
+    step:
+      1,
+
+    status:
+      "pending",
+
+    poolSize:
+      sharedHitPool.length,
+
+    picks:
+      selectedPicks
+  };
+
+  console.log(
+    "🎲 Created today's shared Ladder picks:",
+    selectedPicks.map(
+      pick => pick.player
+    )
+  );
+
+  return ladder;
+}
+
+function saveLadderData(
+  ladderData
+) {
+  const dataDirectory =
+    path.join(
+      process.cwd(),
+      "data"
+    );
+
+  const outputPath =
+    getLadderOutputPath();
+
+  fs.mkdirSync(
+    dataDirectory,
+    {
+      recursive: true
+    }
+  );
+
+  fs.writeFileSync(
+    outputPath,
+    JSON.stringify(
+      ladderData,
+      null,
+      2
+    ),
+    "utf8"
+  );
+
+  console.log(
+    `Shared Ladder saved to ${outputPath}`
+  );
+}
+
+
+/*
+=========================================================
 SAVE TODAY.JSON
 =========================================================
 */
