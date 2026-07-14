@@ -2909,6 +2909,15 @@ async function main() {
       todayData
     );
 
+const ladderData =
+  buildOrPreserveLadder(
+    todayData
+  );
+
+saveLadderData(
+  ladderData
+);    
+    
     const totalBatters =
       todayData.games.reduce(
         (total, game) =>
