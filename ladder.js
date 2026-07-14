@@ -17,9 +17,15 @@ const Ladder = {
 
   settings: {
     picksPerStep: 2,
-    maximumSteps: 5,
-    storagePrefix: "pops-ladder"
-  },
+    maximumSteps: 3,
+
+  /*
+  Using a new storage name forces the redesigned
+  Ladder to generate fresh picks.
+  */
+
+  storagePrefix: "pops-ladder-v2"
+},
 
   /*
   =======================================================
@@ -196,39 +202,108 @@ const Ladder = {
   */
 
   buildChallenge(hitPicks = []) {
-    const eligiblePicks =
-      this.removeDuplicates(
-        hitPicks
-      ).filter(pick => {
-        return (
-          pick &&
-          pick.player &&
-          Number(pick.hitStreak || 0) >= 2 &&
-          Number(
-            pick.bvpStats?.hits || 0
-          ) >= 1
+  const eligiblePicks =
+    this.removeDuplicates(
+      hitPicks
+    ).filter(pick => {
+      if (
+        !pick ||
+        !pick.player
+      ) {
+        return false;
+      }
+
+      const hitStreak =
+        Number(
+          pick.hitStreak || 0
         );
-      });
 
-    if (
-      eligiblePicks.length <
-      this.settings.picksPerStep
-    ) {
-      return null;
-    }
+      const bvpHits =
+        Number(
+          pick.bvpStats?.hits ||
+          pick.bvpHits ||
+          0
+        );
 
-    /*
-    hitPicks is already ranked inside app.js, so the first
-    two eligible players become the automatic ladder picks.
-    */
+      const bvpAtBats =
+        Number(
+          pick.bvpStats?.atBats ||
+          pick.bvpAtBats ||
+          0
+        );
 
-    const selectedPicks =
-      eligiblePicks
-        .slice(
-          0,
-          this.settings.picksPerStep
-        )
-        .map(pick => ({
+      const bvpPlateAppearances =
+        Number(
+          pick.bvpStats
+            ?.plateAppearances ||
+          pick.bvpPlateAppearances ||
+          0
+        );
+
+      const hasPitcherHistory =
+        bvpAtBats > 0 ||
+        bvpPlateAppearances > 0;
+
+      /*
+      PLAYER QUALIFICATION
+
+      With pitcher history:
+      - 2+ game hit streak
+      - At least 1 previous hit
+
+      Without pitcher history:
+      - 4+ game hit streak
+      */
+
+      const qualifiesWithHistory =
+        hasPitcherHistory &&
+        hitStreak >= 2 &&
+        bvpHits >= 1;
+
+      const qualifiesWithoutHistory =
+        !hasPitcherHistory &&
+        hitStreak >= 4;
+
+      return (
+        qualifiesWithHistory ||
+        qualifiesWithoutHistory
+      );
+    });
+
+  if (
+    eligiblePicks.length <
+    this.settings.picksPerStep
+  ) {
+    return null;
+  }
+
+  const selectedPicks =
+    eligiblePicks
+      .slice(
+        0,
+        this.settings.picksPerStep
+      )
+      .map(pick => {
+        const bvpAtBats =
+          Number(
+            pick.bvpStats?.atBats ||
+            pick.bvpAtBats ||
+            0
+          );
+
+        const bvpPlateAppearances =
+          Number(
+            pick.bvpStats
+              ?.plateAppearances ||
+            pick.bvpPlateAppearances ||
+            0
+          );
+
+        const hasPitcherHistory =
+          bvpAtBats > 0 ||
+          bvpPlateAppearances > 0;
+
+        return {
           id:
             Number(
               pick.id ||
@@ -273,17 +348,26 @@ const Ladder = {
 
           bvpHits:
             Number(
-              pick.bvpStats?.hits || 0
+              pick.bvpStats?.hits ||
+              pick.bvpHits ||
+              0
             ),
 
-          bvpAtBats:
-            Number(
-              pick.bvpStats?.atBats || 0
-            ),
+          bvpAtBats,
+
+          bvpPlateAppearances,
 
           bvpAverage:
             pick.bvpStats?.avg ||
+            pick.bvpAverage ||
             ".000",
+
+          hasPitcherHistory,
+
+          qualificationReason:
+            hasPitcherHistory
+              ? "2+ game streak with a previous hit vs pitcher"
+              : "4+ game streak with no pitcher history",
 
           score:
             Number(
@@ -292,24 +376,25 @@ const Ladder = {
 
           result: "pending",
           hitsToday: 0
-        }));
+        };
+      });
 
-    return {
-      date:
-        this.getDate(),
+  return {
+    date:
+      this.getDate(),
 
-      step: 1,
+    step: 1,
 
-      status: "pending",
+    status: "pending",
 
-      createdAt:
-        new Date().toISOString(),
+    createdAt:
+      new Date().toISOString(),
 
-      picks:
-        selectedPicks
-    };
-  },
-
+    picks:
+      selectedPicks
+  };
+},
+  
   mergeCurrentData(
     savedChallenge,
     currentHitPicks = []
