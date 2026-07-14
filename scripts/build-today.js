@@ -1423,9 +1423,18 @@ async function getBvPStats(
 
   const empty = {
     atBats: 0,
+    plateAppearances: 0,
     hits: 0,
+    doubles: 0,
+    triples: 0,
+    homeRuns: 0,
+    baseOnBalls: 0,
+    hitByPitch: 0,
+    sacFlies: 0,
     avg: ".000",
-    homeRuns: 0
+    obp: ".000",
+    slg: ".000",
+    ops: ".000"
   };
 
   if (!batterId || !pitcherId) {
@@ -1433,42 +1442,164 @@ async function getBvPStats(
   }
 
   const key =
-    `${batterId}-${pitcherId}`;
+    `career-${batterId}-${pitcherId}`;
 
   if (cache.bvp.has(key)) {
     return cache.bvp.get(key);
   }
 
-  const season = getCurrentSeason();
+  /*
+  No season parameter is used.
+
+  This retrieves career batter-vs-pitcher
+  history instead of only the current season.
+  */
 
   const url =
     `${MLB_BASE}/people/${batterId}/stats` +
     `?stats=vsPlayer` +
     `&group=hitting` +
     `&opposingPlayerId=${pitcherId}` +
-    `&season=${season}`;
+    `&sportId=1`;
 
   const data =
     await safeFetch(url, null);
 
-  const stat =
-    data?.stats?.[0]?.splits?.[0]?.stat || {};
+  const splits =
+    data?.stats?.[0]?.splits || [];
+
+  let atBats = 0;
+  let plateAppearances = 0;
+  let hits = 0;
+  let doubles = 0;
+  let triples = 0;
+  let homeRuns = 0;
+  let baseOnBalls = 0;
+  let hitByPitch = 0;
+  let sacFlies = 0;
+
+  for (const split of splits) {
+    const stat =
+      split?.stat || {};
+
+    atBats += number(
+      stat.atBats
+    );
+
+    plateAppearances += number(
+      stat.plateAppearances
+    );
+
+    hits += number(
+      stat.hits
+    );
+
+    doubles += number(
+      stat.doubles
+    );
+
+    triples += number(
+      stat.triples
+    );
+
+    homeRuns += number(
+      stat.homeRuns
+    );
+
+    baseOnBalls += number(
+      stat.baseOnBalls
+    );
+
+    hitByPitch += number(
+      stat.hitByPitch
+    );
+
+    sacFlies += number(
+      stat.sacFlies
+    );
+  }
+
+  const singles =
+    Math.max(
+      0,
+      hits -
+      doubles -
+      triples -
+      homeRuns
+    );
+
+  const totalBases =
+    singles +
+    doubles * 2 +
+    triples * 3 +
+    homeRuns * 4;
+
+  const avg =
+    atBats > 0
+      ? hits / atBats
+      : 0;
+
+  const obpDenominator =
+    atBats +
+    baseOnBalls +
+    hitByPitch +
+    sacFlies;
+
+  const obp =
+    obpDenominator > 0
+      ? (
+          hits +
+          baseOnBalls +
+          hitByPitch
+        ) /
+        obpDenominator
+      : 0;
+
+  const slg =
+    atBats > 0
+      ? totalBases / atBats
+      : 0;
+
+  const ops =
+    obp + slg;
 
   const result = {
-    atBats:
-      number(stat.atBats),
+    atBats,
 
-    hits:
-      number(stat.hits),
+    plateAppearances:
+      plateAppearances ||
+      (
+        atBats +
+        baseOnBalls +
+        hitByPitch +
+        sacFlies
+      ),
+
+    hits,
+    doubles,
+    triples,
+    homeRuns,
+    baseOnBalls,
+    hitByPitch,
+    sacFlies,
 
     avg:
-      stat.avg || ".000",
+      avg.toFixed(3),
 
-    homeRuns:
-      number(stat.homeRuns)
+    obp:
+      obp.toFixed(3),
+
+    slg:
+      slg.toFixed(3),
+
+    ops:
+      ops.toFixed(3)
   };
 
-  cache.bvp.set(key, result);
+  cache.bvp.set(
+    key,
+    result
+  );
 
   return result;
 }
