@@ -2638,18 +2638,47 @@ function addHitPick(
     Number(batter.hitStreak || 0);
 
   /*
-A player must satisfy BOTH requirements:
+A player qualifies in one of two ways:
 
-1. Hit streak of at least 2 games
-2. At least 1 career hit against today's pitcher
+1. If pitcher history exists:
+   - 2+ game hit streak
+   - At least 1 previous hit vs pitcher
+
+2. If no pitcher history exists:
+   - 4+ game hit streak
 */
-
+  
 const bvpHits =
-  Number(bvpStats.hits || 0);
+  Number(
+    bvpStats.hits || 0
+  );
+
+const bvpAtBats =
+  Number(
+    bvpStats.atBats || 0
+  );
+
+const bvpPlateAppearances =
+  Number(
+    bvpStats.plateAppearances || 0
+  );
+
+const hasPitcherHistory =
+  bvpAtBats > 0 ||
+  bvpPlateAppearances > 0;
+
+const qualifiesWithHistory =
+  hasPitcherHistory &&
+  hitStreak >= 2 &&
+  bvpHits >= 1;
+
+const qualifiesWithoutHistory =
+  !hasPitcherHistory &&
+  hitStreak >= 4;
 
 if (
-  hitStreak < 2 ||
-  bvpHits < 1
+  !qualifiesWithHistory &&
+  !qualifiesWithoutHistory
 ) {
   return;
 }
