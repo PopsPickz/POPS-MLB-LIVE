@@ -34,10 +34,15 @@ jobs:
       - name: Build POPS Daily Data
         run: node scripts/build-today.js
 
-      - name: Verify Today Data Exists
+      - name: Verify Daily Data Exists
         run: |
           if [ ! -f data/today.json ]; then
             echo "data/today.json was not created."
+            exit 1
+          fi
+
+          if [ ! -f data/ladder.json ]; then
+            echo "data/ladder.json was not created."
             exit 1
           fi
 
@@ -46,11 +51,11 @@ jobs:
           git config user.name "POPS Pickz Bot"
           git config user.email "actions@users.noreply.github.com"
 
-          git add data/today.json
+          git add data/today.json data/ladder.json
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Update POPS today data"
+            git commit -m "Update POPS daily and Ladder data"
             git push
           fi
