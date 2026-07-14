@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-14T22:23:41.854Z",
+  "generatedAt": "2026-07-14T22:46:50.927Z",
   "date": "2026-07-14",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
@@ -144,9 +144,18 @@
           },
           "bvp": {
             "atBats": 2,
+            "plateAppearances": 3,
             "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 1,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.000",
+            "obp": "0.333",
+            "slg": "0.000",
+            "ops": "0.333"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -231,9 +240,18 @@
           },
           "bvp": {
             "atBats": 0,
+            "plateAppearances": 0,
             "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -318,9 +336,18 @@
           },
           "bvp": {
             "atBats": 4,
+            "plateAppearances": 4,
             "hits": 2,
-            "avg": ".500",
-            "homeRuns": 0
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.500",
+            "obp": "0.500",
+            "slg": "0.500",
+            "ops": "1.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -404,10 +431,19 @@
             "iso": 0.389
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "atBats": 6,
+            "plateAppearances": 6,
+            "hits": 1,
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.167",
+            "obp": "0.167",
+            "slg": "0.167",
+            "ops": "0.333"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -492,9 +528,18 @@
           },
           "bvp": {
             "atBats": 6,
+            "plateAppearances": 6,
             "hits": 1,
-            "avg": ".167",
-            "homeRuns": 0
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.167",
+            "obp": "0.167",
+            "slg": "0.167",
+            "ops": "0.333"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -579,9 +624,18 @@
           },
           "bvp": {
             "atBats": 5,
+            "plateAppearances": 6,
             "hits": 2,
-            "avg": ".400",
-            "homeRuns": 0
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 1,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.400",
+            "obp": "0.500",
+            "slg": "0.400",
+            "ops": "0.900"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -666,9 +720,18 @@
           },
           "bvp": {
             "atBats": 0,
+            "plateAppearances": 0,
             "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -753,9 +816,18 @@
           },
           "bvp": {
             "atBats": 6,
+            "plateAppearances": 6,
             "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -839,10 +911,19 @@
             "iso": 0.122
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "atBats": 12,
+            "plateAppearances": 12,
+            "hits": 4,
+            "doubles": 1,
+            "triples": 0,
+            "homeRuns": 1,
+            "baseOnBalls": 0,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.333",
+            "obp": "0.333",
+            "slg": "0.667",
+            "ops": "1.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -928,10 +1009,19 @@
             "iso": 0.162
           },
           "bvp": {
-            "atBats": 5,
+            "atBats": 13,
+            "plateAppearances": 16,
             "hits": 3,
-            "avg": ".600",
-            "homeRuns": 2
+            "doubles": 1,
+            "triples": 0,
+            "homeRuns": 2,
+            "baseOnBalls": 3,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.231",
+            "obp": "0.375",
+            "slg": "0.769",
+            "ops": "1.144"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -1015,10 +1105,19 @@
             "iso": 0.353
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 1,
-            "avg": ".333",
-            "homeRuns": 1
+            "atBats": 11,
+            "plateAppearances": 12,
+            "hits": 2,
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 1,
+            "baseOnBalls": 1,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.182",
+            "obp": "0.250",
+            "slg": "0.455",
+            "ops": "0.705"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -1102,10 +1201,19 @@
             "iso": 0.103
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 2,
-            "avg": ".667",
-            "homeRuns": 0
+            "atBats": 19,
+            "plateAppearances": 20,
+            "hits": 6,
+            "doubles": 1,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 1,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.316",
+            "obp": "0.350",
+            "slg": "0.368",
+            "ops": "0.718"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -1189,10 +1297,19 @@
             "iso": 0.256
           },
           "bvp": {
-            "atBats": 6,
+            "atBats": 9,
+            "plateAppearances": 10,
             "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 1,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.000",
+            "obp": "0.100",
+            "slg": "0.000",
+            "ops": "0.100"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -1277,9 +1394,18 @@
           },
           "bvp": {
             "atBats": 12,
+            "plateAppearances": 15,
             "hits": 2,
-            "avg": ".167",
-            "homeRuns": 0
+            "doubles": 1,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 3,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.167",
+            "obp": "0.333",
+            "slg": "0.250",
+            "ops": "0.583"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -1364,9 +1490,18 @@
           },
           "bvp": {
             "atBats": 12,
+            "plateAppearances": 13,
             "hits": 3,
-            "avg": ".250",
-            "homeRuns": 0
+            "doubles": 2,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
+            "hitByPitch": 1,
+            "sacFlies": 0,
+            "avg": "0.250",
+            "obp": "0.308",
+            "slg": "0.417",
+            "ops": "0.724"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -1451,9 +1586,18 @@
           },
           "bvp": {
             "atBats": 10,
+            "plateAppearances": 11,
             "hits": 3,
-            "avg": ".300",
-            "homeRuns": 1
+            "doubles": 1,
+            "triples": 0,
+            "homeRuns": 1,
+            "baseOnBalls": 1,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.300",
+            "obp": "0.364",
+            "slg": "0.700",
+            "ops": "1.064"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -1538,9 +1682,18 @@
           },
           "bvp": {
             "atBats": 10,
+            "plateAppearances": 12,
             "hits": 1,
-            "avg": ".100",
-            "homeRuns": 0
+            "doubles": 1,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 1,
+            "hitByPitch": 1,
+            "sacFlies": 0,
+            "avg": "0.100",
+            "obp": "0.250",
+            "slg": "0.200",
+            "ops": "0.450"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -1625,9 +1778,18 @@
           },
           "bvp": {
             "atBats": 5,
+            "plateAppearances": 5,
             "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "doubles": 0,
+            "triples": 0,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
+            "hitByPitch": 0,
+            "sacFlies": 0,
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
