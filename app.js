@@ -3062,6 +3062,11 @@ const rankedHitCandidates =
               </span>
             </p>
 
+        <p>
+          <strong>✅ Qualified By:</strong>
+          ${pick.qualificationReason}
+        </p>
+
             <p>
               💣 Previous HR vs Pitcher:
 
