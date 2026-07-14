@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-14T16:02:25.215Z",
+  "generatedAt": "2026-07-14T20:42:07.742Z",
   "date": "2026-07-14",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
@@ -752,7 +752,7 @@
             "iso": 0.286
           },
           "bvp": {
-            "atBats": 6,
+            "atBats": 3,
             "hits": 0,
             "avg": ".000",
             "homeRuns": 0
@@ -839,10 +839,10 @@
             "iso": 0.122
           },
           "bvp": {
-            "atBats": 12,
-            "hits": 4,
-            "avg": ".333",
-            "homeRuns": 1
+            "atBats": 3,
+            "hits": 0,
+            "avg": ".000",
+            "homeRuns": 0
           },
           "dataQuality": {
             "seasonStats": true,
@@ -928,9 +928,9 @@
             "iso": 0.162
           },
           "bvp": {
-            "atBats": 5,
+            "atBats": 13,
             "hits": 3,
-            "avg": ".600",
+            "avg": ".231",
             "homeRuns": 2
           },
           "dataQuality": {
@@ -1015,9 +1015,9 @@
             "iso": 0.353
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 1,
-            "avg": ".333",
+            "atBats": 11,
+            "hits": 2,
+            "avg": ".182",
             "homeRuns": 1
           },
           "dataQuality": {
@@ -1276,9 +1276,9 @@
             "iso": 0.091
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 1,
-            "avg": ".333",
+            "atBats": 12,
+            "hits": 2,
+            "avg": ".167",
             "homeRuns": 0
           },
           "dataQuality": {
@@ -1450,10 +1450,10 @@
             "iso": 0
           },
           "bvp": {
-            "atBats": 3,
-            "hits": 0,
-            "avg": ".000",
-            "homeRuns": 0
+            "atBats": 10,
+            "hits": 3,
+            "avg": ".300",
+            "homeRuns": 1
           },
           "dataQuality": {
             "seasonStats": true,
@@ -1537,9 +1537,9 @@
             "iso": 0.129
           },
           "bvp": {
-            "atBats": 2,
-            "hits": 0,
-            "avg": ".000",
+            "atBats": 10,
+            "hits": 1,
+            "avg": ".100",
             "homeRuns": 0
           },
           "dataQuality": {
