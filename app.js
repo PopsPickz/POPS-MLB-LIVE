@@ -3016,11 +3016,12 @@ const rankedHitCandidates =
         <h3>No Hit Pickz Found</h3>
 
       <p>
-       No available batters currently have
-       both a 2+ game hit streak and at least
-       1 career hit against today's opposing
-       pitcher.
-     </p>
+       No available batters currently qualify.
+       Players need either a 2+ game hit streak
+       with at least 1 previous hit against today's
+       pitcher, or a 4+ game hit streak when no
+       previous pitcher history exists.
+  </p>
       </div>
     `;
 
