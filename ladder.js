@@ -1,29 +1,22 @@
 /*
 =========================================================
-POPS LADDER CHALLENGE
+POPS SHARED LADDER CHALLENGE
 File: ladder.js
-Version: 3.0
+Version: 4.0
 =========================================================
 
-Uses the final locked POPS Hitz Pickz list from app.js.
+The two Ladder players are selected by the GitHub data
+builder and saved inside:
 
-The Ladder randomly selects two eligible players.
+data/ladder.json
 
-Once selected, those two players remain locked for the
-entire day. Two new random players are selected the next
-day.
+Every phone, laptop, browser and website visitor loads
+the same two players.
 
-Both players must record at least one hit for the
-current Ladder step to win.
+The browser does not randomly select players.
 
-PLAYER ELIGIBILITY
-
-With previous pitcher history:
-- Hit streak of 2 or more games
-- At least 1 previous hit against today's pitcher
-
-Without previous pitcher history:
-- Hit streak of 4 or more games
+The shared selections remain unchanged until GitHub
+creates a new ladder.json for the next Eastern date.
 =========================================================
 */
 
@@ -34,18 +27,16 @@ const Ladder = {
     picksPerStep: 2,
     maximumSteps: 3,
 
-    /*
-    Version 3 creates a fresh random Ladder after
-    replacing the previous version.
-    */
+    sharedFile:
+      "data/ladder.json",
 
-    storagePrefix:
-      "pops-ladder-v3"
+    cachePrefix:
+      "pops-shared-ladder-v4"
   },
 
   /*
   =======================================================
-  DATE AND STORAGE
+  DATE HELPERS
   =======================================================
   */
 
@@ -84,89 +75,12 @@ const Ladder = {
     );
   },
 
-  getStorageKey() {
-    return (
-      `${this.settings.storagePrefix}-` +
-      this.getDate()
-    );
-  },
-
-  loadSavedChallenge() {
-    try {
-      const saved =
-        localStorage.getItem(
-          this.getStorageKey()
-        );
-
-      if (!saved) {
-        return null;
-      }
-
-      const parsed =
-        JSON.parse(saved);
-
-      if (
-        !parsed ||
-        !Array.isArray(
-          parsed.picks
-        ) ||
-        parsed.picks.length !==
-          this.settings.picksPerStep
-      ) {
-        return null;
-      }
-
-      /*
-      Confirm the saved Ladder belongs to today.
-      */
-
-      if (
-        parsed.date !==
-        this.getDate()
-      ) {
-        return null;
-      }
-
-      return parsed;
-    } catch (error) {
-      console.warn(
-        "POPS Ladder could not load saved challenge:",
-        error
-      );
-
-      return null;
-    }
-  },
-
-  saveChallenge(
-    challenge
+  getCacheKey(
+    date = this.getDate()
   ) {
-    try {
-      localStorage.setItem(
-        this.getStorageKey(),
-        JSON.stringify(
-          challenge
-        )
-      );
-    } catch (error) {
-      console.warn(
-        "POPS Ladder could not save challenge:",
-        error
-      );
-    }
-  },
-
-  clearSavedChallenge() {
-    try {
-      localStorage.removeItem(
-        this.getStorageKey()
-      );
-    } catch (error) {
-      console.warn(
-        "POPS Ladder could not clear saved challenge:",
-        error
-      );
-    }
+    return (
+      `${this.settings.cachePrefix}-${date}`
+    );
   },
 
   /*
@@ -174,6 +88,18 @@ const Ladder = {
   GENERAL HELPERS
   =======================================================
   */
+
+  number(
+    value,
+    fallback = 0
+  ) {
+    const parsed =
+      Number(value);
+
+    return Number.isFinite(parsed)
+      ? parsed
+      : fallback;
+  },
 
   normalizeName(
     value = ""
@@ -200,7 +126,7 @@ const Ladder = {
     pick = {}
   ) {
     const playerId =
-      Number(
+      this.number(
         pick.id ||
         pick.playerId ||
         0
@@ -292,580 +218,613 @@ const Ladder = {
     return this.box;
   },
 
-  removeDuplicates(
-    picks = []
+  formatGameTime(
+    value
   ) {
-    const unique = [];
-    const usedKeys =
-      new Set();
+    if (!value) {
+      return "Time TBD";
+    }
 
-    for (const pick of picks) {
-      if (!pick) {
-        continue;
+    const date =
+      new Date(value);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return String(value);
+    }
+
+    return date.toLocaleString(
+      [],
+      {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      }
+    );
+  },
+
+  /*
+  =======================================================
+  SHARED FILE CACHE
+  =======================================================
+
+  This cache is only an emergency fallback when the
+  website temporarily cannot download ladder.json.
+
+  It does not select or replace players.
+  =======================================================
+  */
+
+  saveSharedCache(
+    challenge
+  ) {
+    try {
+      localStorage.setItem(
+        this.getCacheKey(
+          challenge.date
+        ),
+        JSON.stringify(
+          challenge
+        )
+      );
+    } catch (error) {
+      console.warn(
+        "POPS could not cache shared Ladder:",
+        error
+      );
+    }
+  },
+
+  loadSharedCache(
+    date = this.getDate()
+  ) {
+    try {
+      const saved =
+        localStorage.getItem(
+          this.getCacheKey(
+            date
+          )
+        );
+
+      if (!saved) {
+        return null;
       }
 
-      const key =
-        this.getPickKey(
-          pick
-        );
+      const parsed =
+        JSON.parse(saved);
 
       if (
-        !key ||
-        usedKeys.has(key)
+        !parsed ||
+        parsed.date !== date ||
+        !Array.isArray(
+          parsed.picks
+        ) ||
+        parsed.picks.length !==
+          this.settings.picksPerStep
       ) {
-        continue;
+        return null;
       }
 
-      usedKeys.add(key);
-      unique.push(pick);
-    }
-
-    return unique;
-  },
-
-  /*
-  =======================================================
-  RANDOMIZE ELIGIBLE PICKS
-  =======================================================
-
-  Uses a Fisher-Yates shuffle.
-
-  The original Hitz Pickz array is not modified.
-  =======================================================
-  */
-
-  shufflePicks(
-    picks = []
-  ) {
-    const shuffled =
-      [...picks];
-
-    for (
-      let index =
-        shuffled.length - 1;
-      index > 0;
-      index--
-    ) {
-      const randomIndex =
-        Math.floor(
-          Math.random() *
-          (index + 1)
-        );
-
-      const temporaryPick =
-        shuffled[index];
-
-      shuffled[index] =
-        shuffled[randomIndex];
-
-      shuffled[randomIndex] =
-        temporaryPick;
-    }
-
-    return shuffled;
-  },
-
-  /*
-  =======================================================
-  BVP AND ELIGIBILITY HELPERS
-  =======================================================
-  */
-
-  getBvpHits(
-    pick = {}
-  ) {
-    return Number(
-      pick.bvpStats?.hits ??
-      pick.bvpHits ??
-      0
-    );
-  },
-
-  getBvpAtBats(
-    pick = {}
-  ) {
-    return Number(
-      pick.bvpStats?.atBats ??
-      pick.bvpAtBats ??
-      0
-    );
-  },
-
-  getBvpPlateAppearances(
-    pick = {}
-  ) {
-    return Number(
-      pick.bvpStats
-        ?.plateAppearances ??
-      pick.bvpPlateAppearances ??
-      0
-    );
-  },
-
-  hasPitcherHistory(
-    pick = {}
-  ) {
-    const atBats =
-      this.getBvpAtBats(
-        pick
+      return parsed;
+    } catch (error) {
+      console.warn(
+        "POPS could not load cached shared Ladder:",
+        error
       );
 
-    const plateAppearances =
-      this.getBvpPlateAppearances(
-        pick
-      );
-
-    return (
-      atBats > 0 ||
-      plateAppearances > 0
-    );
-  },
-
-  qualifiesForLadder(
-    pick = {}
-  ) {
-    if (
-      !pick ||
-      !pick.player
-    ) {
-      return false;
-    }
-
-    const hitStreak =
-      Number(
-        pick.hitStreak || 0
-      );
-
-    const bvpHits =
-      this.getBvpHits(
-        pick
-      );
-
-    const hasHistory =
-      this.hasPitcherHistory(
-        pick
-      );
-
-    const qualifiesWithHistory =
-      hasHistory &&
-      hitStreak >= 2 &&
-      bvpHits >= 1;
-
-    const qualifiesWithoutHistory =
-      !hasHistory &&
-      hitStreak >= 4;
-
-    return (
-      qualifiesWithHistory ||
-      qualifiesWithoutHistory
-    );
-  },
-
-  getQualificationReason(
-    pick = {}
-  ) {
-    const hasHistory =
-      this.hasPitcherHistory(
-        pick
-      );
-
-    if (hasHistory) {
-      return (
-        "2+ game streak with at least " +
-        "1 previous hit vs pitcher"
-      );
-    }
-
-    return (
-      "4+ game streak with no previous " +
-      "pitcher history"
-    );
-  },
-
-  /*
-  =======================================================
-  BUILD TODAY'S RANDOM CHALLENGE
-  =======================================================
-  */
-
-  buildChallenge(
-    hitPicks = []
-  ) {
-    /*
-    Remove duplicate players and keep only players
-    who qualify under the Hitz eligibility rules.
-    */
-
-    const eligiblePicks =
-      this.removeDuplicates(
-        hitPicks
-      ).filter(
-        pick =>
-          this.qualifiesForLadder(
-            pick
-          )
-      );
-
-    if (
-      eligiblePicks.length <
-      this.settings.picksPerStep
-    ) {
       return null;
     }
+  },
 
-    /*
-    Randomly shuffle every eligible player.
+  /*
+  =======================================================
+  LOAD SHARED LADDER.JSON
+  =======================================================
+  */
 
-    This happens only when today's saved Ladder does
-    not already exist.
-    */
+  async fetchSharedChallenge() {
+    const requestUrl =
+      `${this.settings.sharedFile}` +
+      `?_=${Date.now()}`;
 
-    const randomizedPicks =
-      this.shufflePicks(
-        eligiblePicks
+    const response =
+      await fetch(
+        requestUrl,
+        {
+          cache: "no-store"
+        }
       );
 
-    /*
-    Select the first two players from the randomized
-    list after shuffling.
-    */
+    if (!response.ok) {
+      throw new Error(
+        `ladder.json returned HTTP ${response.status}`
+      );
+    }
 
-    const selectedPicks =
-      randomizedPicks
-        .slice(
-          0,
-          this.settings.picksPerStep
-        )
-        .map(pick => {
-          const bvpHits =
-            this.getBvpHits(
-              pick
-            );
+    const challenge =
+      await response.json();
 
-          const bvpAtBats =
-            this.getBvpAtBats(
-              pick
-            );
+    if (
+      !challenge ||
+      typeof challenge !==
+        "object"
+    ) {
+      throw new Error(
+        "ladder.json did not contain a valid challenge."
+      );
+    }
 
-          const bvpPlateAppearances =
-            this.getBvpPlateAppearances(
-              pick
-            );
-
-          const hasHistory =
-            this.hasPitcherHistory(
-              pick
-            );
-
-          return {
-            id:
-              Number(
-                pick.id ||
-                pick.playerId ||
-                0
-              ),
-
-            player:
-              pick.player ||
-              pick.name ||
-              "Unknown Player",
-
-            team:
-              pick.team ||
-              "Team N/A",
-
-            game:
-              pick.game ||
-              "Game unavailable",
-
-            gamePk:
-              Number(
-                pick.gamePk ||
-                pick.gameId ||
-                0
-              ),
-
-            gameTime:
-              pick.gameTime ||
-              "Time TBD",
-
-            pitcher:
-              pick.pitcher ||
-              "Pitcher TBD",
-
-            lineupSpot:
-              Number(
-                pick.lineupSpot ||
-                0
-              ),
-
-            confirmed:
-              Boolean(
-                pick.confirmed
-              ),
-
-            hitStreak:
-              Number(
-                pick.hitStreak ||
-                0
-              ),
-
-            bvpHits,
-
-            bvpAtBats,
-
-            bvpPlateAppearances,
-
-            bvpAverage:
-              pick.bvpStats?.avg ||
-              pick.bvpAverage ||
-              ".000",
-
-            hasPitcherHistory:
-              hasHistory,
-
-            qualificationReason:
-              this.getQualificationReason(
-                pick
-              ),
-
-            score:
-              Number(
-                pick.score || 0
-              ),
-
-            result:
-              "pending",
-
-            hitsToday:
-              0
-          };
-        });
-
-    const challenge = {
-      date:
-        this.getDate(),
-
-      step:
-        1,
-
-      status:
-        "pending",
-
-      selectionType:
-        "random",
-
-      locked:
-        true,
-
-      createdAt:
-        new Date()
-          .toISOString(),
-
-      picks:
-        selectedPicks
-    };
-
-    console.log(
-      "🎲 POPS selected and locked today's random Ladder picks:",
-      selectedPicks.map(
-        pick => pick.player
+    if (
+      !Array.isArray(
+        challenge.picks
       )
-    );
+    ) {
+      throw new Error(
+        "ladder.json did not contain a picks array."
+      );
+    }
 
     return challenge;
   },
 
   /*
   =======================================================
-  UPDATE LOCKED PLAYERS WITH CURRENT DATA
+  VALIDATE SHARED CHALLENGE
+  =======================================================
+  */
+
+  validateChallenge(
+    challenge
+  ) {
+    if (
+      !challenge ||
+      typeof challenge !==
+        "object"
+    ) {
+      return {
+        valid: false,
+        reason:
+          "Shared Ladder data is unavailable."
+      };
+    }
+
+    const currentDate =
+      this.getDate();
+
+    if (
+      challenge.date !==
+      currentDate
+    ) {
+      return {
+        valid: false,
+        reason:
+          `The shared Ladder is for ${challenge.date || "another date"}, not ${currentDate}.`
+      };
+    }
+
+    if (
+      !Array.isArray(
+        challenge.picks
+      ) ||
+      challenge.picks.length <
+        this.settings.picksPerStep
+    ) {
+      return {
+        valid: false,
+        reason:
+          "The shared Ladder does not currently have two eligible players."
+      };
+    }
+
+    const validPlayers =
+      challenge.picks.filter(
+        pick =>
+          pick &&
+          (
+            pick.player ||
+            pick.name
+          )
+      );
+
+    if (
+      validPlayers.length <
+      this.settings.picksPerStep
+    ) {
+      return {
+        valid: false,
+        reason:
+          "The shared Ladder player information is incomplete."
+      };
+    }
+
+    return {
+      valid: true,
+      reason: ""
+    };
+  },
+
+  /*
+  =======================================================
+  NORMALIZE SHARED PLAYER
+  =======================================================
+  */
+
+  normalizeSharedPick(
+    pick = {}
+  ) {
+    const bvpHits =
+      this.number(
+        pick.bvpHits ??
+        pick.bvpStats?.hits
+      );
+
+    const bvpAtBats =
+      this.number(
+        pick.bvpAtBats ??
+        pick.bvpStats?.atBats
+      );
+
+    const bvpPlateAppearances =
+      this.number(
+        pick.bvpPlateAppearances ??
+        pick.bvpStats
+          ?.plateAppearances
+      );
+
+    const hasPitcherHistory =
+      pick.hasPitcherHistory !==
+        undefined
+        ? Boolean(
+            pick.hasPitcherHistory
+          )
+        : (
+            bvpAtBats > 0 ||
+            bvpPlateAppearances > 0
+          );
+
+    return {
+      id:
+        this.number(
+          pick.id ||
+          pick.playerId
+        ),
+
+      player:
+        pick.player ||
+        pick.name ||
+        "Unknown Player",
+
+      team:
+        pick.team ||
+        "Team N/A",
+
+      game:
+        pick.game ||
+        "Game unavailable",
+
+      gamePk:
+        this.number(
+          pick.gamePk ||
+          pick.gameId
+        ),
+
+      gameTime:
+        pick.gameTime ||
+        pick.date ||
+        "",
+
+      pitcher:
+        pick.pitcher ||
+        "Pitcher TBD",
+
+      lineupSpot:
+        this.number(
+          pick.lineupSpot
+        ),
+
+      confirmed:
+        Boolean(
+          pick.confirmed
+        ),
+
+      hitStreak:
+        this.number(
+          pick.hitStreak
+        ),
+
+      bvpHits,
+
+      bvpAtBats,
+
+      bvpPlateAppearances,
+
+      bvpAverage:
+        pick.bvpAverage ||
+        pick.bvpStats?.avg ||
+        ".000",
+
+      bvpHomeRuns:
+        this.number(
+          pick.bvpHomeRuns ??
+          pick.bvpStats?.homeRuns
+        ),
+
+      hasPitcherHistory,
+
+      qualificationReason:
+        pick.qualificationReason ||
+        (
+          hasPitcherHistory
+            ? (
+                "2+ game hit streak and at least " +
+                "1 previous hit vs pitcher"
+              )
+            : (
+                "4+ game hit streak with no " +
+                "previous pitcher history"
+              )
+        ),
+
+      score:
+        this.number(
+          pick.score
+        ),
+
+      result:
+        pick.result ||
+        "pending",
+
+      hitsToday:
+        this.number(
+          pick.hitsToday
+        )
+    };
+  },
+
+  normalizeChallenge(
+    challenge
+  ) {
+    return {
+      ...challenge,
+
+      date:
+        challenge.date ||
+        this.getDate(),
+
+      step:
+        Math.max(
+          1,
+          this.number(
+            challenge.step,
+            1
+          )
+        ),
+
+      status:
+        challenge.status ||
+        "pending",
+
+      selectionType:
+        challenge.selectionType ||
+        "shared-daily-random",
+
+      locked:
+        true,
+
+      picks:
+        challenge.picks
+          .slice(
+            0,
+            this.settings.picksPerStep
+          )
+          .map(
+            pick =>
+              this.normalizeSharedPick(
+                pick
+              )
+          )
+    };
+  },
+
+  /*
+  =======================================================
+  MERGE CURRENT DISPLAY DATA
   =======================================================
 
-  This updates statistics, game information and lineup
-  status without replacing the two selected players.
+  ladder.json remains the authority for player identity.
+
+  The current browser Hit Pickz list may update:
+  - score
+  - lineup confirmation
+  - pitcher
+  - game information
+  - current streak and BvP display
+
+  It cannot replace either selected player.
   =======================================================
   */
 
   mergeCurrentData(
-    savedChallenge,
+    sharedChallenge,
     currentHitPicks = []
   ) {
     const currentMap =
       new Map();
 
     for (
-      const pick of
+      const currentPick of
       currentHitPicks
     ) {
       currentMap.set(
         this.getPickKey(
-          pick
+          currentPick
         ),
-        pick
+        currentPick
       );
     }
 
     return {
-      ...savedChallenge,
-
-      date:
-        savedChallenge.date ||
-        this.getDate(),
-
-      selectionType:
-        "random",
-
-      locked:
-        true,
+      ...sharedChallenge,
 
       picks:
-        savedChallenge.picks.map(
-          savedPick => {
+        sharedChallenge.picks.map(
+          sharedPick => {
             const currentPick =
               currentMap.get(
                 this.getPickKey(
-                  savedPick
+                  sharedPick
                 )
               );
 
-            /*
-            Do not replace a locked player when that
-            player is missing from the current list.
-
-            Keep the saved player for the entire day.
-            */
-
             if (!currentPick) {
-              return {
-                ...savedPick,
-
-                result:
-                  savedPick.result ||
-                  "pending",
-
-                hitsToday:
-                  Number(
-                    savedPick.hitsToday ||
-                    0
-                  )
-              };
+              return sharedPick;
             }
 
-            const bvpHits =
-              this.getBvpHits(
-                currentPick
+            const currentBvpHits =
+              this.number(
+                currentPick.bvpHits ??
+                currentPick.bvpStats
+                  ?.hits,
+                sharedPick.bvpHits
               );
 
-            const bvpAtBats =
-              this.getBvpAtBats(
-                currentPick
+            const currentBvpAtBats =
+              this.number(
+                currentPick.bvpAtBats ??
+                currentPick.bvpStats
+                  ?.atBats,
+                sharedPick.bvpAtBats
               );
 
-            const bvpPlateAppearances =
-              this.getBvpPlateAppearances(
+            const currentBvpPlateAppearances =
+              this.number(
                 currentPick
+                  .bvpPlateAppearances ??
+                currentPick.bvpStats
+                  ?.plateAppearances,
+                sharedPick
+                  .bvpPlateAppearances
               );
 
-            const hasHistory =
-              this.hasPitcherHistory(
-                currentPick
-              );
+            const hasPitcherHistory =
+              currentPick
+                .hasPitcherHistory !==
+                undefined
+                ? Boolean(
+                    currentPick
+                      .hasPitcherHistory
+                  )
+                : (
+                    currentBvpAtBats > 0 ||
+                    currentBvpPlateAppearances >
+                      0
+                  );
 
             return {
-              ...savedPick,
+              ...sharedPick,
 
               /*
-              The player identity stays locked.
+              These values remain locked to ladder.json.
               */
 
               id:
-                savedPick.id,
+                sharedPick.id,
 
               player:
-                savedPick.player,
+                sharedPick.player,
+
+              /*
+              These values can refresh for display.
+              */
 
               team:
                 currentPick.team ||
-                savedPick.team,
+                sharedPick.team,
 
               game:
                 currentPick.game ||
-                savedPick.game,
+                sharedPick.game,
 
               gamePk:
-                Number(
-                  currentPick.gamePk ||
-                  savedPick.gamePk ||
-                  0
+                this.number(
+                  currentPick.gamePk,
+                  sharedPick.gamePk
                 ),
 
               gameTime:
                 currentPick.gameTime ||
-                savedPick.gameTime,
+                sharedPick.gameTime,
 
               pitcher:
                 currentPick.pitcher ||
-                savedPick.pitcher,
+                sharedPick.pitcher,
 
               lineupSpot:
-                Number(
-                  currentPick.lineupSpot ??
-                  savedPick.lineupSpot ??
-                  0
+                this.number(
+                  currentPick.lineupSpot,
+                  sharedPick.lineupSpot
                 ),
 
               confirmed:
-                Boolean(
-                  currentPick.confirmed
-                ),
+                currentPick.confirmed !==
+                  undefined
+                  ? Boolean(
+                      currentPick.confirmed
+                    )
+                  : sharedPick.confirmed,
 
               hitStreak:
-                Number(
-                  currentPick.hitStreak ??
-                  savedPick.hitStreak ??
-                  0
+                this.number(
+                  currentPick.hitStreak,
+                  sharedPick.hitStreak
                 ),
 
-              bvpHits,
+              bvpHits:
+                currentBvpHits,
 
-              bvpAtBats,
+              bvpAtBats:
+                currentBvpAtBats,
 
-              bvpPlateAppearances,
+              bvpPlateAppearances:
+                currentBvpPlateAppearances,
 
               bvpAverage:
+                currentPick.bvpAverage ||
                 currentPick.bvpStats
                   ?.avg ||
-                currentPick.bvpAverage ||
-                savedPick.bvpAverage ||
-                ".000",
+                sharedPick.bvpAverage,
 
-              hasPitcherHistory:
-                hasHistory,
+              hasPitcherHistory,
 
               qualificationReason:
-                this.getQualificationReason(
-                  currentPick
-                ),
+                currentPick
+                  .qualificationReason ||
+                sharedPick
+                  .qualificationReason,
 
               score:
-                Number(
-                  currentPick.score ??
-                  savedPick.score ??
-                  0
+                this.number(
+                  currentPick.score,
+                  sharedPick.score
                 ),
 
               /*
-              Keep live results already saved.
+              Preserve result fields supplied by the
+              shared challenge.
               */
 
               result:
-                savedPick.result ||
+                sharedPick.result ||
                 "pending",
 
               hitsToday:
-                Number(
-                  savedPick.hitsToday ||
-                  0
+                this.number(
+                  sharedPick.hitsToday
                 )
             };
           }
@@ -883,40 +842,32 @@ const Ladder = {
     status = "pending"
   ) {
     if (status === "won") {
-      return (
-        "✅ Ladder Step Won"
-      );
+      return "✅ Ladder Step Won";
     }
 
     if (status === "lost") {
-      return (
-        "❌ Ladder Step Lost"
-      );
+      return "❌ Ladder Step Lost";
     }
 
-    return (
-      "⏳ Waiting for Results"
-    );
+    if (status === "unavailable") {
+      return "⚠️ Picks Unavailable";
+    }
+
+    return "⏳ Waiting for Results";
   },
 
   getPickResultLabel(
     result = "pending"
   ) {
     if (result === "hit") {
-      return (
-        "✅ Recorded a Hit"
-      );
+      return "✅ Recorded a Hit";
     }
 
     if (result === "miss") {
-      return (
-        "❌ No Hit"
-      );
+      return "❌ No Hit";
     }
 
-    return (
-      "⏳ Game Pending"
-    );
+    return "⏳ Game Pending";
   },
 
   /*
@@ -949,8 +900,9 @@ const Ladder = {
 
     const gameTime =
       this.escapeHtml(
-        pick.gameTime ||
-        "Time TBD"
+        this.formatGameTime(
+          pick.gameTime
+        )
       );
 
     const pitcher =
@@ -964,6 +916,12 @@ const Ladder = {
         this.getPlayerInitials(
           pick.player
         )
+      );
+
+    const qualificationReason =
+      this.escapeHtml(
+        pick.qualificationReason ||
+        ""
       );
 
     const result =
@@ -985,25 +943,20 @@ const Ladder = {
         : "ladder-projected";
 
     const hasHistory =
-      pick.hasPitcherHistory !==
-      false;
+      Boolean(
+        pick.hasPitcherHistory
+      );
 
     const historyDisplay =
       hasHistory
-        ? `${Number(
-            pick.bvpHits || 0
-          )}/${Number(
-            pick.bvpAtBats || 0
-          )}`
+        ? (
+            `${this.number(
+              pick.bvpHits
+            )}/${this.number(
+              pick.bvpAtBats
+            )}`
+          )
         : "No history";
-
-    const qualificationReason =
-      this.escapeHtml(
-        pick.qualificationReason ||
-        this.getQualificationReason(
-          pick
-        )
-      );
 
     return `
       <article class="ladder-player-card">
@@ -1011,7 +964,7 @@ const Ladder = {
         <div class="ladder-player-topbar">
 
           <span class="ladder-pick-tag">
-            RANDOM PICK ${index + 1}
+            SHARED PICK ${index + 1}
           </span>
 
           <span
@@ -1106,8 +1059,8 @@ const Ladder = {
             </small>
 
             <strong>
-              ${Number(
-                pick.hitStreak || 0
+              ${this.number(
+                pick.hitStreak
               )}
             </strong>
 
@@ -1152,8 +1105,8 @@ const Ladder = {
             </small>
 
             <strong>
-              ${Number(
-                pick.score || 0
+              ${this.number(
+                pick.score
               )}
 
               <span>
@@ -1211,15 +1164,16 @@ const Ladder = {
       return;
     }
 
-    if (
-      !challenge ||
-      !Array.isArray(
-        challenge.picks
-      ) ||
-      challenge.picks.length <
-        this.settings.picksPerStep
-    ) {
-      this.renderUnavailable();
+    const validation =
+      this.validateChallenge(
+        challenge
+      );
+
+    if (!validation.valid) {
+      this.renderUnavailable(
+        validation.reason
+      );
+
       return;
     }
 
@@ -1228,8 +1182,9 @@ const Ladder = {
         1,
         Math.min(
           this.settings.maximumSteps,
-          Number(
-            challenge.step || 1
+          this.number(
+            challenge.step,
+            1
           )
         )
       );
@@ -1247,11 +1202,9 @@ const Ladder = {
           step ===
             this.settings.maximumSteps
         ) {
-          return (
-            number <= step
-              ? "complete"
-              : ""
-          );
+          return number <= step
+            ? "complete"
+            : "";
         }
 
         if (number < step) {
@@ -1286,7 +1239,7 @@ const Ladder = {
             <div>
 
               <small>
-                RANDOM DAILY CHALLENGE
+                SHARED DAILY CHALLENGE
               </small>
 
               <h3>
@@ -1298,9 +1251,9 @@ const Ladder = {
           </div>
 
           <p>
-            Two random players are selected from
-            today's eligible POPS Hitz Pickz list.
-            They remain locked until tomorrow.
+            These two random players are shared
+            across every phone, laptop and browser.
+            They remain locked for the entire day.
           </p>
 
         </header>
@@ -1316,7 +1269,7 @@ const Ladder = {
               </span>
 
               <h4>
-                Two Random Picks Must Hit
+                Two Shared Picks Must Hit
               </h4>
 
             </div>
@@ -1412,9 +1365,8 @@ const Ladder = {
             </strong>
 
             <p>
-              Both randomly selected players must
-              record at least one hit for this
-              Ladder step to win.
+              Both shared players must record at least
+              one hit for this Ladder step to win.
             </p>
 
           </div>
@@ -1438,21 +1390,20 @@ const Ladder = {
         <div class="ladder-rule-panel">
 
           <span class="ladder-rule-icon">
-            🔒
+            🌐
           </span>
 
           <div>
 
             <strong>
-              Daily Pick Lock
+              Global Daily Pick Lock
             </strong>
 
             <p>
-              Today's two random selections will
-              not change when the page refreshes
-              or the predictions recalculate.
-              New random players are selected
-              tomorrow.
+              Everyone receives these exact same two
+              players. GitHub creates two new shared
+              random selections when the Eastern date
+              changes.
             </p>
 
           </div>
@@ -1478,26 +1429,37 @@ const Ladder = {
       <div class="ladder-empty-v2">
 
         <div class="ladder-empty-icon">
-          🎲
+          🌐
         </div>
 
         <h3>
-          Loading Ladder Challenge
+          Loading Shared Ladder
         </h3>
 
         <p>
-          Randomly selecting two eligible
-          POPS Hitz Pickz...
+          Loading today's two shared
+          POPS Ladder selections...
         </p>
 
       </div>
     `;
   },
 
-  renderUnavailable() {
+  renderUnavailable(
+    reason = ""
+  ) {
     if (!this.findBox()) {
       return;
     }
+
+    const safeReason =
+      this.escapeHtml(
+        reason ||
+        (
+          "The Ladder needs at least two " +
+          "eligible POPS Hitz Pickz."
+        )
+      );
 
     this.box.innerHTML = `
       <div class="ladder-empty-v2">
@@ -1511,9 +1473,7 @@ const Ladder = {
         </h3>
 
         <p>
-          The Ladder needs at least two
-          eligible POPS Hitz Pickz before
-          random selections can be created.
+          ${safeReason}
         </p>
 
         <div class="ladder-empty-rules">
@@ -1556,7 +1516,7 @@ const Ladder = {
         </div>
 
         <h3>
-          Ladder Could Not Load
+          Shared Ladder Could Not Load
         </h3>
 
         <p>
@@ -1580,75 +1540,98 @@ const Ladder = {
     this.renderLoading();
 
     try {
-      const picks =
-        Array.isArray(
-          currentHitPicks
-        )
-          ? currentHitPicks
-          : [];
+      let sharedChallenge;
 
-      /*
-      First check whether today's two random players
-      were already selected and saved.
-      */
+      try {
+        /*
+        ladder.json is the official source of truth.
+        */
 
-      let challenge =
-        this.loadSavedChallenge();
+        sharedChallenge =
+          await this.fetchSharedChallenge();
 
-      /*
-      Only select random players when no saved challenge
-      exists for today's date.
-      */
-
-      if (!challenge) {
-        challenge =
-          this.buildChallenge(
-            picks
+        const validation =
+          this.validateChallenge(
+            sharedChallenge
           );
 
-        if (!challenge) {
-          this.renderUnavailable();
+        if (!validation.valid) {
+          this.renderUnavailable(
+            validation.reason
+          );
+
           return;
         }
 
-        this.saveChallenge(
-          challenge
-        );
-      } else {
-        /*
-        Keep the same two players and only update their
-        current information.
-        */
-
-        challenge =
-          this.mergeCurrentData(
-            challenge,
-            picks
+        sharedChallenge =
+          this.normalizeChallenge(
+            sharedChallenge
           );
 
-        this.saveChallenge(
-          challenge
+        this.saveSharedCache(
+          sharedChallenge
         );
 
         console.log(
-          "🔒 POPS loaded today's locked random Ladder picks:",
-          challenge.picks.map(
+          "🌐 POPS loaded shared Ladder picks from ladder.json:",
+          sharedChallenge.picks.map(
             pick => pick.player
           )
         );
+      } catch (fetchError) {
+        console.warn(
+          "POPS could not download ladder.json. Checking shared cache:",
+          fetchError
+        );
+
+        /*
+        Only use a previously downloaded copy for the
+        same date when the network file is unavailable.
+        */
+
+        sharedChallenge =
+          this.loadSharedCache(
+            this.getDate()
+          );
+
+        if (!sharedChallenge) {
+          throw fetchError;
+        }
+
+        console.log(
+          "📦 POPS loaded today's previously downloaded shared Ladder."
+        );
       }
 
+      /*
+      Refresh display information without replacing either
+      shared player.
+      */
+
+      const finalChallenge =
+        this.mergeCurrentData(
+          sharedChallenge,
+          Array.isArray(
+            currentHitPicks
+          )
+            ? currentHitPicks
+            : []
+        );
+
       this.render(
-        challenge
+        finalChallenge
       );
 
+      window.sharedLadderChallenge =
+        finalChallenge;
+
       console.log(
-        "✅ POPS Ladder Challenge loaded:",
-        challenge
+        "✅ POPS Shared Ladder Challenge loaded:",
+        finalChallenge
       );
     } catch (error) {
       console.error(
-        "POPS Ladder error:",
+        "POPS Shared Ladder error:",
         error
       );
 
@@ -1660,7 +1643,7 @@ const Ladder = {
 };
 
 /*
-Makes the Ladder module available to app.js.
+Makes the shared Ladder module available to app.js.
 */
 
 window.Ladder =
