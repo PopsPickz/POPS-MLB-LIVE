@@ -70,14 +70,17 @@ TABS
 */
 
 .tabs {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 22px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
 }
 
 .tabs button {
+  
+  width: 100%;
+  box-sizing: border-box; 
+  
   padding: 12px 20px;
   border: 2px solid #ff7a00;
   border-radius: 999px;
