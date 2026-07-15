@@ -5559,3 +5559,12 @@ RECAP RESPONSIVE DESIGN
     animation: none !important;
   }
 }
+
+/* =========================================
+   RECAP BUTTON - FULL WIDTH
+========================================= */
+
+.tabs .recap-button {
+    grid-column: 1 / -1;
+    width: 100%;
+}
