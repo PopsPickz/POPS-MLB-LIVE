@@ -2027,6 +2027,19 @@ function addHRPick(
   const hrLast10 =
     Number(recentForm.homeRuns || 0);
 
+/*
+=========================================================
+QUALIFICATION RULE
+
+A player MUST have at least one home run
+in their last 10 games to qualify.
+=========================================================
+*/
+
+if (hrLast10 < 1) {
+  return;
+}
+  
   const opsLast10 =
     Number(recentForm.ops || 0);
 
