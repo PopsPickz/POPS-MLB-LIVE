@@ -2,37 +2,24 @@
 =========================================================
 POPS PICKZ — PREVIOUS DAY RECAP
 File: recap.js
-Version: 1.0
+Version: 2.0
+Design: Option 3
 =========================================================
 
-PURPOSE
-
-Displays only the previous day's finalized:
+Displays the previous day's finalized:
 
 - HR Pickz Results
 - Hit Pickz Results
 - HR Success Percentage
 - Hit Success Percentage
 
-It does not show:
-
-- Total Results
-- Unique Players
-- Individual player cards
-- Live updates
-
 EXPECTED SAVED KEY
 
 pops-live-results-YYYY-MM-DD
 
-Example:
-
-pops-live-results-2026-07-11
-
 The module also checks:
 
 data/history/YYYY-MM-DD.json
-
 =========================================================
 */
 
@@ -118,7 +105,7 @@ const Recap = {
       new Date();
 
     /*
-    Noon prevents daylight-saving or midnight issues.
+    Noon prevents daylight-saving and midnight issues.
     */
 
     date.setHours(
@@ -137,14 +124,19 @@ const Recap = {
     );
   },
 
-  getDisplayDate(dateKey) {
+  getDateObject(dateKey) {
     const parts =
       String(dateKey)
         .split("-")
         .map(Number);
 
-    if (parts.length !== 3) {
-      return dateKey;
+    if (
+      parts.length !== 3 ||
+      parts.some(part =>
+        !Number.isFinite(part)
+      )
+    ) {
+      return null;
     }
 
     const date =
@@ -162,6 +154,19 @@ const Recap = {
         date.getTime()
       )
     ) {
+      return null;
+    }
+
+    return date;
+  },
+
+  getDisplayDate(dateKey) {
+    const date =
+      this.getDateObject(
+        dateKey
+      );
+
+    if (!date) {
       return dateKey;
     }
 
@@ -174,6 +179,48 @@ const Recap = {
         year: "numeric"
       }
     );
+  },
+
+  getShortMonth(dateKey) {
+    const date =
+      this.getDateObject(
+        dateKey
+      );
+
+    if (!date) {
+      return "";
+    }
+
+    return date
+      .toLocaleDateString(
+        [],
+        {
+          month: "short"
+        }
+      )
+      .toUpperCase();
+  },
+
+  getDayNumber(dateKey) {
+    const date =
+      this.getDateObject(
+        dateKey
+      );
+
+    return date
+      ? date.getDate()
+      : "";
+  },
+
+  getYear(dateKey) {
+    const date =
+      this.getDateObject(
+        dateKey
+      );
+
+    return date
+      ? date.getFullYear()
+      : "";
   },
 
   /*
@@ -398,14 +445,12 @@ const Recap = {
     const hrTracked =
       savedHRTracked > 0
         ? savedHRTracked
-        : this.settings
-            .maximumHRPicks;
+        : this.settings.maximumHRPicks;
 
     const hitTracked =
       savedHitTracked > 0
         ? savedHitTracked
-        : this.settings
-            .maximumHitPicks;
+        : this.settings.maximumHitPicks;
 
     return {
       date:
@@ -415,11 +460,8 @@ const Recap = {
         dateKey,
 
       hrResults,
-
       hitResults,
-
       hrTracked,
-
       hitTracked,
 
       hrSuccess:
@@ -445,13 +487,9 @@ const Recap = {
   loadFromStorage(dateKey) {
     const possibleKeys = [
       `${this.settings.storagePrefix}${dateKey}`,
-
       `pops-liveplays-results-${dateKey}`,
-
       `pops-live-plays-${dateKey}`,
-
       `pops-daily-results-${dateKey}`,
-
       `pops-recap-${dateKey}`
     ];
 
@@ -535,6 +573,282 @@ const Recap = {
 
   /*
   =======================================================
+  BUILD RECAP HEADER
+  =======================================================
+  */
+
+  buildHeader(dateKey) {
+    const safeDate =
+      this.escapeHTML(
+        this.getDisplayDate(
+          dateKey
+        )
+      );
+
+    const month =
+      this.escapeHTML(
+        this.getShortMonth(
+          dateKey
+        )
+      );
+
+    const day =
+      this.escapeHTML(
+        this.getDayNumber(
+          dateKey
+        )
+      );
+
+    const year =
+      this.escapeHTML(
+        this.getYear(
+          dateKey
+        )
+      );
+
+    return `
+      <div class="recap-premium-header">
+
+        <div class="recap-heading-group">
+
+          <div class="recap-heading-icon">
+            📊
+          </div>
+
+          <div>
+            <div class="recap-kicker">
+              DAILY RESULTS
+            </div>
+
+            <h2>
+              Yesterday's
+              <span>POPS Recap</span>
+            </h2>
+          </div>
+
+        </div>
+
+        <div class="recap-date-badge">
+
+          <span class="recap-calendar-icon">
+            📅
+          </span>
+
+          <div>
+            <strong>
+              ${month} ${day}
+            </strong>
+
+            <small>
+              ${year}
+            </small>
+          </div>
+
+        </div>
+
+      </div>
+
+      <p class="recap-date-description">
+        Final results from ${safeDate}
+      </p>
+    `;
+  },
+
+  /*
+  =======================================================
+  BUILD RESULTS SECTION
+  =======================================================
+  */
+
+  buildResultsSection(results) {
+    return `
+      <section class="recap-results-panel">
+
+        <div class="recap-section-heading">
+
+          <span></span>
+
+          <h3>
+            POPS PICKZ RESULTS
+          </h3>
+
+          <span></span>
+
+        </div>
+
+        <div class="recap-result-list">
+
+          <article class="
+            recap-result-row
+            recap-result-row-hr
+          ">
+
+            <div class="
+              recap-result-icon
+              recap-result-icon-hr
+            ">
+              ⚾
+            </div>
+
+            <div class="recap-result-copy">
+
+              <strong>
+                HR PICKZ RESULTS
+              </strong>
+
+              <span>
+                Home runs
+              </span>
+
+            </div>
+
+            <div class="
+              recap-result-total
+              recap-result-total-hr
+            ">
+              ${results.hrResults}
+            </div>
+
+          </article>
+
+          <article class="
+            recap-result-row
+            recap-result-row-hit
+          ">
+
+            <div class="
+              recap-result-icon
+              recap-result-icon-hit
+            ">
+              🎯
+            </div>
+
+            <div class="recap-result-copy">
+
+              <strong>
+                HIT PICKZ RESULTS
+              </strong>
+
+              <span>
+                All hits
+              </span>
+
+            </div>
+
+            <div class="
+              recap-result-total
+              recap-result-total-hit
+            ">
+              ${results.hitResults}
+            </div>
+
+          </article>
+
+        </div>
+
+      </section>
+    `;
+  },
+
+  /*
+  =======================================================
+  BUILD SUCCESS SUMMARY
+  =======================================================
+  */
+
+  buildSuccessSummary(results) {
+    return `
+      <section class="recap-success-section">
+
+        <div class="recap-section-heading">
+
+          <span></span>
+
+          <h3>
+            SUCCESS SUMMARY
+          </h3>
+
+          <span></span>
+
+        </div>
+
+        <div class="recap-success-grid">
+
+          <article class="
+            recap-success-card
+            recap-success-card-hr
+          ">
+
+            <span class="recap-success-label">
+              HR SUCCESS
+            </span>
+
+            <strong>
+              ${results.hrSuccess}%
+            </strong>
+
+            <small>
+              ${results.hrResults}
+              of
+              ${results.hrTracked}
+            </small>
+
+          </article>
+
+          <article class="
+            recap-success-card
+            recap-success-card-hit
+          ">
+
+            <span class="recap-success-label">
+              HIT SUCCESS
+            </span>
+
+            <strong>
+              ${results.hitSuccess}%
+            </strong>
+
+            <small>
+              ${results.hitResults}
+              of
+              ${results.hitTracked}
+            </small>
+
+          </article>
+
+        </div>
+
+      </section>
+    `;
+  },
+
+  /*
+  =======================================================
+  BUILD FOOTER MESSAGE
+  =======================================================
+  */
+
+  buildFooterMessage() {
+    return `
+      <div class="recap-footer-message">
+
+        <div class="recap-footer-icon">
+          📈
+        </div>
+
+        <p>
+          Every pick. Every day.
+          <strong>
+            We track. You win.
+          </strong>
+        </p>
+
+      </div>
+    `;
+  },
+
+  /*
+  =======================================================
   RENDER LOADING
   =======================================================
   */
@@ -544,18 +858,34 @@ const Recap = {
       return;
     }
 
+    const dateKey =
+      this.getPreviousDateKey();
+
     this.box.innerHTML = `
-      <div class="recap-card">
-        <div class="recap-header">
-          <h2>
-            📊 Yesterday's POPS Recap
-          </h2>
+      <div class="
+        recap-dashboard
+        recap-loading-dashboard
+      ">
+
+        ${this.buildHeader(
+          dateKey
+        )}
+
+        <div class="recap-loading-panel">
+
+          <div class="recap-loading-spinner">
+          </div>
+
+          <strong>
+            Loading yesterday's results
+          </strong>
 
           <p>
-            Loading the previous day's
-            finalized results...
+            Checking saved POPS Pickz results...
           </p>
+
         </div>
+
       </div>
     `;
   },
@@ -571,32 +901,32 @@ const Recap = {
       return;
     }
 
-    const displayDate =
-      this.escapeHTML(
-        this.getDisplayDate(
-          dateKey
-        )
-      );
+    const emptyResults = {
+      hrResults: 0,
+      hitResults: 0,
+      hrTracked:
+        this.settings.maximumHRPicks,
+      hitTracked:
+        this.settings.maximumHitPicks,
+      hrSuccess: 0,
+      hitSuccess: 0
+    };
 
     this.box.innerHTML = `
-      <div class="recap-card">
+      <div class="recap-dashboard">
 
-        <div class="recap-header">
-
-          <h2>
-            📊 Yesterday's POPS Recap
-          </h2>
-
-          <p>
-            Results for ${displayDate}
-          </p>
-
-        </div>
+        ${this.buildHeader(
+          dateKey
+        )}
 
         <div class="recap-no-results">
 
+          <div class="recap-no-results-icon">
+            📭
+          </div>
+
           <h3>
-            No saved recap is available
+            No saved recap available
           </h3>
 
           <p>
@@ -606,120 +936,15 @@ const Recap = {
 
         </div>
 
-        ${this.buildStatsGrid({
-          hrResults: 0,
-          hitResults: 0,
-          hrTracked: 20,
-          hitTracked: 20,
-          hrSuccess: 0,
-          hitSuccess: 0
-        })}
+        ${this.buildResultsSection(
+          emptyResults
+        )}
 
-      </div>
-    `;
-  },
+        ${this.buildSuccessSummary(
+          emptyResults
+        )}
 
-  /*
-  =======================================================
-  BUILD STATS GRID
-  =======================================================
-  */
-
-  buildStatsGrid(results) {
-    return `
-      <div class="recap-results-grid">
-
-        <div class="
-          recap-stat-box
-          recap-hr-result
-        ">
-
-          <div class="recap-stat-title">
-            HR PICKZ RESULTS
-          </div>
-
-          <div class="
-            recap-stat-number
-            recap-red-number
-          ">
-            ${results.hrResults}
-          </div>
-
-          <div class="recap-stat-label">
-            Home runs
-          </div>
-
-        </div>
-
-        <div class="
-          recap-stat-box
-          recap-hit-result
-        ">
-
-          <div class="recap-stat-title">
-            HIT PICKZ RESULTS
-          </div>
-
-          <div class="
-            recap-stat-number
-            recap-orange-number
-          ">
-            ${results.hitResults}
-          </div>
-
-          <div class="recap-stat-label">
-            All hits
-          </div>
-
-        </div>
-
-        <div class="
-          recap-stat-box
-          recap-hr-success
-        ">
-
-          <div class="recap-stat-title">
-            HR SUCCESS
-          </div>
-
-          <div class="
-            recap-stat-number
-            recap-red-number
-          ">
-            ${results.hrSuccess}%
-          </div>
-
-          <div class="recap-stat-label">
-            ${results.hrResults}
-            of
-            ${results.hrTracked}
-          </div>
-
-        </div>
-
-        <div class="
-          recap-stat-box
-          recap-hit-success
-        ">
-
-          <div class="recap-stat-title">
-            HIT SUCCESS
-          </div>
-
-          <div class="
-            recap-stat-number
-            recap-orange-number
-          ">
-            ${results.hitSuccess}%
-          </div>
-
-          <div class="recap-stat-label">
-            ${results.hitResults}
-            of
-            ${results.hitTracked}
-          </div>
-
-        </div>
+        ${this.buildFooterMessage()}
 
       </div>
     `;
@@ -736,28 +961,12 @@ const Recap = {
       return;
     }
 
-    const displayDate =
-      this.escapeHTML(
-        this.getDisplayDate(
-          results.date
-        )
-      );
-
     this.box.innerHTML = `
-      <div class="recap-card">
+      <div class="recap-dashboard">
 
-        <div class="recap-header">
-
-          <h2>
-            📊 Yesterday's POPS Recap
-          </h2>
-
-          <p>
-            Final results from
-            ${displayDate}
-          </p>
-
-        </div>
+        ${this.buildHeader(
+          results.date
+        )}
 
         <div class="recap-final-status">
 
@@ -776,9 +985,15 @@ const Recap = {
 
         </div>
 
-        ${this.buildStatsGrid(
+        ${this.buildResultsSection(
           results
         )}
+
+        ${this.buildSuccessSummary(
+          results
+        )}
+
+        ${this.buildFooterMessage()}
 
       </div>
     `;
@@ -855,16 +1070,26 @@ const Recap = {
 
       if (this.box) {
         this.box.innerHTML = `
-          <div class="recap-card">
-            <h3>
-              ⚠️ Recap could not load
-            </h3>
+          <div class="recap-dashboard">
 
-            <p>
-              ${this.escapeHTML(
-                error.message
-              )}
-            </p>
+            <div class="recap-error-panel">
+
+              <div class="recap-error-icon">
+                ⚠️
+              </div>
+
+              <h3>
+                Recap could not load
+              </h3>
+
+              <p>
+                ${this.escapeHTML(
+                  error.message
+                )}
+              </p>
+
+            </div>
+
           </div>
         `;
       }
