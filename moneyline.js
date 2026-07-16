@@ -617,20 +617,26 @@ const Moneyline = {
       homeScores.runsAllowed * 0.15 +
       2;
 
-    const pick =
-      awayTotal > homeTotal
-        ? game.awayTeam
-        : homeTotal > awayTotal
-        ? game.homeTeam
-        : "No Clear Edge";
+   /*
+=======================================================
+POPS PICK DECISION
 
-    const confidence =
-      this.confidenceScore(
-        awayTotal,
-        homeTotal,
-        awayChecks,
-        homeChecks
-      );
+More green checks wins.
+
+If both teams have the same number of green checks,
+the result is No Clear Advantage.
+
+Weighted totals no longer decide the POPS Pick.
+=======================================================
+*/
+
+let pick = "No Clear Advantage";
+
+if (awayChecks > homeChecks) {
+  pick = game.awayTeam;
+} else if (homeChecks > awayChecks) {
+  pick = game.homeTeam;
+}
 
     /*
     =======================================================
