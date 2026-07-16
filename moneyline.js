@@ -619,6 +619,8 @@ const Moneyline = {
 
    /*
 =======================================================
+/*
+=======================================================
 POPS PICK DECISION
 
 More green checks wins.
@@ -637,6 +639,16 @@ if (awayChecks > homeChecks) {
 } else if (homeChecks > awayChecks) {
   pick = game.homeTeam;
 }
+
+const confidence =
+  awayChecks === homeChecks
+    ? 50
+    : this.confidenceScore(
+        awayTotal,
+        homeTotal,
+        awayChecks,
+        homeChecks
+      );
 
     /*
     =======================================================
