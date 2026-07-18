@@ -3214,6 +3214,11 @@ async function buildOrPreserveLadder(
       todayData
     );
 
+  const wager =
+    getLadderWager(
+      progression.day
+    );
+
   if (
     sharedHitPool.length <
     LADDER_PICK_COUNT
@@ -3235,8 +3240,34 @@ async function buildOrPreserveLadder(
       locked:
         true,
 
+      day:
+        progression.day,
+
       step:
-        1,
+        progression.day,
+
+      wager,
+
+      target:
+        wager * 2,
+
+      maximumDay:
+        LADDER_MAXIMUM_DAY,
+
+      completedDays:
+        getCompletedLadderDays(
+          progression.day
+        ),
+
+      previousDate,
+
+      previousResult:
+        progression.previousResult,
+
+      previousStatus,
+
+      cycleCompleted:
+        progression.cycleCompleted,
 
       status:
         "unavailable",
@@ -3270,8 +3301,34 @@ async function buildOrPreserveLadder(
     locked:
       true,
 
+    day:
+      progression.day,
+
     step:
-      1,
+      progression.day,
+
+    wager,
+
+    target:
+      wager * 2,
+
+    maximumDay:
+      LADDER_MAXIMUM_DAY,
+
+    completedDays:
+      getCompletedLadderDays(
+        progression.day
+      ),
+
+    previousDate,
+
+    previousResult:
+      progression.previousResult,
+
+    previousStatus,
+
+    cycleCompleted:
+      progression.cycleCompleted,
 
     status:
       "pending",
@@ -3284,10 +3341,14 @@ async function buildOrPreserveLadder(
   };
 
   console.log(
-    "🎲 Created today's shared Ladder picks:",
+    `🎲 Created Day ${progression.day} shared Ladder picks:`,
     selectedPicks.map(
       pick => pick.player
     )
+  );
+
+  console.log(
+    `💰 Ladder wager: $${wager} → $${wager * 2}`
   );
 
   return ladder;
