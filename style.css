@@ -4082,12 +4082,15 @@ TABLET AND MOBILE
 
 /*
 =========================================================
-POPS LADDER CHALLENGE — SKETCH 1
+POPS LADDER CHALLENGE
+OPTION 3 — COMPACT & PRO
 =========================================================
 */
 
 #ladder {
+  width: 100%;
   overflow: hidden;
+  padding: 12px;
 }
 
 #ladderBox {
@@ -4096,55 +4099,53 @@ POPS LADDER CHALLENGE — SKETCH 1
 
 .ladder-v2 {
   display: grid;
-  gap: 18px;
+  gap: 12px;
   width: 100%;
 }
 
 /*
 =========================================================
-LADDER HEADER
+HEADER
 =========================================================
 */
 
 .ladder-v2-header {
   position: relative;
-  padding: 19px;
   overflow: hidden;
-  border:
-    1px solid rgba(255, 123, 26, 0.48);
-  border-radius: 18px;
+  padding: 16px;
+  border: 1px solid rgba(255, 122, 22, 0.58);
+  border-radius: 16px;
   background:
     radial-gradient(
       circle at 90% 0%,
-      rgba(255, 106, 0, 0.13),
-      transparent 38%
+      rgba(255, 106, 0, 0.14),
+      transparent 42%
     ),
     linear-gradient(
       145deg,
-      rgba(24, 17, 12, 0.98),
-      rgba(5, 5, 5, 0.99)
+      rgba(20, 15, 11, 0.99),
+      rgba(4, 4, 4, 0.99)
     );
   box-shadow:
-    inset 0 0 24px rgba(255, 106, 0, 0.045),
-    0 12px 28px rgba(0, 0, 0, 0.38);
+    0 12px 28px rgba(0, 0, 0, 0.42),
+    inset 0 0 20px rgba(255, 106, 0, 0.04);
 }
 
 .ladder-v2-header::after {
   content: "";
   position: absolute;
-  top: 0;
-  right: -60px;
-  width: 170px;
-  height: 100%;
+  top: -60px;
+  right: -85px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
   pointer-events: none;
   background:
-    linear-gradient(
-      115deg,
-      transparent,
-      rgba(255, 106, 0, 0.07),
-      transparent
+    radial-gradient(
+      circle,
+      rgba(255, 106, 0, 0.15),
+      transparent 68%
     );
-  transform: skewX(-22deg);
 }
 
 .ladder-v2-title {
@@ -4152,22 +4153,29 @@ LADDER HEADER
   z-index: 2;
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 11px;
 }
 
 .ladder-v2-title > span {
-  font-size: 2.5rem;
-  filter:
-    drop-shadow(
-      0 0 10px rgba(255, 106, 0, 0.4)
-    );
+  display: grid;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid rgba(255, 137, 41, 0.55);
+  border-radius: 13px;
+  font-size: 1.65rem;
+  background:
+    rgba(255, 106, 0, 0.1);
+  box-shadow:
+    0 0 15px rgba(255, 106, 0, 0.14);
 }
 
 .ladder-v2-title small {
   display: block;
-  margin-bottom: 4px;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.66rem;
+  margin-bottom: 3px;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.61rem;
   font-weight: 900;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -4175,12 +4183,12 @@ LADDER HEADER
 
 .ladder-v2-title h3 {
   margin: 0;
-  color: #ff982f;
+  color: #ff962f;
   font-size:
     clamp(
-      1.45rem,
-      5vw,
-      2.15rem
+      1.25rem,
+      4.8vw,
+      1.9rem
     );
   line-height: 1.08;
 }
@@ -4188,11 +4196,11 @@ LADDER HEADER
 .ladder-v2-header > p {
   position: relative;
   z-index: 2;
-  max-width: 720px;
-  margin: 13px 0 0;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 0.92rem;
-  line-height: 1.5;
+  max-width: 680px;
+  margin: 11px 0 0;
+  color: rgba(255, 255, 255, 0.67);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 /*
@@ -4202,206 +4210,296 @@ PROGRESS PANEL
 */
 
 .ladder-progress-panel {
-  padding: 19px;
-  border:
-    1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 18px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
   background:
     linear-gradient(
       145deg,
-      rgba(19, 19, 19, 0.98),
-      rgba(5, 5, 5, 0.99)
+      rgba(17, 17, 17, 0.99),
+      rgba(4, 4, 4, 0.99)
     );
   box-shadow:
-    0 12px 30px rgba(0, 0, 0, 0.38);
+    0 12px 26px rgba(0, 0, 0, 0.38);
 }
 
 .ladder-progress-heading {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 15px;
+  gap: 12px;
 }
 
 .ladder-progress-heading span {
   display: block;
-  color: #ff9025;
-  font-size: 0.75rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  color: #ff932b;
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.09em;
 }
 
 .ladder-progress-heading h4 {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   color: #ffffff;
   font-size:
     clamp(
-      1.35rem,
-      5vw,
-      1.9rem
+      1.08rem,
+      4vw,
+      1.45rem
     );
 }
 
 .ladder-main-status {
   flex: 0 0 auto;
-  padding: 8px 11px;
+  padding: 7px 10px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 900;
   white-space: nowrap;
 }
 
 .ladder-status-pending {
-  color: #b8c6ff;
-  border:
-    1px solid rgba(96, 125, 255, 0.55);
-  background:
-    rgba(57, 79, 179, 0.15);
+  color: #aebeff;
+  border: 1px solid rgba(93, 122, 255, 0.55);
+  background: rgba(61, 78, 174, 0.15);
 }
 
 .ladder-status-won {
-  color: #93ff84;
-  border:
-    1px solid rgba(76, 223, 65, 0.55);
-  background:
-    rgba(56, 164, 45, 0.15);
+  color: #8dff7f;
+  border: 1px solid rgba(76, 221, 64, 0.54);
+  background: rgba(57, 165, 47, 0.15);
 }
 
 .ladder-status-lost {
-  color: #ff8a8a;
-  border:
-    1px solid rgba(255, 75, 75, 0.55);
-  background:
-    rgba(183, 45, 45, 0.15);
+  color: #ff8989;
+  border: 1px solid rgba(255, 75, 75, 0.55);
+  background: rgba(184, 43, 43, 0.15);
+}
+
+.ladder-status-held {
+  color: #ffe084;
+  border: 1px solid rgba(255, 198, 53, 0.48);
+  background: rgba(183, 130, 16, 0.14);
 }
 
 /*
 =========================================================
-PROGRESS TRACK
+WAGER AND GOAL
 =========================================================
 */
 
-.ladder-progress-track {
-  position: relative;
+.ladder-money-panel {
   display: grid;
   grid-template-columns:
-    repeat(4, minmax(0, 1fr));
-  align-items: start;
-  margin-top: 26px;
-}
-
-.ladder-progress-line {
-  position: absolute;
-  top: 20px;
-  left: 12.5%;
-  right: 12.5%;
-  height: 3px;
-  border-radius: 999px;
-  background:
-    linear-gradient(
-      90deg,
-      #ff7a16 0 18%,
-      rgba(255, 255, 255, 0.25) 18% 100%
-    );
-}
-
-.ladder-progress-node {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  justify-items: center;
+    minmax(0, 1fr)
+    34px
+    minmax(0, 1fr);
+  align-items: center;
   gap: 8px;
+  margin-top: 14px;
+}
+
+.ladder-money-box {
+  min-width: 0;
+  padding: 12px 10px;
+  border: 1px solid rgba(255, 130, 31, 0.34);
+  border-radius: 12px;
   text-align: center;
-}
-
-.ladder-progress-node strong {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border:
-    2px solid rgba(255, 255, 255, 0.32);
-  border-radius: 50%;
-  color: #ffffff;
-  font-size: 1rem;
-  background: #111111;
-  box-shadow:
-    0 0 0 5px #090909;
-}
-
-.ladder-progress-node span {
-  color: rgba(255, 255, 255, 0.59);
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.ladder-progress-node.active strong {
-  color: #ffffff;
-  border-color: #ff9b30;
   background:
     linear-gradient(
       145deg,
-      #ff971f,
-      #ef4e00
-    );
-  box-shadow:
-    0 0 0 5px #090909,
-    0 0 17px rgba(255, 106, 0, 0.62);
-}
-
-.ladder-progress-node.active span {
-  color: #ff9a2e;
-}
-
-.ladder-progress-node.complete strong {
-  color: #0b1607;
-  border-color: #71ed5e;
-  background: #71ed5e;
-}
-
-.ladder-progress-node.complete span {
-  color: #91f884;
-}
-
-.ladder-progress-node.locked strong {
-  color: rgba(255, 255, 255, 0.54);
-  background: #101010;
-}
-
-.ladder-win-node strong {
-  color: #ffbe3e;
-}
-
-/*
-=========================================================
-WAITING PANEL
-=========================================================
-*/
-
-.ladder-waiting-panel {
-  margin-top: 20px;
-  padding: 14px 16px;
-  border:
-    1px solid rgba(255, 255, 255, 0.17);
-  border-radius: 13px;
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.055),
+      rgba(255, 106, 0, 0.08),
       rgba(255, 255, 255, 0.018)
     );
 }
 
+.ladder-money-box small {
+  display: block;
+  color: rgba(255, 255, 255, 0.53);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.ladder-money-box strong {
+  display: block;
+  margin-top: 5px;
+  color: #ffffff;
+  font-size:
+    clamp(
+      1.35rem,
+      6vw,
+      2rem
+    );
+  line-height: 1;
+}
+
+.ladder-money-box:last-child strong {
+  color: #77ee69;
+}
+
+.ladder-money-arrow {
+  color: #ff8d24;
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+/*
+=========================================================
+10-DAY TRACKER
+=========================================================
+*/
+
+.ladder-day-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.ladder-day-node {
+  min-width: 0;
+  padding: 8px 3px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 10px;
+  text-align: center;
+  background:
+    rgba(255, 255, 255, 0.022);
+}
+
+.ladder-day-circle {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 5px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.27);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.72rem;
+  font-weight: 950;
+  background: #101010;
+}
+
+.ladder-day-node strong {
+  display: block;
+  color: rgba(255, 255, 255, 0.73);
+  font-size: 0.61rem;
+}
+
+.ladder-day-node small {
+  display: block;
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 0.54rem;
+}
+
+.ladder-day-complete {
+  border-color: rgba(92, 224, 77, 0.4);
+  background: rgba(65, 176, 53, 0.07);
+}
+
+.ladder-day-complete .ladder-day-circle {
+  color: #071404;
+  border-color: #74ef65;
+  background: #74ef65;
+  box-shadow:
+    0 0 10px rgba(116, 239, 101, 0.3);
+}
+
+.ladder-day-complete strong,
+.ladder-day-complete small {
+  color: #8cf47f;
+}
+
+.ladder-day-active {
+  border-color: rgba(255, 126, 29, 0.7);
+  background: rgba(255, 106, 0, 0.09);
+  box-shadow:
+    inset 0 0 12px rgba(255, 106, 0, 0.08);
+}
+
+.ladder-day-active .ladder-day-circle {
+  color: #ffffff;
+  border-color: #ff9a31;
+  background:
+    linear-gradient(
+      145deg,
+      #ff9628,
+      #e84c00
+    );
+  box-shadow:
+    0 0 13px rgba(255, 106, 0, 0.52);
+}
+
+.ladder-day-active strong,
+.ladder-day-active small {
+  color: #ff9b38;
+}
+
+.ladder-day-failed {
+  border-color: rgba(255, 73, 73, 0.58);
+  background: rgba(190, 43, 43, 0.08);
+}
+
+.ladder-day-failed .ladder-day-circle {
+  color: #ffffff;
+  border-color: #ff6363;
+  background: #c92f2f;
+}
+
+.ladder-day-held {
+  border-color: rgba(255, 198, 52, 0.48);
+  background: rgba(172, 120, 14, 0.08);
+}
+
+.ladder-day-held .ladder-day-circle {
+  color: #171000;
+  border-color: #ffd25a;
+  background: #ffd25a;
+}
+
+.ladder-day-locked {
+  opacity: 0.68;
+}
+
+/*
+=========================================================
+STATUS MESSAGE
+=========================================================
+*/
+
+.ladder-waiting-panel {
+  margin-top: 14px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 11px;
+  background:
+    rgba(255, 255, 255, 0.025);
+}
+
 .ladder-waiting-panel strong {
   color: #ffffff;
-  font-size: 0.97rem;
+  font-size: 0.82rem;
 }
 
 .ladder-waiting-panel p {
-  margin: 7px 0 0;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 0.83rem;
-  line-height: 1.45;
+  margin: 5px 0 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.73rem;
+  line-height: 1.42;
+}
+
+.ladder-waiting-won {
+  border-color: rgba(86, 224, 73, 0.35);
+  background: rgba(68, 177, 55, 0.06);
+}
+
+.ladder-waiting-lost {
+  border-color: rgba(255, 76, 76, 0.35);
+  background: rgba(183, 45, 45, 0.06);
 }
 
 /*
@@ -4412,66 +4510,49 @@ PLAYER CARDS
 
 .ladder-player-grid {
   display: grid;
-  gap: 14px;
+  gap: 11px;
 }
 
 .ladder-player-card {
-  position: relative;
   overflow: hidden;
-  border:
-    1px solid rgba(255, 126, 33, 0.55);
-  border-radius: 18px;
+  border: 1px solid rgba(255, 126, 30, 0.48);
+  border-radius: 15px;
   background:
-    radial-gradient(
-      circle at 0% 0%,
-      rgba(255, 106, 0, 0.1),
-      transparent 32%
-    ),
     linear-gradient(
       145deg,
-      rgba(21, 21, 21, 0.99),
-      rgba(5, 5, 5, 0.99)
+      rgba(18, 18, 18, 0.99),
+      rgba(4, 4, 4, 0.99)
     );
   box-shadow:
-    0 13px 32px rgba(0, 0, 0, 0.43),
-    inset 0 0 23px rgba(255, 106, 0, 0.035);
+    0 11px 25px rgba(0, 0, 0, 0.38);
 }
 
 .ladder-player-topbar {
   display: flex;
-  min-height: 43px;
+  min-height: 37px;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding:
-    7px
-    12px
-    7px
-    0;
+  gap: 8px;
+  padding: 6px 10px 6px 0;
   background:
     linear-gradient(
       90deg,
-      rgba(255, 106, 0, 0.35),
-      rgba(255, 106, 0, 0.04),
-      transparent
+      rgba(255, 106, 0, 0.25),
+      transparent 68%
     );
 }
 
 .ladder-pick-tag {
-  padding:
-    7px
-    18px
-    7px
-    14px;
+  padding: 6px 15px 6px 11px;
   color: #ffffff;
-  font-size: 0.82rem;
+  font-size: 0.68rem;
   font-weight: 950;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   background:
     linear-gradient(
       135deg,
-      #ff8e20,
-      #9f3500
+      #ff8f21,
+      #a43700
     );
   clip-path:
     polygon(
@@ -4484,27 +4565,23 @@ PLAYER CARDS
 }
 
 .ladder-lineup-badge {
-  padding: 6px 9px;
+  padding: 5px 8px;
   border-radius: 999px;
-  font-size: 0.64rem;
+  font-size: 0.56rem;
   font-weight: 900;
   white-space: nowrap;
 }
 
 .ladder-confirmed {
-  color: #7eff71;
-  border:
-    1px solid rgba(69, 218, 63, 0.5);
-  background:
-    rgba(48, 155, 43, 0.15);
+  color: #80f873;
+  border: 1px solid rgba(72, 219, 64, 0.44);
+  background: rgba(53, 157, 46, 0.14);
 }
 
 .ladder-projected {
-  color: #ffd76e;
-  border:
-    1px solid rgba(255, 196, 43, 0.48);
-  background:
-    rgba(178, 128, 15, 0.13);
+  color: #ffd66d;
+  border: 1px solid rgba(255, 196, 44, 0.42);
+  background: rgba(180, 130, 17, 0.12);
 }
 
 /*
@@ -4516,47 +4593,45 @@ PLAYER PROFILE
 .ladder-player-profile {
   display: grid;
   grid-template-columns:
-    74px
+    54px
     minmax(0, 1fr);
-  gap: 15px;
-  padding: 17px;
+  gap: 11px;
+  padding: 13px;
 }
 
 .ladder-player-avatar {
   position: relative;
   display: grid;
-  width: 74px;
-  height: 74px;
+  width: 54px;
+  height: 54px;
   place-items: center;
-  border:
-    2px solid #ff8321;
-  border-radius: 50%;
+  border: 2px solid #ff8424;
+  border-radius: 14px;
   color: #ffffff;
-  font-size: 1.25rem;
+  font-size: 0.9rem;
   font-weight: 950;
   background:
-    radial-gradient(
-      circle at 35% 25%,
-      #804115,
-      #1a0b03 68%
+    linear-gradient(
+      145deg,
+      #512509,
+      #150903
     );
   box-shadow:
-    0 0 16px rgba(255, 106, 0, 0.25);
+    0 0 12px rgba(255, 106, 0, 0.2);
 }
 
 .ladder-player-avatar small {
   position: absolute;
-  right: -4px;
-  bottom: -1px;
+  right: -5px;
+  bottom: -5px;
   display: grid;
-  width: 26px;
-  height: 26px;
+  width: 21px;
+  height: 21px;
   place-items: center;
-  border:
-    2px solid #090909;
+  border: 2px solid #080808;
   border-radius: 50%;
-  font-size: 0.85rem;
-  background: #ff7016;
+  font-size: 0.65rem;
+  background: #ff7417;
 }
 
 .ladder-player-copy {
@@ -4564,42 +4639,42 @@ PLAYER PROFILE
 }
 
 .ladder-player-copy h3 {
-  margin: 0 0 10px;
+  margin: 0 0 7px;
   overflow-wrap: anywhere;
   color: #ffffff;
   font-size:
     clamp(
-      1.3rem,
-      5vw,
-      1.75rem
+      1.08rem,
+      4.5vw,
+      1.4rem
     );
-  line-height: 1.1;
+  line-height: 1.08;
 }
 
 .ladder-player-detail {
   display: grid;
   grid-template-columns:
-    80px
+    67px
     minmax(0, 1fr);
-  gap: 8px;
-  margin-top: 6px;
-  font-size: 0.78rem;
-  line-height: 1.35;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.68rem;
+  line-height: 1.3;
 }
 
 .ladder-player-detail span {
-  color: rgba(255, 255, 255, 0.51);
+  color: rgba(255, 255, 255, 0.43);
 }
 
 .ladder-player-detail strong {
   overflow-wrap: anywhere;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.82);
   font-weight: 700;
 }
 
 /*
 =========================================================
-STAT BOXES
+PLAYER STATS
 =========================================================
 */
 
@@ -4607,23 +4682,18 @@ STAT BOXES
   display: grid;
   grid-template-columns:
     repeat(3, minmax(0, 1fr));
-  margin:
-    0
-    14px;
+  margin: 0 12px;
   overflow: hidden;
-  border:
-    1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 13px;
-  background:
-    rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .ladder-stat-box {
   min-width: 0;
-  padding: 13px 7px;
+  padding: 10px 4px;
   text-align: center;
-  border-right:
-    1px solid rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .ladder-stat-box:last-child {
@@ -4632,45 +4702,44 @@ STAT BOXES
 
 .ladder-stat-icon {
   display: block;
-  margin-bottom: 4px;
-  font-size: 1.1rem;
+  margin-bottom: 3px;
+  font-size: 0.92rem;
 }
 
 .ladder-stat-box small {
   display: block;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.62rem;
-  font-weight: 800;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.53rem;
+  font-weight: 900;
   text-transform: uppercase;
 }
 
 .ladder-stat-box strong {
   display: block;
-  margin-top: 5px;
+  margin-top: 4px;
   overflow-wrap: anywhere;
   color: #ffffff;
   font-size:
     clamp(
-      1.1rem,
-      5vw,
-      1.55rem
+      0.98rem,
+      4.8vw,
+      1.32rem
     );
   line-height: 1;
 }
 
 .ladder-stat-box strong > span {
-  margin-left: 2px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.58em;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.55em;
 }
 
 .ladder-stat-box em {
   display: block;
-  margin-top: 5px;
-  color: #ff9730;
-  font-size: 0.57rem;
+  margin-top: 4px;
+  color: #ff9631;
+  font-size: 0.49rem;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 900;
   text-transform: uppercase;
 }
 
@@ -4681,153 +4750,131 @@ QUALIFICATION AND RESULT
 */
 
 .ladder-qualification-note {
-  margin:
-    13px
-    14px
-    0;
-  padding: 10px 12px;
-  border-left:
-    3px solid #ff8122;
+  margin: 10px 12px 0;
+  padding: 8px 10px;
+  border-left: 3px solid #ff8122;
   border-radius: 7px;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.72rem;
-  line-height: 1.4;
-  background:
-    rgba(255, 106, 0, 0.06);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.64rem;
+  line-height: 1.38;
+  background: rgba(255, 106, 0, 0.05);
 }
 
 .ladder-qualification-note span {
-  color: #ff9a37;
+  color: #ff9a38;
   font-weight: 900;
 }
 
 .ladder-player-result {
-  margin:
-    12px
-    14px
-    15px;
-  padding: 11px;
-  border-radius: 10px;
-  font-size: 0.78rem;
-  font-weight: 900;
+  margin: 9px 12px 12px;
+  padding: 9px;
+  border-radius: 9px;
+  font-size: 0.68rem;
+  font-weight: 950;
   text-align: center;
   text-transform: uppercase;
 }
 
 .ladder-result-pending {
-  color: #b9c6ff;
-  border:
-    1px solid rgba(99, 122, 255, 0.43);
-  background:
-    rgba(62, 79, 175, 0.13);
+  color: #b8c6ff;
+  border: 1px solid rgba(97, 121, 255, 0.4);
+  background: rgba(62, 79, 176, 0.12);
 }
 
 .ladder-result-hit {
-  color: #93ff85;
-  border:
-    1px solid rgba(70, 224, 59, 0.47);
-  background:
-    rgba(53, 162, 44, 0.14);
+  color: #91ff84;
+  border: 1px solid rgba(72, 222, 62, 0.43);
+  background: rgba(53, 160, 45, 0.13);
 }
 
 .ladder-result-miss {
-  color: #ff8c8c;
-  border:
-    1px solid rgba(255, 73, 73, 0.48);
-  background:
-    rgba(180, 44, 44, 0.14);
+  color: #ff8a8a;
+  border: 1px solid rgba(255, 74, 74, 0.44);
+  background: rgba(180, 44, 44, 0.13);
 }
 
 /*
 =========================================================
-ADVANCEMENT RULE
+GLOBAL RULE
 =========================================================
 */
 
 .ladder-rule-panel {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 15px;
-  border:
-    1px solid rgba(255, 142, 37, 0.4);
-  border-radius: 14px;
-  background:
-    rgba(255, 106, 0, 0.055);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 137, 34, 0.34);
+  border-radius: 12px;
+  background: rgba(255, 106, 0, 0.045);
 }
 
 .ladder-rule-icon {
   flex: 0 0 auto;
-  font-size: 1.7rem;
+  font-size: 1.4rem;
 }
 
 .ladder-rule-panel strong {
-  color: #ff9935;
+  color: #ff9833;
+  font-size: 0.78rem;
 }
 
 .ladder-rule-panel p {
-  margin: 5px 0 0;
-  color: rgba(255, 255, 255, 0.66);
-  font-size: 0.76rem;
-  line-height: 1.45;
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.67rem;
+  line-height: 1.42;
 }
 
 /*
 =========================================================
-EMPTY LADDER
+LOADING AND ERROR
 =========================================================
 */
 
 .ladder-empty-v2 {
-  padding: 28px 18px;
-  border:
-    1px dashed rgba(255, 126, 32, 0.5);
-  border-radius: 17px;
-  color: rgba(255, 255, 255, 0.7);
+  padding: 25px 16px;
+  border: 1px dashed rgba(255, 126, 31, 0.48);
+  border-radius: 15px;
+  color: rgba(255, 255, 255, 0.67);
   text-align: center;
-  background:
-    rgba(255, 106, 0, 0.045);
+  background: rgba(255, 106, 0, 0.04);
 }
 
 .ladder-empty-icon {
-  font-size: 2.7rem;
+  font-size: 2.35rem;
 }
 
 .ladder-empty-v2 h3 {
-  margin: 10px 0;
-  color: #ff9a36;
+  margin: 9px 0;
+  color: #ff9936;
 }
 
 .ladder-empty-v2 > p {
-  margin:
-    0
-    auto;
   max-width: 520px;
-  line-height: 1.5;
-}
-
-.ladder-empty-rules {
-  max-width: 560px;
-  margin:
-    16px
-    auto
-    0;
-  padding: 13px;
-  border-radius: 11px;
-  text-align: left;
-  background:
-    rgba(255, 255, 255, 0.035);
-}
-
-.ladder-empty-rules p {
-  margin: 7px 0;
+  margin: auto;
   font-size: 0.8rem;
   line-height: 1.45;
 }
 
+.ladder-empty-rules {
+  max-width: 540px;
+  margin: 14px auto 0;
+  padding: 11px;
+  border-radius: 10px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ladder-empty-rules p {
+  margin: 6px 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
 /*
 =========================================================
-LADDER RESPONSIVE DESIGN
+DESKTOP
 =========================================================
 */
 
@@ -4836,20 +4883,27 @@ LADDER RESPONSIVE DESIGN
     grid-template-columns:
       repeat(2, minmax(0, 1fr));
   }
+
+  .ladder-day-grid {
+    grid-template-columns:
+      repeat(10, minmax(0, 1fr));
+  }
 }
+
+/*
+=========================================================
+MOBILE
+=========================================================
+*/
 
 @media (max-width: 600px) {
   #ladder {
-    padding: 13px;
-  }
-
-  #ladder > h2 {
-    font-size: 29px;
+    padding: 10px;
   }
 
   .ladder-v2-header,
   .ladder-progress-panel {
-    padding: 15px;
+    padding: 13px;
   }
 
   .ladder-progress-heading {
@@ -4858,69 +4912,51 @@ LADDER RESPONSIVE DESIGN
 
   .ladder-main-status {
     width: fit-content;
-    margin-top: 12px;
+    margin-top: 10px;
   }
 
-  .ladder-progress-node strong {
-    width: 36px;
-    height: 36px;
-  }
-
-  .ladder-progress-line {
-    top: 17px;
-  }
-
-  .ladder-player-profile {
+  .ladder-day-grid {
     grid-template-columns:
-      58px
-      minmax(0, 1fr);
-    gap: 11px;
-    padding: 14px;
-  }
-
-  .ladder-player-avatar {
-    width: 58px;
-    height: 58px;
-    font-size: 0.98rem;
-  }
-
-  .ladder-player-avatar small {
-    width: 22px;
-    height: 22px;
-    font-size: 0.72rem;
-  }
-
-  .ladder-player-detail {
-    grid-template-columns: 69px 1fr;
-    font-size: 0.72rem;
+      repeat(5, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 390px) {
-  .ladder-lineup-badge {
+  .ladder-money-panel {
+    grid-template-columns:
+      minmax(0, 1fr)
+      25px
+      minmax(0, 1fr);
+  }
+
+  .ladder-money-box {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  .ladder-day-grid {
+    gap: 5px;
+  }
+
+  .ladder-day-node {
+    padding-left: 1px;
+    padding-right: 1px;
+  }
+
+  .ladder-day-node strong {
     font-size: 0.55rem;
   }
 
-  .ladder-pick-tag {
-    font-size: 0.72rem;
+  .ladder-day-node small {
+    font-size: 0.48rem;
   }
 
-  .ladder-progress-node span {
-    font-size: 0.62rem;
-  }
-
-  .ladder-stat-box {
-    padding:
-      11px
-      4px;
-  }
-
-  .ladder-stat-box small {
-    font-size: 0.54rem;
-  }
-
-  .ladder-stat-box em {
+  .ladder-lineup-badge {
     font-size: 0.5rem;
+  }
+
+  .ladder-pick-tag {
+    font-size: 0.61rem;
   }
 }
 
