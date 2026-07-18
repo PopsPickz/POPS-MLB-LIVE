@@ -3,9 +3,20 @@
   "date": "2026-07-18",
   "selectionType": "shared-daily-random",
   "locked": true,
-  "step": 1,
-  "status": "pending",
-  "poolSize": 20,
+  "day": 2,
+  "step": 2,
+  "wager": 20,
+  "target": 40,
+  "maximumDay": 10,
+  "completedDays": [
+  1
+],
+"previousDate": "2026-07-17",
+"previousResult": "won",
+"previousStatus": "won",
+"cycleCompleted": false,
+"status": "pending",
+"poolSize": 20,
   "picks": [
     {
       "id": 673237,
