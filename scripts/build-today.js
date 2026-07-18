@@ -2188,6 +2188,9 @@ date, even when the GitHub workflow runs multiple times.
 const LADDER_PICK_COUNT = 2;
 const LADDER_POOL_LIMIT = 20;
 
+const LADDER_MAXIMUM_DAY = 10;
+const LADDER_STARTING_WAGER = 10;
+
 function getLadderOutputPath() {
   return path.join(
     process.cwd(),
