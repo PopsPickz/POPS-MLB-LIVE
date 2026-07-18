@@ -3446,7 +3446,7 @@ async function main() {
     );
 
 const ladderData =
-  buildOrPreserveLadder(
+  await buildOrPreserveLadder(
     todayData
   );
 
