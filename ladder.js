@@ -1,22 +1,26 @@
 /*
 =========================================================
-POPS SHARED LADDER CHALLENGE
+POPS LADDER CHALLENGE V2
 File: ladder.js
-Version: 4.0
+Version: 5.0
 =========================================================
 
-The two Ladder players are selected by the GitHub data
-builder and saved inside:
+Official ladder data is loaded from:
 
 data/ladder.json
 
-Every phone, laptop, browser and website visitor loads
-the same two players.
+The GitHub data builder controls:
 
-The browser does not randomly select players.
+- Shared daily players
+- Current ladder day
+- Wager amount
+- Target amount
+- Completed days
+- Win/loss status
+- Live hit results
 
-The shared selections remain unchanged until GitHub
-creates a new ladder.json for the next Eastern date.
+Every phone, laptop and browser receives the same
+official POPS Ladder Challenge.
 =========================================================
 */
 
@@ -24,14 +28,15 @@ const Ladder = {
   box: null,
 
   settings: {
-    picksPerStep: 2,
-    maximumSteps: 3,
+    picksPerDay: 2,
+    maximumDays: 10,
+    startingWager: 10,
 
     sharedFile:
       "data/ladder.json",
 
     cachePrefix:
-      "pops-shared-ladder-v4"
+      "pops-shared-ladder-v5"
   },
 
   /*
@@ -48,30 +53,39 @@ const Ladder = {
       return API.today();
     }
 
-    const now =
-      new Date();
+    const parts =
+      new Intl.DateTimeFormat(
+        "en-US",
+        {
+          timeZone:
+            "America/New_York",
 
-    const year =
-      now.getFullYear();
+          year:
+            "numeric",
 
-    const month =
-      String(
-        now.getMonth() + 1
-      ).padStart(
-        2,
-        "0"
+          month:
+            "2-digit",
+
+          day:
+            "2-digit"
+        }
+      ).formatToParts(
+        new Date()
       );
 
-    const day =
-      String(
-        now.getDate()
-      ).padStart(
-        2,
-        "0"
-      );
+    const values = {};
+
+    for (
+      const part of parts
+    ) {
+      values[part.type] =
+        part.value;
+    }
 
     return (
-      `${year}-${month}-${day}`
+      `${values.year}-` +
+      `${values.month}-` +
+      `${values.day}`
     );
   },
 
@@ -96,9 +110,25 @@ const Ladder = {
     const parsed =
       Number(value);
 
-    return Number.isFinite(parsed)
+    return Number.isFinite(
+      parsed
+    )
       ? parsed
       : fallback;
+  },
+
+  clamp(
+    value,
+    minimum,
+    maximum
+  ) {
+    return Math.max(
+      minimum,
+      Math.min(
+        maximum,
+        value
+      )
+    );
   },
 
   normalizeName(
@@ -128,14 +158,11 @@ const Ladder = {
     const playerId =
       this.number(
         pick.id ||
-        pick.playerId ||
-        0
+        pick.playerId
       );
 
     if (playerId > 0) {
-      return (
-        `id-${playerId}`
-      );
+      return `id-${playerId}`;
     }
 
     return [
@@ -189,7 +216,9 @@ const Ladder = {
       return "MLB";
     }
 
-    if (words.length === 1) {
+    if (
+      words.length === 1
+    ) {
       return words[0]
         .slice(0, 2)
         .toUpperCase();
@@ -218,6 +247,21 @@ const Ladder = {
     return this.box;
   },
 
+  formatMoney(
+    value
+  ) {
+    const amount =
+      this.number(
+        value
+      );
+
+    return (
+      `$${amount.toLocaleString(
+        "en-US"
+      )}`
+    );
+  },
+
   formatGameTime(
     value
   ) {
@@ -239,24 +283,51 @@ const Ladder = {
     return date.toLocaleString(
       [],
       {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit"
+        weekday:
+          "short",
+
+        month:
+          "short",
+
+        day:
+          "numeric",
+
+        hour:
+          "numeric",
+
+        minute:
+          "2-digit"
       }
+    );
+  },
+
+  calculateWager(
+    day = 1
+  ) {
+    const safeDay =
+      this.clamp(
+        this.number(
+          day,
+          1
+        ),
+        1,
+        this.settings
+          .maximumDays
+      );
+
+    return (
+      this.settings
+        .startingWager *
+      Math.pow(
+        2,
+        safeDay - 1
+      )
     );
   },
 
   /*
   =======================================================
   SHARED FILE CACHE
-  =======================================================
-
-  This cache is only an emergency fallback when the
-  website temporarily cannot download ladder.json.
-
-  It does not select or replace players.
   =======================================================
   */
 
@@ -305,7 +376,7 @@ const Ladder = {
           parsed.picks
         ) ||
         parsed.picks.length !==
-          this.settings.picksPerStep
+          this.settings.picksPerDay
       ) {
         return null;
       }
@@ -323,7 +394,7 @@ const Ladder = {
 
   /*
   =======================================================
-  LOAD SHARED LADDER.JSON
+  LOAD LADDER.JSON
   =======================================================
   */
 
@@ -336,7 +407,8 @@ const Ladder = {
       await fetch(
         requestUrl,
         {
-          cache: "no-store"
+          cache:
+            "no-store"
         }
       );
 
@@ -355,7 +427,7 @@ const Ladder = {
         "object"
     ) {
       throw new Error(
-        "ladder.json did not contain a valid challenge."
+        "ladder.json did not contain valid Ladder data."
       );
     }
 
@@ -374,7 +446,7 @@ const Ladder = {
 
   /*
   =======================================================
-  VALIDATE SHARED CHALLENGE
+  VALIDATE CHALLENGE
   =======================================================
   */
 
@@ -387,7 +459,9 @@ const Ladder = {
         "object"
     ) {
       return {
-        valid: false,
+        valid:
+          false,
+
         reason:
           "Shared Ladder data is unavailable."
       };
@@ -401,9 +475,31 @@ const Ladder = {
       currentDate
     ) {
       return {
-        valid: false,
+        valid:
+          false,
+
         reason:
-          `The shared Ladder is for ${challenge.date || "another date"}, not ${currentDate}.`
+          (
+            `The shared Ladder is for ` +
+            `${challenge.date || "another date"}, ` +
+            `not ${currentDate}.`
+          )
+      };
+    }
+
+    if (
+      challenge.status ===
+        "unavailable"
+    ) {
+      return {
+        valid:
+          false,
+
+        reason:
+          (
+            "The shared Ladder does not currently " +
+            "have two eligible players."
+          )
       };
     }
 
@@ -412,12 +508,17 @@ const Ladder = {
         challenge.picks
       ) ||
       challenge.picks.length <
-        this.settings.picksPerStep
+        this.settings.picksPerDay
     ) {
       return {
-        valid: false,
+        valid:
+          false,
+
         reason:
-          "The shared Ladder does not currently have two eligible players."
+          (
+            "The shared Ladder does not currently " +
+            "have two eligible players."
+          )
       };
     }
 
@@ -433,24 +534,32 @@ const Ladder = {
 
     if (
       validPlayers.length <
-      this.settings.picksPerStep
+      this.settings.picksPerDay
     ) {
       return {
-        valid: false,
+        valid:
+          false,
+
         reason:
-          "The shared Ladder player information is incomplete."
+          (
+            "The shared Ladder player " +
+            "information is incomplete."
+          )
       };
     }
 
     return {
-      valid: true,
-      reason: ""
+      valid:
+        true,
+
+      reason:
+        ""
     };
   },
 
   /*
   =======================================================
-  NORMALIZE SHARED PLAYER
+  NORMALIZE PLAYER
   =======================================================
   */
 
@@ -551,7 +660,8 @@ const Ladder = {
       bvpHomeRuns:
         this.number(
           pick.bvpHomeRuns ??
-          pick.bvpStats?.homeRuns
+          pick.bvpStats
+            ?.homeRuns
         ),
 
       hasPitcherHistory,
@@ -576,8 +686,10 @@ const Ladder = {
         ),
 
       result:
-        pick.result ||
-        "pending",
+        String(
+          pick.result ||
+          "pending"
+        ).toLowerCase(),
 
       hitsToday:
         this.number(
@@ -586,9 +698,72 @@ const Ladder = {
     };
   },
 
+  /*
+  =======================================================
+  NORMALIZE CHALLENGE
+  =======================================================
+  */
+
   normalizeChallenge(
     challenge
   ) {
+    const day =
+      this.clamp(
+        this.number(
+          challenge.day ??
+          challenge.step,
+          1
+        ),
+        1,
+        this.settings.maximumDays
+      );
+
+    const wager =
+      this.number(
+        challenge.wager,
+        this.calculateWager(
+          day
+        )
+      );
+
+    const target =
+      this.number(
+        challenge.target,
+        wager * 2
+      );
+
+    const completedDays =
+      Array.isArray(
+        challenge.completedDays
+      )
+        ? challenge.completedDays
+            .map(
+              completedDay =>
+                this.number(
+                  completedDay
+                )
+            )
+            .filter(
+              completedDay =>
+                completedDay >= 1 &&
+                completedDay <=
+                  this.settings
+                    .maximumDays
+            )
+        : Array.from(
+            {
+              length:
+                Math.max(
+                  0,
+                  day - 1
+                )
+            },
+            (
+              _,
+              index
+            ) => index + 1
+          );
+
     return {
       ...challenge,
 
@@ -596,18 +771,44 @@ const Ladder = {
         challenge.date ||
         this.getDate(),
 
+      day,
+
       step:
-        Math.max(
-          1,
-          this.number(
-            challenge.step,
-            1
-          )
+        day,
+
+      wager,
+
+      target,
+
+      maximumDay:
+        this.number(
+          challenge.maximumDay,
+          this.settings.maximumDays
         ),
 
+      completedDays,
+
+      previousDate:
+        challenge.previousDate ||
+        "",
+
+      previousResult:
+        challenge.previousResult ||
+        "none",
+
+      previousStatus:
+        challenge.previousStatus ||
+        "none",
+
+      cycleCompleted:
+        challenge.cycleCompleted ===
+        true,
+
       status:
-        challenge.status ||
-        "pending",
+        String(
+          challenge.status ||
+          "pending"
+        ).toLowerCase(),
 
       selectionType:
         challenge.selectionType ||
@@ -620,7 +821,7 @@ const Ladder = {
         challenge.picks
           .slice(
             0,
-            this.settings.picksPerStep
+            this.settings.picksPerDay
           )
           .map(
             pick =>
@@ -634,18 +835,6 @@ const Ladder = {
   /*
   =======================================================
   MERGE CURRENT DISPLAY DATA
-  =======================================================
-
-  ladder.json remains the authority for player identity.
-
-  The current browser Hit Pickz list may update:
-  - score
-  - lineup confirmation
-  - pitcher
-  - game information
-  - current streak and BvP display
-
-  It cannot replace either selected player.
   =======================================================
   */
 
@@ -711,36 +900,14 @@ const Ladder = {
                   .bvpPlateAppearances
               );
 
-            const hasPitcherHistory =
-              currentPick
-                .hasPitcherHistory !==
-                undefined
-                ? Boolean(
-                    currentPick
-                      .hasPitcherHistory
-                  )
-                : (
-                    currentBvpAtBats > 0 ||
-                    currentBvpPlateAppearances >
-                      0
-                  );
-
             return {
               ...sharedPick,
-
-              /*
-              These values remain locked to ladder.json.
-              */
 
               id:
                 sharedPick.id,
 
               player:
                 sharedPick.player,
-
-              /*
-              These values can refresh for display.
-              */
 
               team:
                 currentPick.team ||
@@ -799,24 +966,11 @@ const Ladder = {
                   ?.avg ||
                 sharedPick.bvpAverage,
 
-              hasPitcherHistory,
-
-              qualificationReason:
-                currentPick
-                  .qualificationReason ||
-                sharedPick
-                  .qualificationReason,
-
               score:
                 this.number(
                   currentPick.score,
                   sharedPick.score
                 ),
-
-              /*
-              Preserve result fields supplied by the
-              shared challenge.
-              */
 
               result:
                 sharedPick.result ||
@@ -834,7 +988,7 @@ const Ladder = {
 
   /*
   =======================================================
-  STATUS LABELS
+  STATUS HELPERS
   =======================================================
   */
 
@@ -842,25 +996,70 @@ const Ladder = {
     status = "pending"
   ) {
     if (status === "won") {
-      return "✅ Ladder Step Won";
+      return "✅ Today's Ladder Won";
     }
 
     if (status === "lost") {
-      return "❌ Ladder Step Lost";
+      return "❌ Today's Ladder Lost";
     }
 
-    if (status === "unavailable") {
+    if (status === "held") {
+      return "⏸️ Ladder Day Held";
+    }
+
+    if (
+      status === "unavailable"
+    ) {
       return "⚠️ Picks Unavailable";
     }
 
     return "⏳ Waiting for Results";
   },
 
+  getStatusDescription(
+    status = "pending",
+    day = 1
+  ) {
+    if (status === "won") {
+      return (
+        `Both players recorded a hit. ` +
+        `Day ${day} is complete.`
+      );
+    }
+
+    if (status === "lost") {
+      return (
+        "At least one player finished without a hit. " +
+        "The Ladder will reset to Day 1."
+      );
+    }
+
+    if (status === "held") {
+      return (
+        "A selected game was postponed, suspended " +
+        "or cancelled. This Ladder day is being held."
+      );
+    }
+
+    return (
+      "Both shared players must record at least " +
+      "one hit to advance to the next day."
+    );
+  },
+
   getPickResultLabel(
-    result = "pending"
+    result = "pending",
+    hitsToday = 0
   ) {
     if (result === "hit") {
-      return "✅ Recorded a Hit";
+      return (
+        `✅ Recorded a Hit` +
+        (
+          hitsToday > 1
+            ? ` (${hitsToday} hits)`
+            : ""
+        )
+      );
     }
 
     if (result === "miss") {
@@ -868,6 +1067,134 @@ const Ladder = {
     }
 
     return "⏳ Game Pending";
+  },
+
+  getDayState(
+    dayNumber,
+    challenge
+  ) {
+    const currentDay =
+      challenge.day;
+
+    const completedDays =
+      challenge.completedDays ||
+      [];
+
+    const status =
+      challenge.status;
+
+    if (
+      completedDays.includes(
+        dayNumber
+      )
+    ) {
+      return "complete";
+    }
+
+    if (
+      dayNumber <
+      currentDay
+    ) {
+      return "complete";
+    }
+
+    if (
+      dayNumber ===
+      currentDay
+    ) {
+      if (status === "won") {
+        return "complete";
+      }
+
+      if (status === "lost") {
+        return "failed";
+      }
+
+      if (status === "held") {
+        return "held";
+      }
+
+      return "active";
+    }
+
+    return "locked";
+  },
+
+  getDayIcon(
+    dayState,
+    dayNumber
+  ) {
+    if (
+      dayState === "complete"
+    ) {
+      return "✓";
+    }
+
+    if (
+      dayState === "failed"
+    ) {
+      return "✕";
+    }
+
+    if (
+      dayState === "held"
+    ) {
+      return "Ⅱ";
+    }
+
+    return dayNumber;
+  },
+
+  renderDayTracker(
+    challenge
+  ) {
+    const days = [];
+
+    for (
+      let dayNumber = 1;
+      dayNumber <=
+        this.settings.maximumDays;
+      dayNumber++
+    ) {
+      const dayState =
+        this.getDayState(
+          dayNumber,
+          challenge
+        );
+
+      const dayWager =
+        this.calculateWager(
+          dayNumber
+        );
+
+      days.push(`
+        <div
+          class="
+            ladder-day-node
+            ladder-day-${dayState}
+          "
+        >
+          <div class="ladder-day-circle">
+            ${this.getDayIcon(
+              dayState,
+              dayNumber
+            )}
+          </div>
+
+          <strong>
+            Day ${dayNumber}
+          </strong>
+
+          <small>
+            ${this.formatMoney(
+              dayWager
+            )}
+          </small>
+        </div>
+      `);
+    }
+
+    return days.join("");
   },
 
   /*
@@ -1139,7 +1466,10 @@ const Ladder = {
           "
         >
           ${this.getPickResultLabel(
-            result
+            result,
+            this.number(
+              pick.hitsToday
+            )
           )}
         </div>
 
@@ -1177,16 +1507,29 @@ const Ladder = {
       return;
     }
 
-    const step =
-      Math.max(
+    const day =
+      this.clamp(
+        this.number(
+          challenge.day ??
+          challenge.step,
+          1
+        ),
         1,
-        Math.min(
-          this.settings.maximumSteps,
-          this.number(
-            challenge.step,
-            1
-          )
+        this.settings.maximumDays
+      );
+
+    const wager =
+      this.number(
+        challenge.wager,
+        this.calculateWager(
+          day
         )
+      );
+
+    const target =
+      this.number(
+        challenge.target,
+        wager * 2
       );
 
     const status =
@@ -1194,36 +1537,6 @@ const Ladder = {
         challenge.status ||
         "pending"
       ).toLowerCase();
-
-    const stepClass =
-      number => {
-        if (
-          status === "won" &&
-          step ===
-            this.settings.maximumSteps
-        ) {
-          return number <= step
-            ? "complete"
-            : "";
-        }
-
-        if (number < step) {
-          return "complete";
-        }
-
-        if (number === step) {
-          return "active";
-        }
-
-        return "locked";
-      };
-
-    const winClass =
-      status === "won" &&
-      step ===
-        this.settings.maximumSteps
-        ? "active"
-        : "locked";
 
     this.box.innerHTML = `
       <div class="ladder-v2">
@@ -1251,9 +1564,9 @@ const Ladder = {
           </div>
 
           <p>
-            These two random players are shared
-            across every phone, laptop and browser.
-            They remain locked for the entire day.
+            One day, two players, same goal.
+            Both shared players must record at least
+            one hit to advance.
           </p>
 
         </header>
@@ -1265,7 +1578,8 @@ const Ladder = {
             <div>
 
               <span>
-                LADDER STEP ${step}
+                DAY ${day} OF
+                ${this.settings.maximumDays}
               </span>
 
               <h4>
@@ -1287,76 +1601,56 @@ const Ladder = {
 
           </div>
 
-          <div class="ladder-progress-track">
+          <div class="ladder-money-panel">
 
-            <div
-              class="ladder-progress-line"
-            ></div>
+            <div class="ladder-money-box">
 
-            <div
-              class="
-                ladder-progress-node
-                ${stepClass(1)}
-              "
-            >
+              <small>
+                TODAY'S WAGER
+              </small>
+
               <strong>
-                1
+                ${this.formatMoney(
+                  wager
+                )}
               </strong>
 
-              <span>
-                Step 1
-              </span>
             </div>
 
-            <div
-              class="
-                ladder-progress-node
-                ${stepClass(2)}
-              "
-            >
-              <strong>
-                2
-              </strong>
-
-              <span>
-                Step 2
-              </span>
+            <div class="ladder-money-arrow">
+              →
             </div>
 
-            <div
-              class="
-                ladder-progress-node
-                ${stepClass(3)}
-              "
-            >
+            <div class="ladder-money-box">
+
+              <small>
+                TODAY'S GOAL
+              </small>
+
               <strong>
-                3
+                ${this.formatMoney(
+                  target
+                )}
               </strong>
 
-              <span>
-                Step 3
-              </span>
-            </div>
-
-            <div
-              class="
-                ladder-progress-node
-                ladder-win-node
-                ${winClass}
-              "
-            >
-              <strong>
-                ♛
-              </strong>
-
-              <span>
-                Win
-              </span>
             </div>
 
           </div>
 
-          <div class="ladder-waiting-panel">
+          <div class="ladder-day-grid">
+
+            ${this.renderDayTracker(
+              challenge
+            )}
+
+          </div>
+
+          <div
+            class="
+              ladder-waiting-panel
+              ladder-waiting-${status}
+            "
+          >
 
             <strong>
               ${this.getStatusLabel(
@@ -1365,8 +1659,10 @@ const Ladder = {
             </strong>
 
             <p>
-              Both shared players must record at least
-              one hit for this Ladder step to win.
+              ${this.getStatusDescription(
+                status,
+                day
+              )}
             </p>
 
           </div>
@@ -1401,9 +1697,9 @@ const Ladder = {
 
             <p>
               Everyone receives these exact same two
-              players. GitHub creates two new shared
-              random selections when the Eastern date
-              changes.
+              players. A win advances the Ladder to the
+              next day. A loss resets the Ladder to
+              Day 1.
             </p>
 
           </div>
@@ -1416,7 +1712,7 @@ const Ladder = {
 
   /*
   =======================================================
-  LOADING, EMPTY AND ERROR DISPLAYS
+  LOADING AND ERROR DISPLAYS
   =======================================================
   */
 
@@ -1543,10 +1839,6 @@ const Ladder = {
       let sharedChallenge;
 
       try {
-        /*
-        ladder.json is the official source of truth.
-        */
-
         sharedChallenge =
           await this.fetchSharedChallenge();
 
@@ -1584,11 +1876,6 @@ const Ladder = {
           fetchError
         );
 
-        /*
-        Only use a previously downloaded copy for the
-        same date when the network file is unavailable.
-        */
-
         sharedChallenge =
           this.loadSharedCache(
             this.getDate()
@@ -1598,15 +1885,15 @@ const Ladder = {
           throw fetchError;
         }
 
+        sharedChallenge =
+          this.normalizeChallenge(
+            sharedChallenge
+          );
+
         console.log(
-          "📦 POPS loaded today's previously downloaded shared Ladder."
+          "📦 POPS loaded today's cached shared Ladder."
         );
       }
-
-      /*
-      Refresh display information without replacing either
-      shared player.
-      */
 
       const finalChallenge =
         this.mergeCurrentData(
@@ -1626,7 +1913,7 @@ const Ladder = {
         finalChallenge;
 
       console.log(
-        "✅ POPS Shared Ladder Challenge loaded:",
+        "✅ POPS Ladder Challenge v2 loaded:",
         finalChallenge
       );
     } catch (error) {
@@ -1641,10 +1928,6 @@ const Ladder = {
     }
   }
 };
-
-/*
-Makes the shared Ladder module available to app.js.
-*/
 
 window.Ladder =
   Ladder;
