@@ -3054,7 +3054,7 @@ function calculateNextLadderProgress(
 
 
 
-function buildOrPreserveLadder(
+async function buildOrPreserveLadder(
   todayData
 ) {
   const date =
@@ -3065,16 +3065,21 @@ function buildOrPreserveLadder(
     loadExistingLadder();
 
   /*
-  Preserve the exact same two players when the
-  existing file already belongs to today's
-  Eastern date.
+  =======================================================
+  SAME EASTERN DATE
+  =======================================================
+
+  Keep the same two players, but refresh their live
+  results whenever the GitHub workflow runs.
+  =======================================================
   */
 
   if (
-    existingLadder?.date === date &&
+    existingLadder?.date ===
+      date &&
     existingLadder
       ?.picks?.length ===
-        LADDER_PICK_COUNT
+      LADDER_PICK_COUNT
   ) {
     console.log(
       "🔒 Preserving today's shared Ladder picks:",
@@ -3083,8 +3088,273 @@ function buildOrPreserveLadder(
       )
     );
 
-    return existingLadder;
+    const evaluated =
+      await evaluateLadderPicks(
+        existingLadder
+      );
+
+    const currentDay =
+      Math.max(
+        1,
+        Math.min(
+          LADDER_MAXIMUM_DAY,
+          number(
+            existingLadder.day ||
+            existingLadder.step ||
+            1
+          )
+        )
+      );
+
+    const wager =
+      getLadderWager(
+        currentDay
+      );
+
+    return {
+      ...existingLadder,
+
+      updatedAt:
+        new Date()
+          .toISOString(),
+
+      day:
+        currentDay,
+
+      step:
+        currentDay,
+
+      wager,
+
+      target:
+        wager * 2,
+
+      status:
+        evaluated.status,
+
+      completedDays:
+        Array.isArray(
+          existingLadder
+            .completedDays
+        )
+          ? existingLadder
+              .completedDays
+          : getCompletedLadderDays(
+              currentDay
+            ),
+
+      picks:
+        evaluated.picks
+    };
   }
+
+  /*
+  =======================================================
+  NEW EASTERN DATE
+  =======================================================
+
+  Read the previous Ladder result and decide whether the
+  new day advances, resets or holds.
+  =======================================================
+  */
+
+  let progression = {
+    day: 1,
+    previousResult:
+      "none",
+    cycleCompleted:
+      false
+  };
+
+  let previousDate =
+    "";
+
+  let previousStatus =
+    "none";
+
+  if (
+    existingLadder &&
+    Array.isArray(
+      existingLadder.picks
+    ) &&
+    existingLadder.picks.length ===
+      LADDER_PICK_COUNT
+  ) {
+    const evaluatedPrevious =
+      await evaluateLadderPicks(
+        existingLadder
+      );
+
+    previousDate =
+      existingLadder.date ||
+      "";
+
+    previousStatus =
+      evaluatedPrevious.status;
+
+    progression =
+      calculateNextLadderProgress(
+        existingLadder,
+        evaluatedPrevious.status
+      );
+
+    console.log(
+      `Previous Ladder result: ${evaluatedPrevious.status}`
+    );
+
+    console.log(
+      `New Ladder day: ${progression.day}`
+    );
+  }
+
+  const sharedHitPool =
+    buildSharedLadderPool(
+      todayData
+    );
+
+  const wager =
+    getLadderWager(
+      progression.day
+    );
+
+  if (
+    sharedHitPool.length <
+    LADDER_PICK_COUNT
+  ) {
+    console.warn(
+      `Only ${sharedHitPool.length} eligible shared Ladder players were found.`
+    );
+
+    return {
+      generatedAt:
+        new Date()
+          .toISOString(),
+
+      date,
+
+      selectionType:
+        "shared-daily-random",
+
+      locked:
+        true,
+
+      day:
+        progression.day,
+
+      step:
+        progression.day,
+
+      wager,
+
+      target:
+        wager * 2,
+
+      maximumDay:
+        LADDER_MAXIMUM_DAY,
+
+      completedDays:
+        getCompletedLadderDays(
+          progression.day
+        ),
+
+      previousDate,
+
+      previousResult:
+        progression
+          .previousResult,
+
+      previousStatus,
+
+      cycleCompleted:
+        progression
+          .cycleCompleted,
+
+      status:
+        "unavailable",
+
+      poolSize:
+        sharedHitPool.length,
+
+      picks:
+        []
+    };
+  }
+
+  const selectedPicks =
+    shuffleLadderPlayers(
+      sharedHitPool
+    ).slice(
+      0,
+      LADDER_PICK_COUNT
+    );
+
+  const ladder = {
+    generatedAt:
+      new Date()
+        .toISOString(),
+
+    date,
+
+    selectionType:
+      "shared-daily-random",
+
+    locked:
+      true,
+
+    day:
+      progression.day,
+
+    step:
+      progression.day,
+
+    wager,
+
+    target:
+      wager * 2,
+
+    maximumDay:
+      LADDER_MAXIMUM_DAY,
+
+    completedDays:
+      getCompletedLadderDays(
+        progression.day
+      ),
+
+    previousDate,
+
+    previousResult:
+      progression
+        .previousResult,
+
+    previousStatus,
+
+    cycleCompleted:
+      progression
+        .cycleCompleted,
+
+    status:
+      "pending",
+
+    poolSize:
+      sharedHitPool.length,
+
+    picks:
+      selectedPicks
+  };
+
+  console.log(
+    `🎲 Created Day ${progression.day} shared Ladder picks:`,
+    selectedPicks.map(
+      pick => pick.player
+    )
+  );
+
+  console.log(
+    `💰 Ladder wager: $${wager} → $${wager * 2}`
+  );
+
+  return ladder;
+}
 
   const sharedHitPool =
     buildSharedLadderPool(
