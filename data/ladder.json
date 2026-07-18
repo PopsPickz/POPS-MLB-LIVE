@@ -9,14 +9,14 @@
   "target": 40,
   "maximumDay": 10,
   "completedDays": [
-  1
-],
-"previousDate": "2026-07-17",
-"previousResult": "won",
-"previousStatus": "won",
-"cycleCompleted": false,
-"status": "pending",
-"poolSize": 20,
+    1
+  ],
+  "previousDate": "2026-07-17",
+  "previousResult": "won",
+  "previousStatus": "won",
+  "cycleCompleted": false,
+  "status": "pending",
+  "poolSize": 20,
   "picks": [
     {
       "id": 673237,
@@ -62,5 +62,6 @@
       "result": "pending",
       "hitsToday": 0
     }
-  ]
+  ],
+  "updatedAt": "2026-07-18T09:13:49.853Z"
 }
