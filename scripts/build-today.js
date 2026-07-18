@@ -2705,6 +2705,355 @@ function loadExistingLadder() {
   }
 }
 
+
+/*
+=========================================================
+LADDER PROGRESSION HELPERS
+=========================================================
+*/
+
+function getLadderWager(
+  day = 1
+) {
+  const safeDay =
+    Math.max(
+      1,
+      Math.min(
+        LADDER_MAXIMUM_DAY,
+        number(day) || 1
+      )
+    );
+
+  return (
+    LADDER_STARTING_WAGER *
+    Math.pow(
+      2,
+      safeDay - 1
+    )
+  );
+}
+
+function getCompletedLadderDays(
+  currentDay = 1
+) {
+  const completedDays = [];
+
+  for (
+    let day = 1;
+    day < currentDay;
+    day++
+  ) {
+    completedDays.push(day);
+  }
+
+  return completedDays;
+}
+
+function getGameStatus(
+  liveData
+) {
+  return {
+    abstractState:
+      String(
+        liveData?.gameData?.status
+          ?.abstractGameState ||
+        ""
+      ).toLowerCase(),
+
+    detailedState:
+      String(
+        liveData?.gameData?.status
+          ?.detailedState ||
+        ""
+      ).toLowerCase()
+  };
+}
+
+function isFinalLadderGame(
+  liveData
+) {
+  const status =
+    getGameStatus(
+      liveData
+    );
+
+  return (
+    status.abstractState ===
+      "final" ||
+    status.detailedState ===
+      "final" ||
+    status.detailedState ===
+      "game over" ||
+    status.detailedState.includes(
+      "completed early"
+    )
+  );
+}
+
+function isHeldLadderGame(
+  liveData
+) {
+  const status =
+    getGameStatus(
+      liveData
+    );
+
+  return (
+    status.detailedState.includes(
+      "postponed"
+    ) ||
+    status.detailedState.includes(
+      "suspended"
+    ) ||
+    status.detailedState.includes(
+      "cancelled"
+    ) ||
+    status.detailedState.includes(
+      "canceled"
+    )
+  );
+}
+
+function getPlayerHitsFromLiveGame(
+  liveData,
+  playerId
+) {
+  const safePlayerId =
+    number(playerId);
+
+  if (!safePlayerId) {
+    return 0;
+  }
+
+  const playerKey =
+    `ID${safePlayerId}`;
+
+  const awayPlayer =
+    liveData?.liveData?.boxscore
+      ?.teams?.away?.players
+      ?.[playerKey];
+
+  const homePlayer =
+    liveData?.liveData?.boxscore
+      ?.teams?.home?.players
+      ?.[playerKey];
+
+  const player =
+    awayPlayer ||
+    homePlayer;
+
+  return number(
+    player?.stats?.batting?.hits
+  );
+}
+
+async function evaluateLadderPicks(
+  ladder
+) {
+  if (
+    !ladder ||
+    !Array.isArray(
+      ladder.picks
+    ) ||
+    ladder.picks.length !==
+      LADDER_PICK_COUNT
+  ) {
+    return {
+      status: "unavailable",
+      picks: [],
+      allGamesFinal: false
+    };
+  }
+
+  const gameCache =
+    new Map();
+
+  const evaluatedPicks = [];
+
+  let allGamesFinal = true;
+  let hasHeldGame = false;
+
+  for (
+    const pick of
+    ladder.picks
+  ) {
+    const gamePk =
+      number(
+        pick.gamePk
+      );
+
+    let liveData =
+      gameCache.get(
+        gamePk
+      );
+
+    if (
+      !gameCache.has(
+        gamePk
+      )
+    ) {
+      liveData =
+        await getLiveGame(
+          gamePk
+        );
+
+      gameCache.set(
+        gamePk,
+        liveData
+      );
+    }
+
+    const gameFinal =
+      isFinalLadderGame(
+        liveData
+      );
+
+    const gameHeld =
+      isHeldLadderGame(
+        liveData
+      );
+
+    if (!gameFinal) {
+      allGamesFinal = false;
+    }
+
+    if (gameHeld) {
+      hasHeldGame = true;
+    }
+
+    const hitsToday =
+      getPlayerHitsFromLiveGame(
+        liveData,
+        pick.id
+      );
+
+    let result =
+      "pending";
+
+    if (hitsToday >= 1) {
+      result = "hit";
+    } else if (gameFinal) {
+      result = "miss";
+    }
+
+    evaluatedPicks.push({
+      ...pick,
+
+      hitsToday,
+
+      result
+    });
+  }
+
+  let status =
+    "pending";
+
+  const bothPlayersHit =
+    evaluatedPicks.every(
+      pick =>
+        pick.result ===
+        "hit"
+    );
+
+  const anyPlayerMissed =
+    evaluatedPicks.some(
+      pick =>
+        pick.result ===
+        "miss"
+    );
+
+  if (bothPlayersHit) {
+    status = "won";
+  } else if (
+    allGamesFinal &&
+    anyPlayerMissed
+  ) {
+    status = "lost";
+  } else if (hasHeldGame) {
+    status = "held";
+  }
+
+  return {
+    status,
+    picks:
+      evaluatedPicks,
+    allGamesFinal
+  };
+}
+
+function calculateNextLadderProgress(
+  previousLadder,
+  previousStatus
+) {
+  const previousDay =
+    Math.max(
+      1,
+      Math.min(
+        LADDER_MAXIMUM_DAY,
+        number(
+          previousLadder?.day ||
+          previousLadder?.step ||
+          1
+        )
+      )
+    );
+
+  if (
+    previousStatus === "won" &&
+    previousDay >=
+      LADDER_MAXIMUM_DAY
+  ) {
+    return {
+      day: 1,
+      previousResult:
+        "completed",
+      cycleCompleted: true
+    };
+  }
+
+  if (
+    previousStatus === "won"
+  ) {
+    return {
+      day:
+        previousDay + 1,
+
+      previousResult:
+        "won",
+
+      cycleCompleted: false
+    };
+  }
+
+  if (
+    previousStatus === "lost"
+  ) {
+    return {
+      day: 1,
+
+      previousResult:
+        "lost",
+
+      cycleCompleted: false
+    };
+  }
+
+  return {
+    day:
+      previousDay,
+
+    previousResult:
+      previousStatus ===
+        "held"
+        ? "held"
+        : "pending",
+
+    cycleCompleted: false
+  };
+}
+
+
+
 function buildOrPreserveLadder(
   todayData
 ) {
