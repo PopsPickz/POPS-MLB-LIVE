@@ -4002,8 +4002,17 @@ async function main() {
       await buildTodayData();
 
     await saveTodayData(
-      todayData
-    );
+  todayData
+);
+
+const hitPicksData =
+  buildOrPreserveHitPicks(
+    todayData
+  );
+
+saveHitPicksData(
+  hitPicksData
+);
 
 const ladderData =
   await buildOrPreserveLadder(
