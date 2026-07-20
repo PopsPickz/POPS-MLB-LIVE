@@ -2172,6 +2172,566 @@ async function buildTodayData() {
 
 /*
 =========================================================
+SHARED DAILY HIT PICKZ
+=========================================================
+
+Creates one shared data/hit-picks.json file.
+
+Every phone, laptop and browser loads the same Top 20
+players in the same order.
+
+Once created for the current Eastern date, the list is
+preserved for the entire day.
+=========================================================
+*/
+
+const HIT_PICK_LIMIT = 20;
+
+function getHitPicksOutputPath() {
+  return path.join(
+    process.cwd(),
+    "data",
+    "hit-picks.json"
+  );
+}
+
+function getHitPickPlayerKey(
+  player = {}
+) {
+  const playerId =
+    number(
+      player.playerId ||
+      player.id
+    );
+
+  if (playerId > 0) {
+    return `id-${playerId}`;
+  }
+
+  return [
+    String(
+      player.name ||
+      player.player ||
+      ""
+    )
+      .toLowerCase()
+      .trim(),
+
+    String(
+      player.team ||
+      ""
+    )
+      .toLowerCase()
+      .trim()
+  ].join("-");
+}
+
+function removeDuplicateHitPicks(
+  players = []
+) {
+  const unique = [];
+  const usedKeys =
+    new Set();
+
+  for (const player of players) {
+    if (!player) {
+      continue;
+    }
+
+    const key =
+      getHitPickPlayerKey(
+        player
+      );
+
+    if (
+      !key ||
+      usedKeys.has(key)
+    ) {
+      continue;
+    }
+
+    usedKeys.add(key);
+    unique.push(player);
+  }
+
+  return unique;
+}
+
+function sharedHitPickQualifies(
+  batter = {}
+) {
+  const hitStreak =
+    number(
+      batter.hitStreak
+    );
+
+  const bvpHits =
+    number(
+      batter.bvp?.hits
+    );
+
+  /*
+  The player must satisfy BOTH conditions.
+  */
+
+  return (
+    hitStreak >= 2 &&
+    bvpHits >= 1
+  );
+}
+
+function calculateSharedHitScore({
+  hitStreak,
+  bvpHits,
+  bvpAtBats,
+  bvpAvg,
+  lineupSpot
+}) {
+  let score = 50;
+
+  score +=
+    Math.min(
+      hitStreak,
+      10
+    ) * 3;
+
+  score +=
+    Math.min(
+      bvpHits,
+      8
+    ) * 4;
+
+  if (bvpAtBats >= 3) {
+    if (bvpAvg >= 0.400) {
+      score += 12;
+    } else if (
+      bvpAvg >= 0.300
+    ) {
+      score += 9;
+    } else if (
+      bvpAvg >= 0.250
+    ) {
+      score += 6;
+    } else if (
+      bvpAvg >= 0.200
+    ) {
+      score += 3;
+    }
+  }
+
+  if (
+    lineupSpot >= 1 &&
+    lineupSpot <= 3
+  ) {
+    score += 8;
+  } else if (
+    lineupSpot >= 4 &&
+    lineupSpot <= 6
+  ) {
+    score += 5;
+  } else {
+    score += 2;
+  }
+
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(score)
+    )
+  );
+}
+
+function buildSharedHitPick({
+  game,
+  batter,
+  team,
+  pitcher,
+  pitcherId
+}) {
+  const bvp =
+    batter.bvp || {};
+
+  const bvpHits =
+    number(
+      bvp.hits
+    );
+
+  const bvpAtBats =
+    number(
+      bvp.atBats
+    );
+
+  const bvpAvg =
+    bvpAtBats > 0
+      ? bvpHits / bvpAtBats
+      : number(
+          bvp.avg
+        );
+
+  const lineupSpot =
+    number(
+      batter.lineupSpot
+    ) || 9;
+
+  const hitStreak =
+    number(
+      batter.hitStreak
+    );
+
+  const hitScore =
+    calculateSharedHitScore({
+      hitStreak,
+      bvpHits,
+      bvpAtBats,
+      bvpAvg,
+      lineupSpot
+    });
+
+  return {
+    playerId:
+      number(
+        batter.id
+      ),
+
+    name:
+      batter.name ||
+      "Unknown Player",
+
+    team,
+
+    game:
+      `${game.awayTeam} vs ${game.homeTeam}`,
+
+    gamePk:
+      number(
+        game.gamePk
+      ),
+
+    gameTime:
+      game.date ||
+      "",
+
+    pitcher:
+      pitcher ||
+      "TBD",
+
+    pitcherId:
+      number(
+        pitcherId
+      ),
+
+    lineupSpot,
+
+    confirmed:
+      batter.confirmed === true,
+
+    hitStreak,
+
+    bvpHits,
+
+    bvpAtBats,
+
+    bvpAvg:
+      Number(
+        bvpAvg.toFixed(3)
+      ),
+
+    bvpHomeRuns:
+      number(
+        bvp.homeRuns
+      ),
+
+    hitScore,
+
+    reasons:
+      `${hitStreak}-game hit streak • ` +
+      `${bvpHits} career hit${
+        bvpHits === 1
+          ? ""
+          : "s"
+      } vs pitcher`,
+
+    result:
+      "pending",
+
+    hitsToday:
+      0
+  };
+}
+
+function buildSharedHitPickPool(
+  todayData
+) {
+  const candidates = [];
+
+  for (
+    const game of
+    todayData.games || []
+  ) {
+    for (
+      const batter of
+      game.awayLineup || []
+    ) {
+      if (
+        !sharedHitPickQualifies(
+          batter
+        )
+      ) {
+        continue;
+      }
+
+      candidates.push(
+        buildSharedHitPick({
+          game,
+          batter,
+          team:
+            game.awayTeam,
+
+          pitcher:
+            game.homePitcher,
+
+          pitcherId:
+            game.homePitcherId
+        })
+      );
+    }
+
+    for (
+      const batter of
+      game.homeLineup || []
+    ) {
+      if (
+        !sharedHitPickQualifies(
+          batter
+        )
+      ) {
+        continue;
+      }
+
+      candidates.push(
+        buildSharedHitPick({
+          game,
+          batter,
+          team:
+            game.homeTeam,
+
+          pitcher:
+            game.awayPitcher,
+
+          pitcherId:
+            game.awayPitcherId
+        })
+      );
+    }
+  }
+
+  const uniqueCandidates =
+    removeDuplicateHitPicks(
+      candidates
+    );
+
+  uniqueCandidates.sort(
+    (a, b) => {
+      if (
+        b.hitStreak !==
+        a.hitStreak
+      ) {
+        return (
+          b.hitStreak -
+          a.hitStreak
+        );
+      }
+
+      if (
+        b.bvpHits !==
+        a.bvpHits
+      ) {
+        return (
+          b.bvpHits -
+          a.bvpHits
+        );
+      }
+
+      if (
+        b.bvpAvg !==
+        a.bvpAvg
+      ) {
+        return (
+          b.bvpAvg -
+          a.bvpAvg
+        );
+      }
+
+      return (
+        b.hitScore -
+        a.hitScore
+      );
+    }
+  );
+
+  return uniqueCandidates.slice(
+    0,
+    HIT_PICK_LIMIT
+  );
+}
+
+function loadExistingHitPicks() {
+  const outputPath =
+    getHitPicksOutputPath();
+
+  try {
+    if (
+      !fs.existsSync(
+        outputPath
+      )
+    ) {
+      return null;
+    }
+
+    const contents =
+      fs.readFileSync(
+        outputPath,
+        "utf8"
+      );
+
+    const parsed =
+      JSON.parse(
+        contents
+      );
+
+    if (
+      !parsed ||
+      !Array.isArray(
+        parsed.picks
+      )
+    ) {
+      return null;
+    }
+
+    return parsed;
+  } catch (error) {
+    console.warn(
+      "Could not read existing hit-picks.json:",
+      error.message
+    );
+
+    return null;
+  }
+}
+
+function buildOrPreserveHitPicks(
+  todayData
+) {
+  const date =
+    todayData.date ||
+    getEasternDate();
+
+  const existing =
+    loadExistingHitPicks();
+
+  /*
+  Keep the exact same players and order all day.
+  */
+
+  if (
+    existing?.date === date &&
+    Array.isArray(
+      existing.picks
+    ) &&
+    existing.picks.length > 0
+  ) {
+    console.log(
+      "🔒 Preserving today's shared Hit Pickz:",
+      existing.picks.map(
+        pick => pick.name
+      )
+    );
+
+    return {
+      ...existing,
+
+      updatedAt:
+        new Date()
+          .toISOString(),
+
+      locked:
+        true
+    };
+  }
+
+  const picks =
+    buildSharedHitPickPool(
+      todayData
+    );
+
+  console.log(
+    `🔥 Created ${picks.length} shared Hit Pickz:`,
+    picks.map(
+      pick => pick.name
+    )
+  );
+
+  return {
+    generatedAt:
+      new Date()
+        .toISOString(),
+
+    updatedAt:
+      new Date()
+        .toISOString(),
+
+    date,
+
+    version:
+      "POPS Shared Hit Pickz 1.0",
+
+    locked:
+      true,
+
+    pickCount:
+      picks.length,
+
+    picks
+  };
+}
+
+function saveHitPicksData(
+  hitPicksData
+) {
+  const dataDirectory =
+    path.join(
+      process.cwd(),
+      "data"
+    );
+
+  const outputPath =
+    getHitPicksOutputPath();
+
+  fs.mkdirSync(
+    dataDirectory,
+    {
+      recursive: true
+    }
+  );
+
+  fs.writeFileSync(
+    outputPath,
+    JSON.stringify(
+      hitPicksData,
+      null,
+      2
+    ),
+    "utf8"
+  );
+
+  console.log(
+    `Shared Hit Pickz saved to ${outputPath}`
+  );
+}
+
+/*
+=========================================================
 SHARED DAILY LADDER
 =========================================================
 
