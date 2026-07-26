@@ -199,6 +199,10 @@ const Pitchers = {
     this.box.innerHTML =
       "<p>Loading pitcher targets...</p>";
 
+   this.targets = [];
+   window.pitcherTargets = [];
+
+    
     try {
       const games =
         window.todayData?.games || [];
