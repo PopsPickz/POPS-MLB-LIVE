@@ -4289,12 +4289,9 @@ async function buildOrPreserveLadder(
   }
 
   const selectedPicks =
-    shuffleLadderPlayers(
-      sharedHitPool
-    ).slice(
-      0,
-      LADDER_PICK_COUNT
-    );
+  selectSmartLadderPicks(
+    sharedHitPool
+  );
 
   const ladder = {
     generatedAt:
@@ -4304,8 +4301,8 @@ async function buildOrPreserveLadder(
     date,
 
     selectionType:
-      "shared-daily-random",
-
+  "shared-daily-smart-random",
+    
     locked:
       true,
 
