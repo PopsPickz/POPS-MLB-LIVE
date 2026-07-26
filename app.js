@@ -2747,15 +2747,54 @@ if (
       `${game.awayTeam} vs ${game.homeTeam}`,
 
     gameTime:
-      formatTime(game.date),
+  game.date || "",
 
-    pitcher:
-      normalizePitcherName(
-        pitcherName
-      ),
+pitcher:
+  normalizePitcherName(
+    pitcherName
+  ),
 
-    lineupSpot:
-      batter.lineupSpot,
+pitcherId:
+  Number(
+    pitcherId || 0
+  ),
+
+pitcherStats: {
+  era:
+    Number(
+      pitcherStats?.era || 0
+    ),
+
+  whip:
+    Number(
+      pitcherStats?.whip || 0
+    ),
+
+  hr9:
+    Number(
+      pitcherStats?.hr9 ??
+      pitcherStats?.homeRunsPer9 ??
+      pitcherStats?.homeRunsPer9Innings ??
+      0
+    ),
+
+  homeRunsAllowed:
+    Number(
+      pitcherStats?.homeRuns ??
+      pitcherStats?.homeRunsAllowed ??
+      0
+    ),
+
+  inningsPitched:
+    Number(
+      pitcherStats?.inningsPitched ??
+      pitcherStats?.innings ??
+      0
+    )
+},
+
+lineupSpot:
+  batter.lineupSpot,
 
     confirmed:
       Boolean(batter.confirmed),
