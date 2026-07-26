@@ -3109,7 +3109,9 @@ const rankedHitCandidates =
 
             <p>
               <strong>Date/Time:</strong>
-              ${pick.gameTime}
+              <strong>Date/Time:</strong>
+             ${formatTime(pick.gameTime)}
+             
             </p>
 
             <p>
