@@ -2851,6 +2851,309 @@ function shuffleLadderPlayers(
   return shuffled;
 }
 
+function calculateSmartLadderWeight(
+  player = {}
+) {
+  const hitScore =
+    number(
+      player.score
+    );
+
+  const hitStreak =
+    number(
+      player.hitStreak
+    );
+
+  const bvpHits =
+    number(
+      player.bvpHits
+    );
+
+  const bvpAverage =
+    number(
+      player.bvpAverage
+    );
+
+  const bvpAtBats =
+    number(
+      player.bvpAtBats
+    );
+
+  const lineupSpot =
+    number(
+      player.lineupSpot
+    ) || 9;
+
+  const pitcherRisk =
+    number(
+      player.pitcherRisk
+    );
+
+  let weight = 10;
+
+  /*
+  POPS Hit Score
+  Maximum contribution: 40
+  */
+
+  weight +=
+    Math.max(
+      0,
+      Math.min(
+        40,
+        (hitScore - 60) * 1.5
+      )
+    );
+
+  /*
+  Hit streak
+  Maximum contribution: 30
+  */
+
+  weight +=
+    Math.min(
+      hitStreak,
+      10
+    ) * 3;
+
+  /*
+  Career BvP hits
+  Maximum contribution: 24
+  */
+
+  weight +=
+    Math.min(
+      bvpHits,
+      8
+    ) * 3;
+
+  /*
+  Meaningful BvP average.
+  Only apply this when there are at least 3 at-bats.
+  */
+
+  if (bvpAtBats >= 3) {
+    if (bvpAverage >= 0.400) {
+      weight += 18;
+    } else if (
+      bvpAverage >= 0.300
+    ) {
+      weight += 14;
+    } else if (
+      bvpAverage >= 0.250
+    ) {
+      weight += 10;
+    } else if (
+      bvpAverage >= 0.200
+    ) {
+      weight += 5;
+    }
+  }
+
+  /*
+  Opposing pitcher risk
+  Maximum contribution: 25
+  */
+
+  weight +=
+    pitcherRisk * 0.25;
+
+  /*
+  Lineup position
+  */
+
+  if (
+    lineupSpot >= 1 &&
+    lineupSpot <= 3
+  ) {
+    weight += 12;
+  } else if (
+    lineupSpot >= 4 &&
+    lineupSpot <= 6
+  ) {
+    weight += 8;
+  } else {
+    weight += 3;
+  }
+
+  /*
+  Confirmed lineups receive a small boost.
+  */
+
+  if (
+    player.confirmed === true
+  ) {
+    weight += 8;
+  }
+
+  return Math.max(
+    1,
+    Math.round(weight)
+  );
+}
+
+function weightedRandomLadderPick(
+  players = []
+) {
+  if (!players.length) {
+    return null;
+  }
+
+  const weightedPlayers =
+    players.map(player => ({
+      player,
+
+      weight:
+        calculateSmartLadderWeight(
+          player
+        )
+    }));
+
+  const totalWeight =
+    weightedPlayers.reduce(
+      (total, item) =>
+        total + item.weight,
+      0
+    );
+
+  let randomValue =
+    Math.random() *
+    totalWeight;
+
+  for (
+    const item of
+    weightedPlayers
+  ) {
+    randomValue -=
+      item.weight;
+
+    if (randomValue <= 0) {
+      return {
+        ...item.player,
+
+        smartWeight:
+          item.weight
+      };
+    }
+  }
+
+  const fallback =
+    weightedPlayers[
+      weightedPlayers.length - 1
+    ];
+
+  return {
+    ...fallback.player,
+
+    smartWeight:
+      fallback.weight
+  };
+}
+
+function selectSmartLadderPicks(
+  players = []
+) {
+  const pool =
+    removeDuplicateLadderPlayers(
+      players
+    );
+
+  if (
+    pool.length <
+    LADDER_PICK_COUNT
+  ) {
+    return [];
+  }
+
+  /*
+  Select the first player using weighted randomness.
+  */
+
+  const firstPick =
+    weightedRandomLadderPick(
+      pool
+    );
+
+  if (!firstPick) {
+    return [];
+  }
+
+  const remainingPlayers =
+    pool.filter(
+      player =>
+        getLadderPlayerKey(
+          player
+        ) !==
+        getLadderPlayerKey(
+          firstPick
+        )
+    );
+
+  /*
+  Prefer a player from a different game.
+
+  This prevents both Ladder legs from depending
+  on the same game whenever possible.
+  */
+
+  const differentGamePlayers =
+    remainingPlayers.filter(
+      player =>
+        number(
+          player.gamePk
+        ) !==
+        number(
+          firstPick.gamePk
+        )
+    );
+
+  /*
+  Also prefer a different team.
+  */
+
+  const differentTeamPlayers =
+    differentGamePlayers.filter(
+      player =>
+        String(
+          player.team || ""
+        ) !==
+        String(
+          firstPick.team || ""
+        )
+    );
+
+  let secondPickPool =
+    differentTeamPlayers;
+
+  if (
+    secondPickPool.length === 0
+  ) {
+    secondPickPool =
+      differentGamePlayers;
+  }
+
+  if (
+    secondPickPool.length === 0
+  ) {
+    secondPickPool =
+      remainingPlayers;
+  }
+
+  const secondPick =
+    weightedRandomLadderPick(
+      secondPickPool
+    );
+
+  if (!secondPick) {
+    return [];
+  }
+
+  return [
+    firstPick,
+    secondPick
+  ];
+}
+
 function ladderPlayerQualifies(
   player = {}
 ) {
