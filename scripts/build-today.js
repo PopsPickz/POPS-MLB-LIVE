@@ -4346,11 +4346,26 @@ async function buildOrPreserveLadder(
   };
 
   console.log(
-    `🎲 Created Day ${progression.day} shared Ladder picks:`,
-    selectedPicks.map(
-      pick => pick.player
-    )
-  );
+  `🧠 Created Day ${progression.day} Smart Ladder picks:`,
+  selectedPicks.map(
+    pick => ({
+      player:
+        pick.player,
+
+      weight:
+        pick.smartWeight,
+
+      score:
+        pick.score,
+
+      streak:
+        pick.hitStreak,
+
+      pitcherRisk:
+        pick.pitcherRisk
+    })
+  )
+);
 
   console.log(
     `💰 Ladder wager: $${wager} → $${wager * 2}`
