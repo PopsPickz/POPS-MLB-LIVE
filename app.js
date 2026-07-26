@@ -2620,7 +2620,7 @@ window.hrPicks = hrPicks;
     Parlays.render(hrPicks);
   }
 }
-/*
+
 /*
 =========================================================
 HIT PICKS
