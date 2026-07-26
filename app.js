@@ -2432,7 +2432,7 @@ window.hrPicks = hrPicks;
 
           <p>
             <strong>Date/Time:</strong>
-            ${pick.gameTime}
+            ${formatTime(pick.gameTime)}
           </p>
 
           <p>
