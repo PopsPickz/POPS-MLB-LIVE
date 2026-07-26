@@ -2631,6 +2631,8 @@ function addHitPick(
   game,
   batter,
   pitcherName,
+  pitcherId,
+  pitcherStats = {},
   teamName = ""
 ) {
   const stats =
