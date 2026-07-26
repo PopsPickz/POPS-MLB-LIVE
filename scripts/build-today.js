@@ -3256,6 +3256,10 @@ function buildSharedLadderPool(
     const game of
     todayData.games || []
   ) {
+    /*
+    Away hitters face the home pitcher.
+    */
+
     for (
       const batter of
       game.awayLineup || []
@@ -3268,16 +3272,21 @@ function buildSharedLadderPool(
         continue;
       }
 
-      buildLadderCandidate(
-       game,
-       batter,
-       game.awayTeam,
-       game.homePitcher,
-       game.homePitcherId,
-       game.homePitcherStats
-     )
+      candidates.push(
+        buildLadderCandidate(
+          game,
+          batter,
+          game.awayTeam,
+          game.homePitcher,
+          game.homePitcherId,
+          game.homePitcherStats
+        )
       );
     }
+
+    /*
+    Home hitters face the away pitcher.
+    */
 
     for (
       const batter of
@@ -3291,14 +3300,15 @@ function buildSharedLadderPool(
         continue;
       }
 
-      buildLadderCandidate(
-       game,
-       batter,
-       game.homeTeam,
-       game.awayPitcher,
-       game.awayPitcherId,
-       game.awayPitcherStats
-     )
+      candidates.push(
+        buildLadderCandidate(
+          game,
+          batter,
+          game.homeTeam,
+          game.awayPitcher,
+          game.awayPitcherId,
+          game.awayPitcherStats
+        )
       );
     }
   }
@@ -3351,11 +3361,6 @@ function buildSharedLadderPool(
       );
     }
   );
-
-  /*
-  The random Ladder is selected from the canonical
-  Top 20 shared Hit Pickz pool.
-  */
 
   return uniqueCandidates.slice(
     0,
