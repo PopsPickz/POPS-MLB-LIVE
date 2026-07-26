@@ -3268,13 +3268,14 @@ function buildSharedLadderPool(
         continue;
       }
 
-      candidates.push(
-        buildLadderCandidate(
-          game,
-          batter,
-          game.awayTeam,
-          game.homePitcher
-        )
+      buildLadderCandidate(
+       game,
+       batter,
+       game.awayTeam,
+       game.homePitcher,
+       game.homePitcherId,
+       game.homePitcherStats
+     )
       );
     }
 
@@ -3290,13 +3291,14 @@ function buildSharedLadderPool(
         continue;
       }
 
-      candidates.push(
-        buildLadderCandidate(
-          game,
-          batter,
-          game.homeTeam,
-          game.awayPitcher
-        )
+      buildLadderCandidate(
+       game,
+       batter,
+       game.homeTeam,
+       game.awayPitcher,
+       game.awayPitcherId,
+       game.awayPitcherStats
+     )
       );
     }
   }
