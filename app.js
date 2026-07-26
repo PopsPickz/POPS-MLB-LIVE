@@ -2970,11 +2970,13 @@ async function loadHitPicks() {
       game.awayLineup || []
     ) {
       addHitPick(
-        game,
-        batter,
-        game.homePitcher,
-        game.awayTeam
-      );
+       game,
+       batter,
+       game.homePitcher,
+       game.homePitcherId,
+       game.homePitcherStats || {},
+       game.awayTeam
+     );
     }
 
     for (
@@ -2982,11 +2984,13 @@ async function loadHitPicks() {
       game.homeLineup || []
     ) {
       addHitPick(
-        game,
-        batter,
-        game.awayPitcher,
-        game.homeTeam
-      );
+       game,
+       batter,
+       game.awayPitcher,
+       game.awayPitcherId,
+       game.awayPitcherStats || {},
+       game.homeTeam
+     );
     }
   }
 
