@@ -4243,7 +4243,7 @@ async function buildOrPreserveLadder(
       date,
 
       selectionType:
-        "shared-daily-random",
+  "shared-daily-smart-random",
 
       locked:
         true,
