@@ -3001,11 +3001,109 @@ function calculateBuilderHitScore(
   );
 }
 
+function calculateLadderPitcherRisk(
+  pitcherStats = {}
+) {
+  const era =
+    number(pitcherStats.era);
+
+  const whip =
+    number(pitcherStats.whip);
+
+  const homeRuns =
+    number(
+      pitcherStats.homeRuns
+    );
+
+  const inningsPitched =
+    number(
+      pitcherStats.inningsPitched
+    );
+
+  let hr9 =
+    number(
+      pitcherStats.homeRunsPer9 ||
+      pitcherStats.hr9
+    );
+
+  if (
+    hr9 === 0 &&
+    inningsPitched > 0
+  ) {
+    hr9 =
+      (homeRuns * 9) /
+      inningsPitched;
+  }
+
+  let risk = 0;
+
+  /*
+  Higher score means the pitcher is
+  a better matchup for opposing hitters.
+  */
+
+  if (era >= 5.50) {
+    risk += 30;
+  } else if (era >= 5.00) {
+    risk += 25;
+  } else if (era >= 4.50) {
+    risk += 20;
+  } else if (era >= 4.00) {
+    risk += 15;
+  } else if (era >= 3.50) {
+    risk += 10;
+  } else if (era > 0) {
+    risk += 5;
+  }
+
+  if (whip >= 1.50) {
+    risk += 30;
+  } else if (whip >= 1.40) {
+    risk += 25;
+  } else if (whip >= 1.30) {
+    risk += 20;
+  } else if (whip >= 1.20) {
+    risk += 15;
+  } else if (whip > 0) {
+    risk += 8;
+  }
+
+  if (hr9 >= 1.80) {
+    risk += 30;
+  } else if (hr9 >= 1.50) {
+    risk += 25;
+  } else if (hr9 >= 1.20) {
+    risk += 20;
+  } else if (hr9 >= 1.00) {
+    risk += 15;
+  } else if (hr9 > 0) {
+    risk += 8;
+  }
+
+  if (homeRuns >= 20) {
+    risk += 10;
+  } else if (homeRuns >= 15) {
+    risk += 8;
+  } else if (homeRuns >= 10) {
+    risk += 5;
+  }
+
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(risk)
+    )
+  );
+}
+
 function buildLadderCandidate(
   game,
   batter,
   team,
-  pitcher
+  pitcher,
+  pitcherId,
+  pitcherStats = {}
 ) {
   const bvp =
     batter.bvp || {};
@@ -3023,6 +3121,11 @@ function buildLadderCandidate(
   const hasPitcherHistory =
     bvpAtBats > 0 ||
     bvpPlateAppearances > 0;
+
+  const pitcherRisk =
+    calculateLadderPitcherRisk(
+      pitcherStats
+    );
 
   return {
     id:
@@ -3051,6 +3154,41 @@ function buildLadderCandidate(
     pitcher:
       pitcher ||
       "Pitcher TBD",
+
+    pitcherId:
+      number(
+        pitcherId
+      ) || null,
+
+    pitcherRisk,
+
+    pitcherStats: {
+      era:
+        number(
+          pitcherStats.era
+        ),
+
+      whip:
+        number(
+          pitcherStats.whip
+        ),
+
+      hr9:
+        number(
+          pitcherStats.homeRunsPer9 ||
+          pitcherStats.hr9
+        ),
+
+      homeRunsAllowed:
+        number(
+          pitcherStats.homeRuns
+        ),
+
+      inningsPitched:
+        number(
+          pitcherStats.inningsPitched
+        )
+    },
 
     lineupSpot:
       number(
