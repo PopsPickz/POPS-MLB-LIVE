@@ -334,6 +334,70 @@ const Pitchers = {
         (a, b) => b.risk - a.risk
       );
 
+this.targets =
+  pitcherCards.map((card, index) => ({
+    rank: index + 1,
+
+    pitcherName:
+      card.pitcherName,
+
+    pitcherId:
+      Number(card.pitcherId || 0),
+
+    pitcherHand:
+      card.pitcherHand || "",
+
+    targetTeam:
+      card.targetTeam,
+
+    gameText:
+      card.gameText,
+
+    risk:
+      Number(card.risk || 0),
+
+    tier:
+      this.getTier(card.risk),
+
+    stats:
+      this.normalizeStats(
+        card.stats || {}
+      ),
+
+    opponentHitters:
+      Array.isArray(card.opponentHitters)
+        ? card.opponentHitters
+        : [],
+
+    hotHitters:
+      Array.isArray(card.hotHitters)
+        ? card.hotHitters
+        : [],
+
+    previousHR:
+      Array.isArray(card.previousHR)
+        ? card.previousHR
+        : [],
+
+    recentHR:
+      Array.isArray(card.recentHR)
+        ? card.recentHR
+        : [],
+
+    bestTargets:
+      Array.isArray(card.bestTargets)
+        ? card.bestTargets
+        : []
+  }));
+
+window.pitcherTargets =
+  this.targets;
+
+console.log(
+  "🎯 POPS pitcher targets ready:",
+  this.targets
+);      
+
       this.box.innerHTML =
         pitcherCards.length
           ? pitcherCards
