@@ -1052,164 +1052,180 @@ if (
   */
 
   renderCard(prediction = {}) {
-    const projectedKs =
-      this.num(
-        prediction.projectedStrikeouts
-      );
+  const projectedKs =
+    this.num(
+      prediction.projectedStrikeouts
+    );
 
-    const projectedInnings =
-      this.num(
-        prediction.projectedInnings
-      );
+  const projectedInnings =
+    this.num(
+      prediction.projectedInnings
+    );
 
-    const projectedBatters =
-      this.num(
-        prediction.projectedBattersFaced
-      );
+  const projectedBatters =
+    this.num(
+      prediction.projectedBattersFaced
+    );
 
-    const kRate =
-      this.num(
-        prediction.kRate
-      );
+  const kRate =
+    this.num(
+      prediction.kRate
+    );
 
-    const kPer9 =
-      this.num(
-        prediction.kPer9
-      );
+  const kPer9 =
+    this.num(
+      prediction.kPer9
+    );
 
-    const opponentKRate =
-      this.num(
-        prediction.opponentKRate
-      );
+  const opponentKRate =
+    this.num(
+      prediction.opponentKRate
+    );
 
-    const score =
-      this.num(
-        prediction.score
-      );
+  const strikeoutsPerStart =
+    this.num(
+      prediction.strikeoutsPerStart
+    );
 
-    return `
-      <article class="pitcher-k-card">
+  const score =
+    this.num(
+      prediction.score
+    );
 
-        <div class="pitcher-k-rank">
-          #${prediction.rank || "-"}
+  const hand =
+    prediction.pitcherHand
+      ? `${prediction.pitcherHand}HP`
+      : "N/A";
+
+  const gameTime =
+    typeof formatTime === "function"
+      ? formatTime(
+          prediction.gameTime
+        )
+      : prediction.gameTime || "Time TBD";
+
+  return `
+    <article class="pitcher-k-list-card">
+
+      <div class="pitcher-k-list-top">
+
+        <div class="pitcher-k-list-rank">
+          ${prediction.rank || "-"}
         </div>
 
-        <div class="pitcher-k-header">
-          <div>
+        <div class="pitcher-k-list-main">
+
+          <div class="pitcher-k-list-name-row">
             <h3>
-              ⚾ ${prediction.pitcherName}
+              ${prediction.pitcherName}
             </h3>
 
-            <p class="pitcher-k-matchup">
-              ${prediction.team}
-              vs
-              ${prediction.opponent}
-            </p>
+            <span class="pitcher-k-hand-badge">
+              ${hand}
+            </span>
           </div>
 
-          <div class="pitcher-k-projection">
-            <span>Projected Ks</span>
-
+          <p class="pitcher-k-list-matchup">
             <strong>
-              ${projectedKs.toFixed(1)}
+              ${prediction.team || "Team"}
             </strong>
-          </div>
-        </div>
 
-        <p>
-          <strong>Game:</strong>
-          ${prediction.gameText || "N/A"}
-        </p>
+            <span>vs</span>
 
-        <p>
-          <strong>Date/Time:</strong>
-          ${
-            typeof formatTime === "function"
-              ? formatTime(
-                  prediction.gameTime
-                )
-              : prediction.gameTime || "TBD"
-          }
-        </p>
+            ${prediction.opponent || "Opponent"}
+          </p>
 
-        <p>
-          <strong>Pitcher Hand:</strong>
-          ${prediction.pitcherHand || "N/A"}
-        </p>
-
-        <div class="pitcher-k-stats">
-
-          <div>
-            <span>K Rate</span>
-
-            <strong>
-              ${kRate.toFixed(1)}%
-            </strong>
-          </div>
-
-          <div>
-            <span>K/9</span>
-
-            <strong>
-              ${kPer9.toFixed(2)}
-            </strong>
-          </div>
-
-          <div>
-            <span>Opponent K Rate</span>
-
-            <strong>
-              ${opponentKRate.toFixed(1)}%
-            </strong>
-          </div>
-
-          <div>
-            <span>Projected Innings</span>
-
-            <strong>
-              ${projectedInnings.toFixed(1)}
-            </strong>
-          </div>
-
-          <div>
-            <span>Projected Batters</span>
-
-            <strong>
-              ${projectedBatters.toFixed(1)}
-            </strong>
-          </div>
-
-          <div>
-            <span>Ks Per Start</span>
-
-            <strong>
-              ${this.num(
-                prediction.strikeoutsPerStart
-              ).toFixed(2)}
-            </strong>
-          </div>
-
-        </div>
-
-        <div class="pitcher-k-score-row">
-
-          <div>
-            <span>POPS K Score</span>
-
-            <strong>
-              ${score}/100
-            </strong>
-          </div>
-
-          <p class="pitcher-k-tier">
-            ${prediction.tier || ""}
+          <p class="pitcher-k-list-time">
+            🗓️ ${gameTime}
           </p>
 
         </div>
 
-      </article>
-    `;
-  }
+        <div class="pitcher-k-list-projection">
+          <span>Proj Ks</span>
+
+          <strong>
+            ${projectedKs.toFixed(1)}
+          </strong>
+        </div>
+
+      </div>
+
+      <div class="pitcher-k-list-stats pitcher-k-list-stats-top">
+
+        <div class="pitcher-k-list-stat">
+          <span>K Rate</span>
+
+          <strong class="pitcher-k-blue">
+            ${kRate.toFixed(1)}%
+          </strong>
+        </div>
+
+        <div class="pitcher-k-list-stat">
+          <span>K/9</span>
+
+          <strong class="pitcher-k-purple">
+            ${kPer9.toFixed(2)}
+          </strong>
+        </div>
+
+        <div class="pitcher-k-list-stat">
+          <span>Opp. K Rate</span>
+
+          <strong class="pitcher-k-green">
+            ${opponentKRate.toFixed(1)}%
+          </strong>
+        </div>
+
+      </div>
+
+      <div class="pitcher-k-list-stats pitcher-k-list-stats-bottom">
+
+        <div class="pitcher-k-list-stat">
+          <span>IP</span>
+
+          <strong>
+            ${projectedInnings.toFixed(1)}
+          </strong>
+        </div>
+
+        <div class="pitcher-k-list-stat">
+          <span>Batters</span>
+
+          <strong>
+            ${projectedBatters.toFixed(1)}
+          </strong>
+        </div>
+
+        <div class="pitcher-k-list-stat">
+          <span>Ks / Start</span>
+
+          <strong>
+            ${strikeoutsPerStart.toFixed(2)}
+          </strong>
+        </div>
+
+      </div>
+
+      <div class="pitcher-k-list-footer">
+
+        <div class="pitcher-k-list-score">
+          <span>POPS K SCORE</span>
+
+          <strong>
+            ${score}/100
+          </strong>
+        </div>
+
+        <div class="pitcher-k-list-tier">
+          ${prediction.tier || "⚪ LOW CONFIDENCE"}
+        </div>
+
+      </div>
+
+    </article>
+  `;
+}
 };
 
 window.PitcherKs = PitcherKs;
