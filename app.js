@@ -3214,6 +3214,21 @@ async function recalculateAllPicks() {
     rebuildGamesArray();
     renderGames();
 
+/*
+=========================================================
+PITCHER K PICKZ
+=========================================================
+*/
+
+if (
+  typeof PitcherKs !== "undefined" &&
+  typeof PitcherKs.load === "function"
+) {
+  PitcherKs.load(
+    todayData.games || []
+  );
+}    
+
 if (
       typeof PitcherKs !== "undefined" &&
       typeof PitcherKs.load === "function"
