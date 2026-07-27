@@ -209,6 +209,20 @@ const PitcherKs = {
         battersFaced;
     }
 
+/*
+Fallback estimate when batters faced
+is missing from the pitcher data.
+*/
+
+if (
+  !strikeoutRate &&
+  strikeoutsPer9 > 0
+) {
+  strikeoutRate =
+    strikeoutsPer9 /
+    38;
+}
+    
     const startsUsed =
       gamesStarted ||
       gamesPitched;
