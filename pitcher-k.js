@@ -973,19 +973,17 @@ const PitcherKs = {
       );
 
     window.pitcherKPredictions =
-  this.predictions;
+      this.predictions;
 
-this.render();
+    this.render();
 
-console.log(
-  "🎯 POPS Pitcher K predictions:",
-  this.predictions
-);
+    console.log(
+      "🎯 POPS Pitcher K predictions:",
+      this.predictions
+    );
 
-return this.predictions;
-};
-
-},
+    return this.predictions;
+  },
 
   /*
   =========================================================
@@ -1129,6 +1127,7 @@ return this.predictions;
 
           <div>
             <span>K Rate</span>
+
             <strong>
               ${kRate.toFixed(1)}%
             </strong>
@@ -1136,6 +1135,7 @@ return this.predictions;
 
           <div>
             <span>K/9</span>
+
             <strong>
               ${kPer9.toFixed(2)}
             </strong>
@@ -1143,6 +1143,7 @@ return this.predictions;
 
           <div>
             <span>Opponent K Rate</span>
+
             <strong>
               ${opponentKRate.toFixed(1)}%
             </strong>
@@ -1150,6 +1151,7 @@ return this.predictions;
 
           <div>
             <span>Projected Innings</span>
+
             <strong>
               ${projectedInnings.toFixed(1)}
             </strong>
@@ -1157,6 +1159,7 @@ return this.predictions;
 
           <div>
             <span>Projected Batters</span>
+
             <strong>
               ${projectedBatters.toFixed(1)}
             </strong>
@@ -1164,6 +1167,7 @@ return this.predictions;
 
           <div>
             <span>Ks Per Start</span>
+
             <strong>
               ${this.num(
                 prediction.strikeoutsPerStart
@@ -1174,6 +1178,7 @@ return this.predictions;
         </div>
 
         <div class="pitcher-k-score-row">
+
           <div>
             <span>POPS K Score</span>
 
@@ -1185,10 +1190,12 @@ return this.predictions;
           <p class="pitcher-k-tier">
             ${prediction.tier || ""}
           </p>
+
         </div>
 
       </article>
-    }
+    `;
+  }
 };
 
 window.PitcherKs = PitcherKs;
