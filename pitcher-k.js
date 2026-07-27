@@ -973,14 +973,16 @@ const PitcherKs = {
       );
 
     window.pitcherKPredictions =
-      this.predictions;
+  this.predictions;
 
-    console.log(
-      "🎯 POPS Pitcher K predictions:",
-      this.predictions
-    );
+this.render();
 
-    return this.predictions;
+console.log(
+  "🎯 POPS Pitcher K predictions:",
+  this.predictions
+);
+
+return this.predictions;
   }
 };
 
