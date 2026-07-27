@@ -983,7 +983,212 @@ console.log(
 );
 
 return this.predictions;
-  }
+};
+
+},
+
+  /*
+  =========================================================
+  RENDER PITCHER K PICKZ
+  =========================================================
+  */
+
+  render() {
+    const box =
+      document.getElementById(
+        "pitcherKsBox"
+      );
+
+    if (!box) {
+      console.warn(
+        "pitcherKsBox was not found."
+      );
+
+      return;
+    }
+
+    if (
+      !Array.isArray(this.predictions) ||
+      !this.predictions.length
+    ) {
+      box.innerHTML = `
+        <div class="pick-card">
+          <h3>No Pitcher K Pickz Found</h3>
+
+          <p>
+            Starting pitchers or strikeout data
+            may not be available yet.
+          </p>
+        </div>
+      `;
+
+      return;
+    }
+
+    box.innerHTML =
+      this.predictions
+        .map(prediction =>
+          this.renderCard(prediction)
+        )
+        .join("");
+  },
+
+  /*
+  =========================================================
+  RENDER ONE PITCHER K CARD
+  =========================================================
+  */
+
+  renderCard(prediction = {}) {
+    const projectedKs =
+      this.num(
+        prediction.projectedStrikeouts
+      );
+
+    const projectedInnings =
+      this.num(
+        prediction.projectedInnings
+      );
+
+    const projectedBatters =
+      this.num(
+        prediction.projectedBattersFaced
+      );
+
+    const kRate =
+      this.num(
+        prediction.kRate
+      );
+
+    const kPer9 =
+      this.num(
+        prediction.kPer9
+      );
+
+    const opponentKRate =
+      this.num(
+        prediction.opponentKRate
+      );
+
+    const score =
+      this.num(
+        prediction.score
+      );
+
+    return `
+      <article class="pitcher-k-card">
+
+        <div class="pitcher-k-rank">
+          #${prediction.rank || "-"}
+        </div>
+
+        <div class="pitcher-k-header">
+          <div>
+            <h3>
+              ⚾ ${prediction.pitcherName}
+            </h3>
+
+            <p class="pitcher-k-matchup">
+              ${prediction.team}
+              vs
+              ${prediction.opponent}
+            </p>
+          </div>
+
+          <div class="pitcher-k-projection">
+            <span>Projected Ks</span>
+
+            <strong>
+              ${projectedKs.toFixed(1)}
+            </strong>
+          </div>
+        </div>
+
+        <p>
+          <strong>Game:</strong>
+          ${prediction.gameText || "N/A"}
+        </p>
+
+        <p>
+          <strong>Date/Time:</strong>
+          ${
+            typeof formatTime === "function"
+              ? formatTime(
+                  prediction.gameTime
+                )
+              : prediction.gameTime || "TBD"
+          }
+        </p>
+
+        <p>
+          <strong>Pitcher Hand:</strong>
+          ${prediction.pitcherHand || "N/A"}
+        </p>
+
+        <div class="pitcher-k-stats">
+
+          <div>
+            <span>K Rate</span>
+            <strong>
+              ${kRate.toFixed(1)}%
+            </strong>
+          </div>
+
+          <div>
+            <span>K/9</span>
+            <strong>
+              ${kPer9.toFixed(2)}
+            </strong>
+          </div>
+
+          <div>
+            <span>Opponent K Rate</span>
+            <strong>
+              ${opponentKRate.toFixed(1)}%
+            </strong>
+          </div>
+
+          <div>
+            <span>Projected Innings</span>
+            <strong>
+              ${projectedInnings.toFixed(1)}
+            </strong>
+          </div>
+
+          <div>
+            <span>Projected Batters</span>
+            <strong>
+              ${projectedBatters.toFixed(1)}
+            </strong>
+          </div>
+
+          <div>
+            <span>Ks Per Start</span>
+            <strong>
+              ${this.num(
+                prediction.strikeoutsPerStart
+              ).toFixed(2)}
+            </strong>
+          </div>
+
+        </div>
+
+        <div class="pitcher-k-score-row">
+          <div>
+            <span>POPS K Score</span>
+
+            <strong>
+              ${score}/100
+            </strong>
+          </div>
+
+          <p class="pitcher-k-tier">
+            ${prediction.tier || ""}
+          </p>
+        </div>
+
+      </article>
+    }
 };
 
 window.PitcherKs = PitcherKs;
