@@ -236,6 +236,349 @@ const API = {
     return games;
   },
 
+
+
+
+/*
+=========================================================
+LAST 3 HEAD-TO-HEAD MATCHUPS
+=========================================================
+*/
+
+async getHeadToHead(
+  awayTeamId,
+  homeTeamId,
+  upcomingGameDate = "",
+  forceRefresh = false
+) {
+  awayTeamId = Number(
+    awayTeamId || 0
+  );
+
+  homeTeamId = Number(
+    homeTeamId || 0
+  );
+
+  const empty = {
+    games: [],
+    awayWins: 0,
+    homeWins: 0,
+    ties: 0,
+    leaderTeamId: null,
+    leaderWins: 0,
+    trailingWins: 0
+  };
+
+  if (
+    !awayTeamId ||
+    !homeTeamId
+  ) {
+    return empty;
+  }
+
+  /*
+  Use the upcoming game's date as the cutoff.
+
+  This prevents today's game from appearing in the
+  previous-matchups section if it has already started.
+  */
+
+  const cutoffDate =
+    upcomingGameDate
+      ? new Date(upcomingGameDate)
+      : new Date();
+
+  if (
+    Number.isNaN(
+      cutoffDate.getTime()
+    )
+  ) {
+    return empty;
+  }
+
+  const cutoffYear =
+    cutoffDate.getFullYear();
+
+  /*
+  Search the current season and previous two seasons.
+
+  This helps early-season matchups where the teams
+  may not have met three times yet.
+  */
+
+  const startDate =
+    `${cutoffYear - 2}-01-01`;
+
+  const endDateObject =
+    new Date(cutoffDate);
+
+  endDateObject.setDate(
+    endDateObject.getDate() - 1
+  );
+
+  const endYear =
+    endDateObject.getFullYear();
+
+  const endMonth =
+    String(
+      endDateObject.getMonth() + 1
+    ).padStart(2, "0");
+
+  const endDay =
+    String(
+      endDateObject.getDate()
+    ).padStart(2, "0");
+
+  const endDate =
+    `${endYear}-${endMonth}-${endDay}`;
+
+  const sortedTeamIds = [
+    awayTeamId,
+    homeTeamId
+  ].sort(
+    (a, b) => a - b
+  );
+
+  const cacheKey =
+    `${sortedTeamIds[0]}-` +
+    `${sortedTeamIds[1]}-` +
+    `${endDate}`;
+
+  if (
+    !forceRefresh &&
+    this.cache.headToHead[
+      cacheKey
+    ]
+  ) {
+    return this.cache.headToHead[
+      cacheKey
+    ];
+  }
+
+  if (forceRefresh) {
+    delete this.cache.headToHead[
+      cacheKey
+    ];
+  }
+
+  /*
+  Pull games involving one of the teams, then filter
+  the response so only meetings between these exact
+  two teams remain.
+  */
+
+  const url =
+    `${this.base}/schedule` +
+    `?sportId=1` +
+    `&teamId=${awayTeamId}` +
+    `&startDate=${startDate}` +
+    `&endDate=${endDate}` +
+    `&hydrate=team,status,linescore`;
+
+  const data =
+    await this.fetchJSON(
+      url,
+      forceRefresh
+    );
+
+  const rawGames =
+    (data?.dates || [])
+      .flatMap(
+        date => date.games || []
+      );
+
+  const completedStates = [
+    "Final",
+    "Game Over",
+    "Completed Early"
+  ];
+
+  const matchups =
+    rawGames
+      .filter(game => {
+        const gameAwayId =
+          Number(
+            game.teams?.away
+              ?.team?.id || 0
+          );
+
+        const gameHomeId =
+          Number(
+            game.teams?.home
+              ?.team?.id || 0
+          );
+
+        const isCorrectMatchup =
+          (
+            gameAwayId ===
+              awayTeamId &&
+            gameHomeId ===
+              homeTeamId
+          ) ||
+          (
+            gameAwayId ===
+              homeTeamId &&
+            gameHomeId ===
+              awayTeamId
+          );
+
+        const detailedState =
+          game.status
+            ?.detailedState || "";
+
+        const abstractState =
+          game.status
+            ?.abstractGameState || "";
+
+        const isCompleted =
+          completedStates.includes(
+            detailedState
+          ) ||
+          abstractState === "Final";
+
+        return (
+          isCorrectMatchup &&
+          isCompleted
+        );
+      })
+      .map(game => {
+        const gameAway =
+          game.teams?.away || {};
+
+        const gameHome =
+          game.teams?.home || {};
+
+        const gameAwayScore =
+          Number(
+            gameAway.score || 0
+          );
+
+        const gameHomeScore =
+          Number(
+            gameHome.score || 0
+          );
+
+        let winnerTeamId = null;
+
+        if (
+          gameAwayScore >
+          gameHomeScore
+        ) {
+          winnerTeamId =
+            Number(
+              gameAway.team?.id || 0
+            );
+        } else if (
+          gameHomeScore >
+          gameAwayScore
+        ) {
+          winnerTeamId =
+            Number(
+              gameHome.team?.id || 0
+            );
+        }
+
+        return {
+          gamePk:
+            Number(
+              game.gamePk || 0
+            ),
+
+          date:
+            game.gameDate || "",
+
+          awayTeamId:
+            Number(
+              gameAway.team?.id || 0
+            ),
+
+          awayTeam:
+            gameAway.team?.name ||
+            "Away Team",
+
+          awayScore:
+            gameAwayScore,
+
+          homeTeamId:
+            Number(
+              gameHome.team?.id || 0
+            ),
+
+          homeTeam:
+            gameHome.team?.name ||
+            "Home Team",
+
+          homeScore:
+            gameHomeScore,
+
+          winnerTeamId
+        };
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.date) -
+          new Date(a.date)
+      )
+      .slice(0, 3);
+
+  let awayWins = 0;
+  let homeWins = 0;
+  let ties = 0;
+
+  for (const matchup of matchups) {
+    if (
+      matchup.winnerTeamId ===
+      awayTeamId
+    ) {
+      awayWins++;
+    } else if (
+      matchup.winnerTeamId ===
+      homeTeamId
+    ) {
+      homeWins++;
+    } else {
+      ties++;
+    }
+  }
+
+  let leaderTeamId = null;
+
+  if (awayWins > homeWins) {
+    leaderTeamId =
+      awayTeamId;
+  } else if (
+    homeWins > awayWins
+  ) {
+    leaderTeamId =
+      homeTeamId;
+  }
+
+  const result = {
+    games: matchups,
+    awayWins,
+    homeWins,
+    ties,
+    leaderTeamId,
+    leaderWins:
+      Math.max(
+        awayWins,
+        homeWins
+      ),
+    trailingWins:
+      Math.min(
+        awayWins,
+        homeWins
+      )
+  };
+
+  this.cache.headToHead[
+    cacheKey
+  ] = result;
+
+  return result;
+},
+
+
   /*
   =========================================================
   LIVE GAME FEED
