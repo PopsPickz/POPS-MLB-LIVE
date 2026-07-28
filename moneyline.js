@@ -1004,11 +1004,16 @@ const confidence =
         </p>
 
         <p class="small">
-          Confidence:
-          ${confidence}%
-        </p>
+         Confidence:
+         ${confidence}%
+       </p>
 
-        <hr>
+        ${this.renderHeadToHead(
+          headToHead,
+          game
+       )}
+
+      <hr>
 
         <p>
           <strong>
