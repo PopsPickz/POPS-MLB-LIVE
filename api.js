@@ -299,12 +299,12 @@ async getHeadToHead(
     cutoffDate.getFullYear();
 
   /*
-  Search the current season and previous two seasons.
+Search the current season only.
 
-  This helps early-season matchups where the teams
-  may not have met three times yet.
-  */
-
+If the teams have played fewer than three completed
+games this season, display only the games available.
+*/
+  
   const startDate =
   `${cutoffYear}-01-01`;
 
