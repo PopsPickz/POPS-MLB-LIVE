@@ -20,9 +20,8 @@ const API = {
     schedule: {},
     liveFeed: {},
     splits: {},
-    weather: {}
-
-    headToHead: {},
+    weather: {},
+    headToHead: {}
   },
 
   /*
