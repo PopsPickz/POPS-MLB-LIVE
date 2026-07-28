@@ -383,6 +383,312 @@ const Moneyline = {
     );
   },
 
+
+/*
+=========================================================
+HEAD-TO-HEAD DISPLAY
+=========================================================
+*/
+
+formatHeadToHeadDate(value) {
+  if (!value) {
+    return "Date TBD";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Date TBD";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    }
+  ).format(date);
+},
+
+shortTeamName(name = "") {
+  const words =
+    String(name)
+      .trim()
+      .split(/\s+/);
+
+  return (
+    words[words.length - 1] ||
+    name ||
+    "Team"
+  );
+},
+
+renderHeadToHead(
+  headToHead = {},
+  game = {}
+) {
+  const matchups =
+    Array.isArray(headToHead.games)
+      ? headToHead.games
+      : [];
+
+  if (!matchups.length) {
+    return `
+      <div
+        style="
+          margin: 16px 0;
+          padding: 14px;
+          border: 1px solid #ff7a00;
+          border-radius: 12px;
+          background: rgba(255, 122, 0, 0.04);
+        "
+      >
+        <div
+          style="
+            color: #ff7a00;
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: 0.5px;
+          "
+        >
+          LAST 3 MATCHUPS
+        </div>
+
+        <p
+          class="small"
+          style="
+            margin: 10px 0 0;
+            text-align: center;
+            opacity: 0.75;
+          "
+        >
+          No completed head-to-head games found.
+        </p>
+      </div>
+    `;
+  }
+
+  const rows =
+    matchups.map(matchup => {
+      const awayWon =
+        Number(
+          matchup.awayScore
+        ) >
+        Number(
+          matchup.homeScore
+        );
+
+      const homeWon =
+        Number(
+          matchup.homeScore
+        ) >
+        Number(
+          matchup.awayScore
+        );
+
+      const awayName =
+        this.shortTeamName(
+          matchup.awayTeam
+        );
+
+      const homeName =
+        this.shortTeamName(
+          matchup.homeTeam
+        );
+
+      return `
+        <div
+          style="
+            display: grid;
+            grid-template-columns:
+              minmax(76px, 0.8fr)
+              minmax(90px, 1.5fr)
+              auto
+              18px
+              auto
+              minmax(90px, 1.5fr);
+            align-items: center;
+            gap: 7px;
+            padding: 10px 8px;
+            margin-top: 7px;
+            border: 1px solid rgba(255, 122, 0, 0.22);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.025);
+            font-size: 13px;
+          "
+        >
+          <span
+            style="
+              color: #bdbdbd;
+              font-size: 11px;
+              line-height: 1.15;
+            "
+          >
+            ${this.formatHeadToHeadDate(
+              matchup.date
+            )}
+          </span>
+
+          <strong
+            style="
+              color:
+                ${
+                  awayWon
+                    ? "#ff4d4d"
+                    : "#f2f2f2"
+                };
+              text-align: right;
+            "
+          >
+            ${awayName}
+          </strong>
+
+          <strong
+            style="
+              color:
+                ${
+                  awayWon
+                    ? "#ff4d4d"
+                    : "#ffffff"
+                };
+              font-size: 21px;
+            "
+          >
+            ${matchup.awayScore}
+          </strong>
+
+          <strong
+            style="
+              text-align: center;
+              color: #bdbdbd;
+            "
+          >
+            -
+          </strong>
+
+          <strong
+            style="
+              color:
+                ${
+                  homeWon
+                    ? "#ff4d4d"
+                    : "#ffffff"
+                };
+              font-size: 21px;
+            "
+          >
+            ${matchup.homeScore}
+          </strong>
+
+          <strong
+            style="
+              color:
+                ${
+                  homeWon
+                    ? "#ff4d4d"
+                    : "#f2f2f2"
+                };
+            "
+          >
+            ${homeName}
+          </strong>
+        </div>
+      `;
+    }).join("");
+
+  const awayWins =
+    Number(
+      headToHead.awayWins || 0
+    );
+
+  const homeWins =
+    Number(
+      headToHead.homeWins || 0
+    );
+
+  let summary = "";
+
+  if (awayWins > homeWins) {
+    summary = `
+      🏆
+      <strong style="color: #ff4d4d;">
+        ${this.shortTeamName(
+          game.awayTeam
+        )}
+      </strong>
+      lead the last
+      ${matchups.length}
+      matchups:
+      <strong style="color: #ff4d4d;">
+        ${awayWins} - ${homeWins}
+      </strong>
+    `;
+  } else if (homeWins > awayWins) {
+    summary = `
+      🏆
+      <strong style="color: #ff4d4d;">
+        ${this.shortTeamName(
+          game.homeTeam
+        )}
+      </strong>
+      lead the last
+      ${matchups.length}
+      matchups:
+      <strong style="color: #ff4d4d;">
+        ${homeWins} - ${awayWins}
+      </strong>
+    `;
+  } else {
+    summary = `
+      ⚖️ The last
+      ${matchups.length}
+      matchups are tied:
+      <strong>
+        ${awayWins} - ${homeWins}
+      </strong>
+    `;
+  }
+
+  return `
+    <div
+      style="
+        margin: 16px 0;
+        padding: 12px;
+        border: 1px solid #ff7a00;
+        border-radius: 12px;
+        background: rgba(255, 122, 0, 0.04);
+        overflow: hidden;
+      "
+    >
+      <div
+        style="
+          color: #ff7a00;
+          font-weight: 800;
+          text-align: center;
+          letter-spacing: 0.6px;
+        "
+      >
+        LAST 3 MATCHUPS
+      </div>
+
+      ${rows}
+
+      <div
+        style="
+          margin-top: 11px;
+          padding-top: 10px;
+          border-top: 1px solid rgba(255, 122, 0, 0.35);
+          text-align: center;
+          font-size: 14px;
+        "
+      >
+        ${summary}
+      </div>
+    </div>
+  `;
+},
+  
   /*
   =========================================================
   BUILD MONEYLINE CARD
