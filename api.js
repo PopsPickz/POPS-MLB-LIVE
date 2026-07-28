@@ -306,7 +306,7 @@ async getHeadToHead(
   */
 
   const startDate =
-    `${cutoffYear - 2}-01-01`;
+  `${cutoffYear}-01-01`;
 
   const endDateObject =
     new Date(cutoffDate);
