@@ -2062,7 +2062,8 @@ async getHeadToHead(
     this.cache.liveFeed = {};
     this.cache.splits = {};
     this.cache.weather = {};
-
+    this.cache.headToHead = {};
+    
     console.log(
       "🧹 All POPS API caches cleared."
     );
