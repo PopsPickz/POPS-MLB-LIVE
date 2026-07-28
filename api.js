@@ -21,6 +21,8 @@ const API = {
     liveFeed: {},
     splits: {},
     weather: {}
+
+    headToHead: {},
   },
 
   /*
