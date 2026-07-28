@@ -432,6 +432,24 @@ const Moneyline = {
         {}
       );
 
+    const headToHead =
+      await safe(
+       () =>
+         API.getHeadToHead(
+           game.awayTeamId,
+           game.homeTeamId,
+           game.date
+        ),
+      {
+         games: [],
+         awayWins: 0,
+         homeWins: 0,
+         ties: 0,
+         leaderTeamId: null
+        }
+     );
+
+    
     /*
     =======================================================
     ACTUAL RUN VALUES
