@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T14:49:05.762Z",
+  "generatedAt": "2026-08-07T17:43:47.678Z",
   "date": "2026-08-07",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
@@ -3616,13 +3616,33 @@
       "homeTeam": "Washington Nationals",
       "awayTeamId": 113,
       "homeTeamId": 120,
-      "awayPitcher": "TBD",
+      "awayPitcher": "Chase Petty",
       "homePitcher": "Cade Cavalli",
-      "awayPitcherId": null,
+      "awayPitcherId": 695534,
       "homePitcherId": 676917,
-      "awayPitcherHand": "",
+      "awayPitcherHand": "R",
       "homePitcherHand": "R",
-      "awayPitcherStats": {},
+      "awayPitcherStats": {
+        "id": 695534,
+        "gamesPlayed": 15,
+        "gamesStarted": 2,
+        "wins": 1,
+        "losses": 2,
+        "era": 4.5,
+        "whip": 1.23,
+        "inningsPitched": 30,
+        "inningsPitchedDisplay": "30.0",
+        "hits": 29,
+        "runs": 16,
+        "earnedRuns": 15,
+        "homeRuns": 5,
+        "homeRunsPer9": 1.5,
+        "baseOnBalls": 8,
+        "strikeOuts": 14,
+        "strikeoutsPer9Inn": 4.2,
+        "walksPer9Inn": 2.4,
+        "strikeoutWalkRatio": 1.75
+      },
       "homePitcherStats": {
         "id": 676917,
         "gamesPlayed": 24,
@@ -4594,10 +4614,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -4690,10 +4710,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -4786,10 +4806,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -4882,10 +4902,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -4978,10 +4998,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -5074,10 +5094,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -5170,10 +5190,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -5266,10 +5286,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -5362,10 +5382,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -12065,19 +12085,19 @@
             "iso": 0.324
           },
           "bvp": {
-            "atBats": 57,
-            "plateAppearances": 61,
-            "hits": 11,
-            "doubles": 3,
+            "atBats": 9,
+            "plateAppearances": 9,
+            "hits": 1,
+            "doubles": 0,
             "triples": 0,
-            "homeRuns": 1,
-            "baseOnBalls": 4,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": "0.193",
-            "obp": "0.246",
-            "slg": "0.298",
-            "ops": "0.544"
+            "avg": "0.111",
+            "obp": "0.111",
+            "slg": "0.111",
+            "ops": "0.222"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -12449,19 +12469,19 @@
             "iso": 0.167
           },
           "bvp": {
-            "atBats": 57,
-            "plateAppearances": 61,
-            "hits": 11,
-            "doubles": 3,
+            "atBats": 6,
+            "plateAppearances": 6,
+            "hits": 2,
+            "doubles": 2,
             "triples": 0,
-            "homeRuns": 1,
-            "baseOnBalls": 4,
+            "homeRuns": 0,
+            "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": "0.193",
-            "obp": "0.246",
-            "slg": "0.298",
-            "ops": "0.544"
+            "avg": "0.333",
+            "obp": "0.333",
+            "slg": "0.667",
+            "ops": "1.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -25153,11 +25173,11 @@
       "awayTeamId": 116,
       "homeTeamId": 137,
       "awayPitcher": "Keider Montero",
-      "homePitcher": "TBD",
+      "homePitcher": "JT Brubaker",
       "awayPitcherId": 672456,
-      "homePitcherId": null,
+      "homePitcherId": 664141,
       "awayPitcherHand": "R",
-      "homePitcherHand": "",
+      "homePitcherHand": "R",
       "awayPitcherStats": {
         "id": 672456,
         "gamesPlayed": 24,
@@ -25179,7 +25199,27 @@
         "walksPer9Inn": 1.93,
         "strikeoutWalkRatio": 3.24
       },
-      "homePitcherStats": {},
+      "homePitcherStats": {
+        "id": 664141,
+        "gamesPlayed": 34,
+        "gamesStarted": 0,
+        "wins": 0,
+        "losses": 0,
+        "era": 3.17,
+        "whip": 1.17,
+        "inningsPitched": 54,
+        "inningsPitchedDisplay": "54.0",
+        "hits": 41,
+        "runs": 21,
+        "earnedRuns": 19,
+        "homeRuns": 4,
+        "homeRunsPer9": 0.67,
+        "baseOnBalls": 22,
+        "strikeOuts": 36,
+        "strikeoutsPer9Inn": 6,
+        "walksPer9Inn": 3.67,
+        "strikeoutWalkRatio": 1.64
+      },
       "awayLineup": [
         {
           "id": 693307,
@@ -25264,10 +25304,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -25360,10 +25400,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -25456,10 +25496,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -25552,10 +25592,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -25648,10 +25688,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -25744,10 +25784,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -25840,10 +25880,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -25936,10 +25976,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -26032,10 +26072,10 @@
             "baseOnBalls": 0,
             "hitByPitch": 0,
             "sacFlies": 0,
-            "avg": ".000",
-            "obp": ".000",
-            "slg": ".000",
-            "ops": ".000"
+            "avg": "0.000",
+            "obp": "0.000",
+            "slg": "0.000",
+            "ops": "0.000"
           },
           "dataQuality": {
             "seasonStats": true,
