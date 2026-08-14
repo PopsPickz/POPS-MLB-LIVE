@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T11:40:39.998Z",
+  "generatedAt": "2026-08-14T14:46:18.233Z",
   "date": "2026-08-14",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
@@ -14416,7 +14416,7 @@
         {
           "id": 700250,
           "name": "Ben Rice",
-          "position": "1B",
+          "position": "DH",
           "lineupSpot": 1,
           "confirmed": false,
           "batSide": "L",
