@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T11:20:44.750Z",
+  "generatedAt": "2026-08-18T14:26:43.517Z",
   "date": "2026-08-18",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
@@ -8297,19 +8297,19 @@
             "iso": 0.217
           },
           "bvp": {
-            "atBats": 14,
-            "plateAppearances": 16,
-            "hits": 4,
-            "doubles": 0,
-            "triples": 0,
-            "homeRuns": 0,
-            "baseOnBalls": 2,
-            "hitByPitch": 0,
-            "sacFlies": 0,
-            "avg": "0.286",
-            "obp": "0.375",
-            "slg": "0.286",
-            "ops": "0.661"
+            "atBats": 166,
+            "plateAppearances": 183,
+            "hits": 37,
+            "doubles": 5,
+            "triples": 1,
+            "homeRuns": 1,
+            "baseOnBalls": 14,
+            "hitByPitch": 2,
+            "sacFlies": 1,
+            "avg": "0.223",
+            "obp": "0.290",
+            "slg": "0.283",
+            "ops": "0.573"
           },
           "dataQuality": {
             "seasonStats": true,
@@ -10575,8 +10575,8 @@
             "iso": 0.044
           },
           "bvp": {
-            "atBats": 2,
-            "plateAppearances": 3,
+            "atBats": 1,
+            "plateAppearances": 2,
             "hits": 0,
             "doubles": 0,
             "triples": 0,
@@ -10585,9 +10585,9 @@
             "hitByPitch": 0,
             "sacFlies": 0,
             "avg": "0.000",
-            "obp": "0.333",
+            "obp": "0.500",
             "slg": "0.000",
-            "ops": "0.333"
+            "ops": "0.500"
           },
           "dataQuality": {
             "seasonStats": true,
