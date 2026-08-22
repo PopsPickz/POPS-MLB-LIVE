@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T11:16:27.397Z",
+  "generatedAt": "2026-08-22T14:16:25.564Z",
   "date": "2026-08-22",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
@@ -14916,7 +14916,7 @@
         {
           "id": 680664,
           "name": "Eduardo Valencia",
-          "position": "C",
+          "position": "DH",
           "lineupSpot": 6,
           "confirmed": false,
           "batSide": "R",
