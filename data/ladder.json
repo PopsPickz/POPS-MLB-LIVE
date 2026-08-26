@@ -44,7 +44,7 @@
       "hasPitcherHistory": true,
       "qualificationReason": "2+ game hit streak and at least 1 previous hit vs pitcher",
       "score": 78,
-      "result": "pending",
+      "result": "miss",
       "hitsToday": 0,
       "smartWeight": 96
     },
@@ -81,5 +81,5 @@
       "smartWeight": 76
     }
   ],
-  "updatedAt": "2026-08-26T18:53:03.529Z"
+  "updatedAt": "2026-08-26T22:39:01.165Z"
 }
