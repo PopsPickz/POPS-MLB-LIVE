@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T14:25:50.568Z",
+  "generatedAt": "2026-09-02T14:29:11.031Z",
   "date": "2026-09-02",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
@@ -6234,7 +6234,7 @@
         {
           "id": 687637,
           "name": "Dylan Beavers",
-          "position": "RF",
+          "position": "LF",
           "lineupSpot": 9,
           "confirmed": false,
           "batSide": "L",
@@ -7335,8 +7335,8 @@
             "iso": 0.282
           },
           "bvp": {
-            "atBats": 3,
-            "plateAppearances": 3,
+            "atBats": 2,
+            "plateAppearances": 2,
             "hits": 0,
             "doubles": 0,
             "triples": 0,
@@ -17120,7 +17120,7 @@
         {
           "id": 665019,
           "name": "Kody Clemens",
-          "position": "1B",
+          "position": "2B",
           "lineupSpot": 1,
           "confirmed": false,
           "batSide": "L",
