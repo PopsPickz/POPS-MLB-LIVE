@@ -17,7 +17,7 @@
   "previousResult": "won",
   "previousStatus": "won",
   "cycleCompleted": false,
-  "status": "pending",
+  "status": "lost",
   "poolSize": 18,
   "picks": [
     {
@@ -48,7 +48,7 @@
       "hasPitcherHistory": false,
       "qualificationReason": "4+ game hit streak with no previous pitcher history",
       "score": 80,
-      "result": "pending",
+      "result": "miss",
       "hitsToday": 0,
       "smartWeight": 76
     },
@@ -85,5 +85,5 @@
       "smartWeight": 56
     }
   ],
-  "updatedAt": "2026-09-10T22:10:17.181Z"
+  "updatedAt": "2026-09-11T00:44:51.466Z"
 }
