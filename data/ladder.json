@@ -16,7 +16,7 @@
   "previousResult": "won",
   "previousStatus": "won",
   "cycleCompleted": false,
-  "status": "pending",
+  "status": "won",
   "poolSize": 20,
   "picks": [
     {
@@ -47,8 +47,8 @@
       "hasPitcherHistory": true,
       "qualificationReason": "2+ game hit streak and at least 1 previous hit vs pitcher",
       "score": 68,
-      "result": "pending",
-      "hitsToday": 0,
+      "result": "hit",
+      "hitsToday": 1,
       "smartWeight": 76
     },
     {
@@ -79,10 +79,10 @@
       "hasPitcherHistory": true,
       "qualificationReason": "2+ game hit streak and at least 1 previous hit vs pitcher",
       "score": 91,
-      "result": "pending",
-      "hitsToday": 0,
+      "result": "hit",
+      "hitsToday": 1,
       "smartWeight": 129
     }
   ],
-  "updatedAt": "2026-09-17T22:40:31.042Z"
+  "updatedAt": "2026-09-18T00:56:49.339Z"
 }
