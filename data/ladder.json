@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-01T23:36:48.758Z",
-  "date": "2026-10-01",
+  "generatedAt": "2026-10-02T16:26:44.000Z",
+  "date": "2026-10-02",
   "selectionType": "shared-daily-smart-random",
   "locked": true,
   "day": 1,
@@ -14,6 +14,6 @@
   "previousStatus": "none",
   "cycleCompleted": false,
   "status": "unavailable",
-  "poolSize": 1,
+  "poolSize": 0,
   "picks": []
 }
