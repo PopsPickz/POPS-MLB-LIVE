@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-10-10T20:25:48.948Z",
+  "generatedAt": "2026-10-11T01:26:42.762Z",
   "date": "2026-10-10",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
     {
       "gamePk": 849831,
       "date": "2026-10-11T00:00:00Z",
-      "status": "Pre-Game",
+      "status": "In Progress",
       "statusObject": {
-        "abstractGameState": "Preview",
-        "codedGameState": "P",
-        "detailedState": "Pre-Game",
-        "statusCode": "P",
+        "abstractGameState": "Live",
+        "codedGameState": "I",
+        "detailedState": "In Progress",
+        "statusCode": "I",
         "startTimeTBD": false,
-        "abstractGameCode": "P"
+        "abstractGameCode": "L"
       },
       "venue": "Progressive Field",
       "awayTeam": "Chicago White Sox",
