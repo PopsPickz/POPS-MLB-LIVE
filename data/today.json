@@ -1,18 +1,19 @@
 {
-  "generatedAt": "2026-10-16T22:22:43.146Z",
+  "generatedAt": "2026-10-17T00:56:28.667Z",
   "date": "2026-10-16",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
     {
       "gamePk": 849817,
       "date": "2026-10-17T00:00:00Z",
-      "status": "Pre-Game",
+      "status": "Delayed Start: Inclement Weather",
       "statusObject": {
         "abstractGameState": "Preview",
         "codedGameState": "P",
-        "detailedState": "Pre-Game",
-        "statusCode": "P",
+        "detailedState": "Delayed Start: Inclement Weather",
+        "statusCode": "PI",
         "startTimeTBD": false,
+        "reason": "Inclement Weather",
         "abstractGameCode": "P"
       },
       "venue": "Progressive Field",
