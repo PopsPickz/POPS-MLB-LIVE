@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-16T15:05:46.250Z",
-  "date": "2026-10-16",
+  "generatedAt": "2026-10-17T14:00:19.067Z",
+  "date": "2026-10-17",
   "selectionType": "shared-daily-smart-random",
   "locked": true,
   "day": 1,
@@ -9,20 +9,20 @@
   "target": 20,
   "maximumDay": 10,
   "completedDays": [],
-  "previousDate": "2026-10-15",
-  "previousResult": "lost",
-  "previousStatus": "lost",
+  "previousDate": "2026-10-16",
+  "previousResult": "pending",
+  "previousStatus": "pending",
   "cycleCompleted": false,
   "status": "pending",
   "poolSize": 4,
   "picks": [
     {
-      "id": 800050,
-      "player": "Chase DeLauter",
+      "id": 663993,
+      "player": "Nathaniel Lowe",
       "team": "Cleveland Guardians",
       "game": "Tampa Bay Rays vs Cleveland Guardians",
-      "gamePk": 849817,
-      "gameTime": "2026-10-17T00:00:00Z",
+      "gamePk": 849816,
+      "gameTime": "2026-10-18T00:08:00Z",
       "pitcher": "Nick Martinez",
       "pitcherId": 607259,
       "pitcherRisk": 38,
@@ -33,28 +33,28 @@
         "homeRunsAllowed": 22,
         "inningsPitched": 180
       },
-      "lineupSpot": 2,
+      "lineupSpot": 5,
       "confirmed": false,
       "hitStreak": 2,
-      "bvpHits": 1,
-      "bvpAtBats": 3,
-      "bvpPlateAppearances": 3,
+      "bvpHits": 2,
+      "bvpAtBats": 6,
+      "bvpPlateAppearances": 6,
       "bvpAverage": "0.333",
       "bvpHomeRuns": 0,
       "hasPitcherHistory": true,
       "qualificationReason": "2+ game hit streak and at least 1 previous hit vs pitcher",
-      "score": 73,
+      "score": 64,
       "result": "pending",
       "hitsToday": 0,
-      "smartWeight": 74
+      "smartWeight": 60
     },
     {
       "id": 656775,
       "player": "Cedric Mullins",
       "team": "Tampa Bay Rays",
       "game": "Tampa Bay Rays vs Cleveland Guardians",
-      "gamePk": 849817,
-      "gameTime": "2026-10-17T00:00:00Z",
+      "gamePk": 849816,
+      "gameTime": "2026-10-18T00:08:00Z",
       "pitcher": "Shawn Armstrong",
       "pitcherId": 542888,
       "pitcherRisk": 55,
@@ -80,6 +80,5 @@
       "hitsToday": 0,
       "smartWeight": 92
     }
-  ],
-  "updatedAt": "2026-10-17T00:56:28.760Z"
+  ]
 }
