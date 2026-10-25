@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-10-24T22:09:51.038Z",
+  "generatedAt": "2026-10-25T00:43:13.053Z",
   "date": "2026-10-24",
   "version": "POPS Pickz Batter Data 4.0",
   "games": [
     {
       "gamePk": 849802,
       "date": "2026-10-25T00:00:00Z",
-      "status": "Pre-Game",
+      "status": "In Progress",
       "statusObject": {
-        "abstractGameState": "Preview",
-        "codedGameState": "P",
-        "detailedState": "Pre-Game",
-        "statusCode": "P",
+        "abstractGameState": "Live",
+        "codedGameState": "I",
+        "detailedState": "In Progress",
+        "statusCode": "I",
         "startTimeTBD": false,
-        "abstractGameCode": "P"
+        "abstractGameCode": "L"
       },
       "venue": "American Family Field",
       "awayTeam": "Tampa Bay Rays",
